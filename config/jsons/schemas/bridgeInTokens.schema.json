@@ -65,6 +65,10 @@
                     "description": "decimals",
                     "type": "number"
                 },
+                "sharedDecimals": {
+                    "description": "decimals",
+                    "type": "number"
+                },
                 "icon": {
                     "description": "icon",
                     "type": "string"
