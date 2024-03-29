@@ -62,7 +62,12 @@ export async function signCosmosEIPTx(
     if (txError) throw txError;
 
     /** check if transaction was successful */
-    if (txData.tx_response.code !== 0) throw Error(txData.tx_response.code === 19 ? txData.tx_response.raw_log || "invalid account sequence" : txData.tx_response.raw_log);
+    if (txData.tx_response.code !== 0)
+      throw Error(
+        txData.tx_response.code === 19
+          ? txData.tx_response.raw_log || "invalid account sequence"
+          : txData.tx_response.raw_log
+      );
 
     return NO_ERROR(txData.tx_response.txhash);
   } catch (err) {
@@ -111,7 +116,10 @@ async function signAndBroadcastCosmosTransaction(
       try {
         const signature = await window.ethereum.request({
           method: "personal_sign",
-          params: [context.ethAddress, "generate_pubkey"],
+          params: [
+            context.ethAddress,
+            "Welcome to Canto! \n\nPlease sign this message to generate your Canto account.",
+          ],
         });
         context.sender.pubkey = signatureToPubkey(
           signature,
