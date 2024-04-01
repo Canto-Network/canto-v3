@@ -21,6 +21,11 @@ import {
 import { sleep, tryFetch, tryFetchWithRetry } from "@/utils/async";
 import { generateCosmosEIP712TxContext } from "./txContext";
 import { TX_SIGN_ERRORS } from "@/config/consts/errors";
+import {
+  signMessage,
+  signTypedData,
+  type SignTypedDataArgs,
+} from "@wagmi/core";
 
 export async function signCosmosEIPTx(
   tx: Transaction
@@ -109,9 +114,8 @@ async function signAndBroadcastCosmosTransaction(
     if (!context.sender.pubkey) {
       // create a public key for the user IFF EIP712 Canto is used (since through metamask)
       try {
-        const signature = await window.ethereum.request({
-          method: "personal_sign",
-          params: [context.ethAddress, "generate_pubkey"],
+        const signature = await signMessage({
+          message: "generate_pubkey",
         });
         context.sender.pubkey = signatureToPubkey(
           signature,
@@ -143,10 +147,7 @@ async function signAndBroadcastCosmosTransaction(
     );
 
     // get signature from metamask
-    const signature = await window.ethereum.request({
-      method: "eth_signTypedData_v4",
-      params: [context.ethAddress, JSON.stringify(eipToSign)],
-    });
+    const signature = await signTypedData(eipToSign as SignTypedDataArgs);
     const signedTx = createTxRawEIP712(
       cosmosPayload.legacyAmino.body,
       cosmosPayload.legacyAmino.authInfo,
