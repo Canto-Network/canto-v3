@@ -105,7 +105,13 @@ export async function getEvmSignerOnChainId(
     if (currentNetwork.chain?.id !== chainId) {
       // switch chains
       const network = await switchNetwork({ chainId });
-      if (!network || network.id !== chainId)
+      const updatedNetwork = getNetwork();
+      if (
+        !network ||
+        network.id !== chainId ||
+        !updatedNetwork.chain ||
+        updatedNetwork.chain.id !== chainId
+      )
         throw new Error(TX_SIGN_ERRORS.SWITCH_CHAIN_ERROR());
     }
 
