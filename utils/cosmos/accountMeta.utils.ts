@@ -26,8 +26,10 @@ export async function getCantoAccountMetaData(
     if (!cantoNetwork) throw new Error("not canto chain id");
 
     // get account data
-    const { data, error } = await tryFetch<CantoAccountReturn>(
-      `${cantoNetwork.restEndpoint}/cosmos/auth/v1beta1/accounts/${cantoAddress}`
+    const { data, error } =
+    await tryFetchWithRetry<CantoAccountReturn>(
+      `${cantoNetwork.restEndpoint}/cosmos/auth/v1beta1/accounts/${cantoAddress}`,
+      5
     );
     if (error) throw error;
 

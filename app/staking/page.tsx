@@ -766,7 +766,11 @@ export default function StakingPage() {
                   color="secondary"
                   themed={false}
                 >
-                  <Text font="proto_mono">Claim Staking Rewards</Text>
+                  <Text font="proto_mono">
+                    {claimRewardsTxValidation.error
+                      ? claimRewardsTxValidation.reason
+                      : "Claim Staking Rewards"}
+                  </Text>
                 </Button>
               </Container>
             </Container>
