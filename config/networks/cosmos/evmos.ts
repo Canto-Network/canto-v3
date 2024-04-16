@@ -13,8 +13,8 @@ export const EVMOS: CosmosNetwork = {
   icon: "/icons/evmos.svg",
   name: "Evmos",
   isTestChain: false,
-  rpcUrl: "https://evmos.kingnodes.com",
-  restEndpoint: "https://evmos.kingnodes.com",
+  rpcUrl: "https://rpc-evmos.ecostake.com",
+  restEndpoint: "https://rest-evmos.ecostake.com",
   addressPrefix: "evmos",
   checkAddress: function (address) {
     return checkCosmosAddress(this.addressPrefix)(address);
