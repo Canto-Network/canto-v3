@@ -121,10 +121,7 @@ async function signAndBroadcastCosmosTransaction(
       try {
         const signature = await window.ethereum.request({
           method: "personal_sign",
-          params: [
-            context.ethAddress,
-            "Welcome to Canto! \n\nPlease sign this message to generate your Canto account.",
-          ],
+          params: [context.ethAddress, "generate_pubkey"],
         });
         context.sender.pubkey = signatureToPubkey(
           signature,
