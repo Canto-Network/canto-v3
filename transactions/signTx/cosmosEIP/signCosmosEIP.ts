@@ -119,9 +119,12 @@ async function signAndBroadcastCosmosTransaction(
     if (!context.sender.pubkey) {
       // create a public key for the user IFF EIP712 Canto is used (since through metamask)
       try {
-        const signature = await signMessage({
-          message:
+        const signature = await window.ethereum.request({
+          method: "personal_sign",
+          params: [
+            context.ethAddress,
             "Welcome to Canto! \n\nPlease sign this message to generate your Canto account.",
+          ],
         });
         context.sender.pubkey = signatureToPubkey(
           signature,
