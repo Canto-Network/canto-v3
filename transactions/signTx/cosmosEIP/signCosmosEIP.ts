@@ -26,6 +26,7 @@ import {
   signTypedData,
   type SignTypedDataArgs,
 } from "@wagmi/core";
+import { areEqualAddresses } from "@/utils/address";
 
 export async function signCosmosEIPTx(
   tx: Transaction
@@ -114,13 +115,25 @@ async function signAndBroadcastCosmosTransaction(
       context.chain.chainId,
       eipPayload
     );
+    if(!window || !window.ethereum){
+      return NEW_ERROR("signAndBroadcastCosmosTransaction", "Wallet not supported");
+    }
+    const connectedAccounts = await window.ethereum.request({ method: "eth_accounts" })
+    if(!connectedAccounts || connectedAccounts.length === 0){
+      return NEW_ERROR("signAndBroadcastCosmosTransaction", "Wallet not supported");
+    }
+    const index = connectedAccounts.findIndex(address => areEqualAddresses(address, context.ethAddress));
+    if(index === -1){
+      return NEW_ERROR("signAndBroadcastCosmosTransaction", "Wallet not supported");
+    }
 
     // check public key on sender object, if none, create one
     if (!context.sender.pubkey) {
       // create a public key for the user IFF EIP712 Canto is used (since through metamask)
       try {
-        const signature = await signMessage({
-          message:"Welcome to Canto! \n\nPlease sign this message to generate your Canto account.",
+        const signature = await window.ethereum.request({
+          method: "personal_sign",
+          params: [context.ethAddress, "generate_pubkey"],
         });
         context.sender.pubkey = signatureToPubkey(
           signature,
@@ -152,7 +165,12 @@ async function signAndBroadcastCosmosTransaction(
     );
 
     // get signature from metamask
-    const signature = await signTypedData(eipToSign as SignTypedDataArgs);
+
+    const signature = await window.ethereum.request({
+      method: "eth_signTypedData_v4",
+      params: [context.ethAddress, JSON.stringify(eipToSign)],
+    });
+
     const signedTx = createTxRawEIP712(
       cosmosPayload.legacyAmino.body,
       cosmosPayload.legacyAmino.authInfo,
