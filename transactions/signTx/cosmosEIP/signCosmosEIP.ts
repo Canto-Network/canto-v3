@@ -118,7 +118,7 @@ async function signAndBroadcastCosmosTransaction(
     if(!window || !window.ethereum){
       return NEW_ERROR("signAndBroadcastCosmosTransaction", "Wallet not supported");
     }
-    const connectedAccounts = await window.ethereum.request({ method: "eth_accounts" })
+    const connectedAccounts: string[] = await window.ethereum.request({ method: "eth_accounts" })
     if(!connectedAccounts || connectedAccounts.length === 0){
       return NEW_ERROR("signAndBroadcastCosmosTransaction", "Wallet not supported");
     }
