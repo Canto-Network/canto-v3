@@ -335,7 +335,6 @@ async function injectiveIBCIn(
         //@ts-ignore
         signDoc
       );
-      console.log("direct sign response", directSignResponse);
 
       if (!directSignResponse) {
         return NEW_ERROR("injectiveIBCIn: no direct sign response");
@@ -344,7 +343,6 @@ async function injectiveIBCIn(
         directSignResponse as any
       );
 
-      console.log("txRaw: ", txRaw)
       /** Broadcast the Transaction **/
       return NO_ERROR(
         await window.keplr?.sendTx(
@@ -355,7 +353,6 @@ async function injectiveIBCIn(
         )
       );
     } catch (err) {
-      console.log("error injective:", err)
       return NEW_ERROR("injectiveIBCIn", err);
     }
   }
