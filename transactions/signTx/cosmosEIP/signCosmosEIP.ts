@@ -115,15 +115,22 @@ async function signAndBroadcastCosmosTransaction(
       context.chain.chainId,
       eipPayload
     );
+    
     if(!window || !window.ethereum){
       return NEW_ERROR("signAndBroadcastCosmosTransaction", "Wallet not supported");
     }
+
     const connectedAccounts: string[] = await window.ethereum.request({ method: "eth_accounts" })
     if(!connectedAccounts || connectedAccounts.length === 0){
       return NEW_ERROR("signAndBroadcastCosmosTransaction", "Wallet not supported");
     }
     const index = connectedAccounts.findIndex(address => areEqualAddresses(address, context.ethAddress));
     if(index === -1){
+      return NEW_ERROR("signAndBroadcastCosmosTransaction", "Wallet not supported");
+    }
+
+    const connectedChainId =  await window.ethereum.request({ method: "eth_chainId" });
+    if(!connectedChainId || parseInt(connectedChainId, 16) !== context.chain.chainId){
       return NEW_ERROR("signAndBroadcastCosmosTransaction", "Wallet not supported");
     }
 
