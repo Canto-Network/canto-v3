@@ -115,7 +115,11 @@ export async function getAllAmbientPoolsData(
         totals: {
           noteTvl: tvl,
           apr: {
-            poolApr: ambientAPR("225000000000000000", tvl, cantoPrice ?? "0"),
+            poolApr: ambientAPR(
+              pools[idx].cantoRewardPerBlock,
+              tvl,
+              cantoPrice ?? "0"
+            ),
           },
         },
       };
