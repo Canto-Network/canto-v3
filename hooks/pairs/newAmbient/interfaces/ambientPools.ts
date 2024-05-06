@@ -7,6 +7,7 @@ export interface BaseAmbientPool {
   poolIdx: number;
   stable: boolean;
   rewardsLedger: string;
+  cantoRewardPerBlock: string;
 }
 interface AmbientPoolToken {
   address: string;
