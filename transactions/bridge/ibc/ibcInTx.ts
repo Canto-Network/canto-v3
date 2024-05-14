@@ -296,7 +296,7 @@ async function injectiveIBCIn(
   /** Message **/
   const msg = MsgTransfer.fromJSON({
     port: "transfer",
-    memo: "injectiveIBC",
+    memo: undefined,
     sender: injectiveAddress,
     receiver: cantoAddress,
     channelId: ibcChannel.toCanto,
