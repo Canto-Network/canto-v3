@@ -76,9 +76,10 @@ function protoMsgConvertCoin(
       amount: params.amount,
     }),
   });
+  // add serializeBinary function for signing package
   return {
-    message,
-    path: MsgConvertCoin.typeName,
+    message: { ...message, serializeBinary: () => message.toBinary() },
+    path: "canto.erc20.v1.MsgConvertCoin",
   };
 }
 

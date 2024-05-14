@@ -6,11 +6,15 @@ import {
   UserTokenBalances,
 } from "@/config/interfaces";
 import { getEVMTokenBalanceList } from "@/utils/tokens";
-import { getCosmosTokenBalanceList } from "@/utils/cosmos";
+import {
+  getCosmosTokenBalance,
+  getCosmosTokenBalanceList,
+} from "@/utils/cosmos";
 import { useQuery } from "react-query";
 import { getCosmosEIPChainObject } from "@/utils/networks";
 import { ethToCantoAddress } from "@/utils/address";
 import { addTokenBalances } from "@/utils/math";
+import { CANTO_MAINNET_COSMOS, INJECTIVE } from "@/config/networks";
 
 /**
  * @notice hook to get an object of token balances for a given address and available tokens
@@ -47,6 +51,23 @@ export default function useTokenBalances(
           userCosmosAddress
         );
         if (balancesError) throw balancesError;
+
+        // if injective add special canto native balance
+        if (chainId === INJECTIVE.chainId) {
+          const { data: injCantoBalance, error: injError } =
+            await getCosmosTokenBalance(
+              CANTO_MAINNET_COSMOS.chainId,
+              (await ethToCantoAddress(userEthAddress as string)).data,
+              "ibc/4E790C04E6F00F971251E227AEA8E19A5AD274BFE18253EF0EDD7707D8AF1F7C"
+            );
+
+          if (injCantoBalance) {
+            balances["inj"] = addTokenBalances(
+              balances["inj"],
+              injCantoBalance
+            );
+          }
+        }
 
         // check if we need to combine native balances (convert coins)
         if (combinedCantoNative && userEthAddress) {

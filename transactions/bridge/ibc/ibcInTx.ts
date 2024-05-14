@@ -30,7 +30,7 @@ import {
   createTransactionWithMultipleMessages,
   createTxRaw,
 } from "@evmos/proto";
-import { tryFetch } from "@/utils/async";
+import { asyncCallWithRetry, tryFetch } from "@/utils/async";
 import Long from "long";
 import { displayAmount } from "@/utils/formatting";
 import { isIBCToken } from "@/utils/tokens";
@@ -60,8 +60,10 @@ import { generateCantoPublicKeyWithTx } from "@/transactions/cosmos/publicKey";
 import { getBlockTimestamp, getIBCData } from "./helpers";
 import { createMsgsIBCTransfer } from "@/transactions/cosmos/messages/ibc/ibc";
 import { BridgingMethod, getBridgeMethodInfo } from "..";
-import { getCantoSenderObj } from "@/utils/cosmos";
+import { getCantoSenderObj, getCosmosTokenBalance } from "@/utils/cosmos";
 import { generatePostBodyBroadcast } from "@/transactions/signTx/cosmosEIP/signCosmosEIP";
+import { TransactionFlowType } from "@/transactions/flows";
+import { _convertCoinTx } from "./txCreators";
 
 type IBCInParams = {
   senderCosmosAddress: string;
@@ -125,18 +127,15 @@ export async function ibcInKeplr(
 
     /** specific chain check */
     if (cosmosNetwork.chainId === INJECTIVE.chainId) {
-      const { data: injTx, error: injErr } = await injectiveIBCIn(
+      /** return here */
+      return injectiveIBCIn(
         cosmosNetwork,
         txParams.senderCosmosAddress,
         cantoReceiver,
+        txParams.cantoEthReceiverAddress,
         txParams.token,
         txParams.amount
       );
-      if (injErr) throw injErr;
-      txList.push(...injTx);
-
-      /** return here */
-      return NO_ERROR({ transactions: txList });
     }
     if (cosmosNetwork.chainId === EVMOS.chainId) {
       const { data: evmosTxs, error: evmosError } = await evmosIBCIn(
@@ -256,9 +255,10 @@ async function injectiveIBCIn(
   injectiveNetwork: CosmosNetwork,
   injectiveAddress: string,
   cantoAddress: string,
+  ethAddress: string,
   token: IBCToken,
   amount: string
-): PromiseWithError<Transaction[]> {
+): PromiseWithError<TxCreatorFunctionReturn> {
   // check injective chain
   if (injectiveNetwork.chainId !== INJECTIVE.chainId) {
     return NEW_ERROR(
@@ -266,6 +266,35 @@ async function injectiveIBCIn(
         injectiveNetwork.chainId
     );
   }
+
+  // since auto convert is unavailable, track balance on canto before ibc initiated
+  const { data: injectiveCantoBalance, error: balanceError } =
+    await getCosmosTokenBalance(
+      CANTO_MAINNET_COSMOS.chainId,
+      cantoAddress,
+      token.ibcDenom
+    );
+
+  // check if this balance is enough so ibc is not needed
+  if (BigInt(injectiveCantoBalance) >= BigInt(amount)) {
+    // just convert coin is needed
+    return NO_ERROR({
+      transactions: [
+        _convertCoinTx(
+          CANTO_MAINNET_EVM.chainId,
+          cantoAddress,
+          ethAddress,
+          token.ibcDenom,
+          amount,
+          TX_DESCRIPTIONS.CONVERT_COIN(
+            token.symbol,
+            displayAmount(amount, token.decimals)
+          )
+        ),
+      ],
+    });
+  }
+
   // get the channel number from the network
   const ibcChannel =
     IBC_CHANNELS[injectiveNetwork.id as keyof typeof IBC_CHANNELS];
@@ -357,24 +386,103 @@ async function injectiveIBCIn(
     }
   }
 
-  return NO_ERROR([
-    {
-      fromAddress: injectiveAddress,
-      chainId: injectiveNetwork.chainId,
-      description: TX_DESCRIPTIONS.BRIDGE(
-        token.symbol,
-        displayAmount(amount, token.decimals),
-        injectiveNetwork.name,
-        CANTO_MAINNET_COSMOS.name,
-        "ibc"
-      ),
-      feTxType: CantoFETxType.IBC_IN_KEPLR,
-      type: "KEPLR",
-      tx: signAndBroadcast,
-      getHash: (txResponse: Uint8Array) =>
-        NO_ERROR(Buffer.from(txResponse).toString("hex")),
+  return NO_ERROR({
+    transactions: [
+      {
+        fromAddress: injectiveAddress,
+        chainId: injectiveNetwork.chainId,
+        description: TX_DESCRIPTIONS.BRIDGE(
+          token.symbol,
+          displayAmount(amount, token.decimals),
+          injectiveNetwork.name,
+          CANTO_MAINNET_COSMOS.name,
+          "ibc"
+        ),
+        feTxType: CantoFETxType.IBC_IN_KEPLR,
+        type: "KEPLR",
+        tx: signAndBroadcast,
+        getHash: (txResponse: Uint8Array) =>
+          NO_ERROR(Buffer.from(txResponse).toString("hex")),
+      },
+    ],
+    extraFlow: {
+      description: {
+        title: "Convert Coin",
+        description: "Convert Injective to ERC20 token",
+      },
+      txFlowType: TransactionFlowType.CONVERT_COIN_IBC,
+      params: {
+        cantoSender: cantoAddress,
+        ethReceiver: ethAddress,
+        token: token,
+        amount,
+        prevBalance: balanceError ? "0" : injectiveCantoBalance,
+      },
     },
-  ]);
+  });
+}
+
+export type ConvertCoinIBCParams = {
+  cantoSender: string;
+  ethReceiver: string;
+  token: IBCToken;
+  amount: string;
+  prevBalance: string;
+};
+// injective auto convert not available, manual convert coin needed
+export async function convertCoinIBC({
+  cantoSender,
+  ethReceiver,
+  token,
+  amount,
+  prevBalance,
+}: ConvertCoinIBCParams): PromiseWithError<TxCreatorFunctionReturn> {
+  // wait until the ibc transaction has gone through (check balance)
+  const cantoTokenBalance = async () =>
+    getCosmosTokenBalance(
+      CANTO_MAINNET_COSMOS.chainId,
+      cantoSender,
+      token.ibcDenom
+    );
+  const { data: convertAmount, error } = await asyncCallWithRetry<string>(
+    async () => {
+      try {
+        // get new balance
+        const { data: newBalance, error: balanceError } =
+          await cantoTokenBalance();
+        if (balanceError) throw balanceError;
+
+        // if did not increase by amount, then retry
+        if (BigInt(newBalance) - BigInt(prevBalance) >= BigInt(amount)) {
+          return NO_ERROR(newBalance);
+        }
+        throw new Error("not received");
+      } catch (err) {
+        return NEW_ERROR("convertCoinIBC", err);
+      }
+    },
+    {
+      numTries: 5,
+      sleepTime: 5000,
+    }
+  );
+
+  if (error) return NEW_ERROR("convertCoinIBC", error);
+  return NO_ERROR({
+    transactions: [
+      _convertCoinTx(
+        CANTO_MAINNET_EVM.chainId,
+        cantoSender,
+        ethReceiver,
+        token.ibcDenom,
+        convertAmount,
+        TX_DESCRIPTIONS.CONVERT_COIN(
+          token.symbol,
+          displayAmount(convertAmount, token.decimals)
+        )
+      ),
+    ],
+  });
 }
 
 /**
