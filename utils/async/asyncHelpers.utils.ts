@@ -136,7 +136,7 @@ export async function asyncCallWithRetry<T>(
       numberOfTries++;
       await sleep(options?.sleepTime ?? 4000);
     } else {
-      return NO_ERROR<T>(result as T);
+      return result;
     }
   }
   return NEW_ERROR(

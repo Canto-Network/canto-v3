@@ -24,9 +24,10 @@ import {
 import { cantoBridgeTx, validateCantoBridgeTxParams } from "../bridge";
 import { stakingTx, validateStakingTxParams } from "../staking";
 import { proposalVoteTx, validateGovTxParams } from "../gov";
+import { convertCoinIBC } from "../bridge/ibc/ibcInTx";
 
 export enum TransactionFlowType {
-  //   // Bridge
+  // Bridge
   BRIDGE = "BRIDGE",
   // LP
   AMBIENT_LIQUIDITY_TX = "AMBIENT_LIQUIDITY_TX",
@@ -40,6 +41,8 @@ export enum TransactionFlowType {
   //STAKING
   STAKE_CANTO_TX = "STAKE_CANTO_TX",
   VOTE_TX = "VOTE_TX",
+  // Convert Coin (pre-proposal)
+  CONVERT_COIN_IBC = "CONVERT_COIN_IBC",
 }
 
 export const TRANSACTION_FLOW_MAP: {
@@ -88,5 +91,9 @@ export const TRANSACTION_FLOW_MAP: {
   [TransactionFlowType.VOTE_TX]: {
     tx: async (params) => proposalVoteTx(params),
     validRetry: async (params) => NO_ERROR(validateGovTxParams(params)),
+  },
+  [TransactionFlowType.CONVERT_COIN_IBC]: {
+    tx: async (params) => convertCoinIBC(params),
+    validRetry: async () => NO_ERROR({ error: false }),
   },
 };
