@@ -265,6 +265,11 @@ export const GeneralAmbientPairRow = ({
     <Text theme="primary-dark" key={pool.address + "symbol"}>
       {pool.symbol}
     </Text>
+    {pool.symbol === "cNOTE / USDC" && (
+      <InfoPop>
+        <Text>All emissions to this pool will be removed soon.</Text>
+      </InfoPop>
+    )}
   </Container>,
   <AprBlock key={"apr"} pool={pool} />,
   <Text key={pool.address + "tvl"}>

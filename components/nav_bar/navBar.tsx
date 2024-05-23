@@ -127,7 +127,7 @@ const NavBar = () => {
         >
           <Text size="sm">Pools</Text>
         </Link>
-        <Link
+        {/* <Link
           href="https://explore.canto.io/"
           className={clsx(
             styles["nav-link"],
@@ -136,7 +136,7 @@ const NavBar = () => {
           onClick={() => Analytics.actions.events.clickedNavLink("Explore")}
         >
           <Text size="sm">Explore</Text>
-        </Link>
+        </Link> */}
         {isMobile && (
           <Link
             href="/staking"
