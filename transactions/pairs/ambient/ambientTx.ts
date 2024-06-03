@@ -192,19 +192,20 @@ async function addConLiquidity(
     
     /** add add liquidity tx */
     txList.push(
-      _addKnockoutLiquidityTx(
+      _addAmbientConcLiquidityTx(
         txParams.chainId,
         txParams.ethAccount,
         txParams.crocDexAddress,
         txParams.pool.base.address,
         txParams.pool.quote.address,
         txParams.pool.poolIdx,
+        txParams.isAmountBase ? baseAmount : quoteAmount,
+        txParams.isAmountBase,
         txParams.lowerTick,
         txParams.upperTick,
-        true,
-        1,
-        true,
-        TX_DESCRIPTIONS.ADD_KNOCKOUT_LIQUIDITY(),
+        txParams.minExecPriceQ64,
+        txParams.maxExecPriceQ64,
+        TX_DESCRIPTIONS.ADD_AMBIENT_CONC_LIQ()
       )
     );
 
@@ -311,7 +312,7 @@ export function validateAmbientLiquidityTxParams(
     txParams.maxExecPriceWei,
     currentPrice
   );
-  //if (executionPriceCheck.error) return executionPriceCheck;
+  if (executionPriceCheck.error) return executionPriceCheck;
 
   /** check ticks */
   if (txParams.lowerTick >= txParams.upperTick) {

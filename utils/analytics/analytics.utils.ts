@@ -196,6 +196,7 @@ function getAmbientLiquidityTransactionFlowData(
     };
   }
   // remove liquidity
+  if (ambientLiquidityTxParams.txType === AmbientTxType.REMOVE_CONC_LIQUIDITY) {
   const [ambientLpExpectedBaseAmount, ambientLpExpectedQuoteAmount] = [
     displayAnalyticsAmount(
       ambientLiquidityTxParams.expectedBaseAmount ?? "0",
@@ -212,6 +213,9 @@ function getAmbientLiquidityTransactionFlowData(
     ambientLpExpectedBaseAmount,
     ambientLpExpectedQuoteAmount,
   };
+}
+  //Need to add analytics for knockout liquidity txs
+  return poolData;
 }
 
 function getCantoDexTransactionFlowData(
