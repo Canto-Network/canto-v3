@@ -11,6 +11,14 @@ export const TX_DESCRIPTIONS = {
     title: "Add Concentrated Liquidity",
     description: "Add concentrated liquidity to the pool",
   }),
+  ADD_KNOCKOUT_LIQUIDITY: () => ({
+    title: "Add Knockout Liquidity",
+    description: "Add knockout liquidity to the pool",
+  }),
+  REMOVE_KNOCKOUT_LIQUIDITY: () => ({
+    title: "Remove Knockout Liquidity",
+    description: "Remove knockout liquidity from the pool",
+  }),
   APPROVE_TOKEN: (tokenSymbol: string, spender: string) => ({
     title: `Approve ${tokenSymbol}`,
     description: `Give ${spender} approval to move ${tokenSymbol}`,

@@ -22,6 +22,8 @@ import { getAmbientAddress } from "@/hooks/pairs/newAmbient/config/addresses";
 import {
   _addAmbientConcLiquidityTx,
   _removeAmbientConcLiquidityTx,
+  _addKnockoutLiquidityTx,
+  _removeKnockoutLiquidityTx
 } from "./txCreators";
 import { createApprovalTxs } from "@/transactions/erc20";
 import { isValidEthAddress } from "@/utils/address";
@@ -66,6 +68,44 @@ export async function ambientLiquidityTx(
               minPriceQ64,
               maxPriceQ64,
               TX_DESCRIPTIONS.REMOVE_AMBIENT_CONC_LIQ()
+            ),
+          ],
+        });
+      case AmbientTxType.ADD_KNOCKOUT_LIQUIDITY:
+        return NO_ERROR({
+          transactions: [
+            _addKnockoutLiquidityTx(
+              txParams.chainId,
+              txParams.ethAccount,
+              crocDexAddress,
+              txParams.pool.base.address,
+              txParams.pool.quote.address,
+              txParams.pool.poolIdx,
+              txParams.lowerTick,
+              txParams.upperTick,
+              true,
+              1,
+              true,
+              TX_DESCRIPTIONS.ADD_KNOCKOUT_LIQUIDITY()
+            ),
+          ],
+        });
+      case AmbientTxType.REMOVE_KNOCKOUT_LIQUIDITY:
+        return NO_ERROR({
+          transactions: [
+            _removeKnockoutLiquidityTx(
+              txParams.chainId,
+              txParams.ethAccount,
+              crocDexAddress,
+              txParams.pool.base.address,
+              txParams.pool.quote.address,
+              txParams.pool.poolIdx,
+              txParams.lowerTick,
+              txParams.upperTick,
+              true,
+              1,
+              true,
+              TX_DESCRIPTIONS.ADD_KNOCKOUT_LIQUIDITY()
             ),
           ],
         });
@@ -143,27 +183,28 @@ async function addConLiquidity(
         [baseApproval, quoteApproval],
         { address: txParams.crocDexAddress, name: "Ambient" }
       );
+    
     if (allowanceTxsError) throw allowanceTxsError;
-
+    
     /** add allowance txs to list */
+    
     txList.push(...allowanceTxs);
-
+    
     /** add add liquidity tx */
     txList.push(
-      _addAmbientConcLiquidityTx(
+      _addKnockoutLiquidityTx(
         txParams.chainId,
         txParams.ethAccount,
         txParams.crocDexAddress,
         txParams.pool.base.address,
         txParams.pool.quote.address,
         txParams.pool.poolIdx,
-        txParams.isAmountBase ? baseAmount : quoteAmount,
-        txParams.isAmountBase,
         txParams.lowerTick,
         txParams.upperTick,
-        txParams.minExecPriceQ64,
-        txParams.maxExecPriceQ64,
-        TX_DESCRIPTIONS.ADD_AMBIENT_CONC_LIQ()
+        true,
+        1,
+        true,
+        TX_DESCRIPTIONS.ADD_KNOCKOUT_LIQUIDITY(),
       )
     );
 
@@ -270,7 +311,7 @@ export function validateAmbientLiquidityTxParams(
     txParams.maxExecPriceWei,
     currentPrice
   );
-  if (executionPriceCheck.error) return executionPriceCheck;
+  //if (executionPriceCheck.error) return executionPriceCheck;
 
   /** check ticks */
   if (txParams.lowerTick >= txParams.upperTick) {

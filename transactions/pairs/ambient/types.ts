@@ -3,6 +3,8 @@ import { AmbientPool } from "@/hooks/pairs/newAmbient/interfaces/ambientPools";
 export enum AmbientTxType {
   ADD_CONC_LIQUIDITY = "Add concentrated liquidity",
   REMOVE_CONC_LIQUIDITY = "Remove concentrated liquidity",
+  ADD_KNOCKOUT_LIQUIDITY = "Add knockout liquidity",
+  REMOVE_KNOCKOUT_LIQUIDITY = "Remove knockout liquidity",
 }
 export type AmbientTransactionParams = {
   chainId: number;
@@ -10,6 +12,8 @@ export type AmbientTransactionParams = {
 } & (
   | AmbientAddConcentratedLiquidityParams
   | AmbientRemoveConcentratedLiquidityParams
+  | AmbientAddKnockoutLiquidityParams
+  | AmbientRemoveKnockoutLiquidityParams
 );
 
 type BaseConcLiqParams = {
@@ -44,3 +48,23 @@ export type AmbientClaimRewardsTxParams = {
     poolName: string;
   }[];
 };
+
+//Add Knockout liquidity
+export type AmbientAddKnockoutLiquidityParams = BaseConcLiqParams & {
+  txType: AmbientTxType.ADD_KNOCKOUT_LIQUIDITY;
+  amount: string;
+  isAmountBase: boolean;
+  isAdvanced?: boolean;
+  positionId?: string;
+};
+
+//Remove Knockout liquidity
+export type AmbientRemoveKnockoutLiquidityParams = BaseConcLiqParams & {
+  txType: AmbientTxType.REMOVE_KNOCKOUT_LIQUIDITY;
+  amount: string;
+  isAmountBase: boolean;
+  isAdvanced?: boolean;
+  positionId?: string;
+};
+
+
