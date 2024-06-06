@@ -13,7 +13,7 @@ import {
 } from "@/hooks/pairs/newAmbient/interfaces/ambientPools";
 import { getPriceFromTick, concLiquidityNoteValue } from "@/utils/ambient";
 import BigNumber from "bignumber.js";
-import { NewAmbientPositionModal } from "./newAmbientPosition";
+import { NewAmbientBasePositionModal } from "./newAmbientPosition";
 import { ManageAmbientPosition } from "./managePosition";
 import { AmbientTransactionParams } from "@/transactions/pairs/ambient";
 import { Validation } from "@/config/interfaces";
@@ -112,7 +112,7 @@ export const AmbientModal = (props: AmbientModalProps) => {
               padding: "0 16px",
             }}
           >
-            <NewAmbientPositionModal
+            <NewAmbientBasePositionModal
               pool={props.pool}
               sendTxFlow={props.sendTxFlow}
               verifyParams={props.verifyParams}
