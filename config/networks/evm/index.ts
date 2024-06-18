@@ -1,4 +1,6 @@
+export * from "./arbitrum";
 export * from "./avalanche";
+export * from "./blast";
 export * from "./bnb";
 export { CANTO_MAINNET_EVM, CANTO_TESTNET_EVM } from "../canto";
 export * from "./ethereum";

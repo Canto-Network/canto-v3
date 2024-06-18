@@ -103,6 +103,36 @@
 				"bridgeMethods": ["2"]
 			}
 		],
+		"arb-mainnet": [
+			{
+				"id": "0xEbe265c9299d0C879bcc2A76948511BA6ED6C36D",
+				"chainId": 42161,
+				"address": "0xEbe265c9299d0C879bcc2A76948511BA6ED6C36D",
+				"name": "cNote",
+				"symbol": "cNOTE",
+				"decimals": 18,
+				"icon": "/icons/cNote.svg",
+				"isOFT": true,
+				"isOFTProxy": false,
+				"oftHasAdapterParams": true,
+				"bridgeMethods": ["2"]
+			}
+		],
+		"blast-mainnet": [
+			{
+				"id": "0xEbe265c9299d0C879bcc2A76948511BA6ED6C36D",
+				"chainId": 81457,
+				"address": "0xEbe265c9299d0C879bcc2A76948511BA6ED6C36D",
+				"name": "cNote",
+				"symbol": "cNOTE",
+				"decimals": 18,
+				"icon": "/icons/cNote.svg",
+				"isOFT": true,
+				"isOFTProxy": false,
+				"oftHasAdapterParams": true,
+				"bridgeMethods": ["2"]
+			}
+		],
 		"bnb-mainnet": [
 			{
 				"id": "0x56C03B8C4FA80Ba37F5A7b60CAAAEF749bB5b220",

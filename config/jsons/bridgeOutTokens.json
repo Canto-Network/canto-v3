@@ -52,6 +52,14 @@
 					{
 						"chainId": "bnb-mainnet",
 						"methods": ["2"]
+					},
+					{
+						"chainId": "blast-mainnet",
+						"methods": ["2"]
+					},
+					{
+						"chainId": "arb-mainnet",
+						"methods": ["2"]
 					}
 				]
 			},

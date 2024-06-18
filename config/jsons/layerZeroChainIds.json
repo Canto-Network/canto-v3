@@ -1,5 +1,7 @@
 {
     "eth-mainnet": 101,
+    "arb-mainnet": 110,
+    "blast-mainnet": 243,
     "bnb-mainnet": 102,
     "canto-mainnet": 159,
     
