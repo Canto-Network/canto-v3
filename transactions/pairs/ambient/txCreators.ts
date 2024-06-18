@@ -142,3 +142,54 @@ export const _ambientClaimRewardsTx = (
   params: [],
   value: "0",
 });
+
+export const _mintKnockoutTx = (
+  chainId: number,
+  fromEthAddress: string,
+  crocDexAddress: string,
+  baseAddress: string,
+  quoteAddress: string,
+  poolIdx: number,
+  lowerTick: number,
+  upperTick: number,
+  isBid: boolean,
+  amountTokens: string,
+  description: TransactionDescription
+): Transaction => {
+  const calldata = eth.abi.encodeParameters(
+    [
+      "uint8",
+      "address",
+      "address",
+      "uint256",
+      "int24",
+      "int24",
+      "bool",
+      "uint8",
+      "bytes",
+    ],
+    [
+      91,
+      baseAddress,
+      quoteAddress,
+      poolIdx,
+      lowerTick,
+      upperTick,
+      isBid,
+      2,
+      eth.abi.encodeParameters(["uint128", "bool"], [amountTokens, false]),
+    ]
+  );
+  return {
+    description,
+    feTxType: undefined,
+    chainId: chainId,
+    fromAddress: fromEthAddress,
+    type: "EVM",
+    target: crocDexAddress,
+    abi: CROC_SWAP_DEX_ABI,
+    method: "userCmd",
+    params: [7, calldata],
+    value: "0",
+  };
+};

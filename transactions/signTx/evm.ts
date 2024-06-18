@@ -24,6 +24,7 @@ import { WalletClient } from "wagmi";
 export async function signEVMTransaction(
   tx: Transaction
 ): PromiseWithError<`0x${string}`> {
+  console.log(tx)
   try {
     if (tx.type !== "EVM")
       throw Error(TX_SIGN_ERRORS.INCORRECT_TX_TYPE(tx.type));
@@ -81,6 +82,7 @@ export async function signEVMTransaction(
 
     return NO_ERROR(transaction.transactionHash as `0x${string}`);
   } catch (err) {
+    console.log(err)
     if (err instanceof BaseWeb3Error && err.toJSON().innerError) {
       return NEW_ERROR("performEVMTransaction", err.toJSON().innerError);
     }

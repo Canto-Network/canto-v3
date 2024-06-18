@@ -31,6 +31,14 @@ import { Validation } from "@/config/interfaces";
 import Analytics from "@/provider/analytics";
 import BigNumber from "bignumber.js";
 import useScreenSize from "@/hooks/helpers/useScreenSize";
+import { signEVMTransaction } from "@/transactions/signTx/evm";
+import { _mintKnockoutTx } from "@/transactions/pairs/ambient/txCreators";
+import { getAmbientAddress } from "@/hooks/pairs/newAmbient/config/addresses";
+import { parseUnits } from "viem";
+import { priceToTick } from "@crocswap-libs/sdk";
+import { newContractInstance } from "@/utils/evm";
+import { CROC_QUERY_ABI } from "@/config/abis";
+
 interface NewPositionModalProps {
   pool: AmbientPool;
   sendTxFlow: (params: Partial<AmbientTransactionParams>) => void;
@@ -46,6 +54,46 @@ export const NewAmbientPositionModal = ({
   const positionValidation = verifyParams(
     positionManager.txParams.addLiquidity()
   );
+
+  async function test() {
+    console.log("test");
+    // bid = below price, base -> quote, ask = above price, quote -> base
+    // note -> usdc
+    const isBid = true;
+    const crocDexAddress = getAmbientAddress(7700, "crocDex");
+    const amountTokens = parseUnits("1", 6); // 1 Note
+    console.log(priceToTick(pool.stats.lastPriceLiq));
+    console.log(priceToTick(parseUnits("1", 12).toString()));
+
+    const crocQuery = newContractInstance(
+      7700,
+      getAmbientAddress(7700, "crocQuery"),
+      CROC_QUERY_ABI
+    );
+
+    console.log(
+      await crocQuery.data.methods
+        .queryPoolParams(pool.base.address, pool.quote.address, pool.poolIdx)
+        .call()
+    );
+
+    const tx = await signEVMTransaction(
+      _mintKnockoutTx(
+        7700,
+        "0xa1f50E086D7d1191d35E687349c2b21B7d39CecB",
+        crocDexAddress,
+        baseToken.address,
+        quoteToken.address,
+        pool.poolIdx,
+        276471 - 128,
+        276471 - 64,
+        isBid,
+        amountTokens,
+        { description: "ambient knockout test", title: "KOCKOUT" }
+      )
+    );
+    console.log(tx);
+  }
 
   // modal options
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -417,6 +465,7 @@ export const NewAmbientPositionModal = ({
           ? positionValidation.reason
           : "Add Concentrated Liquidity"}
       </Button>
+      <Button onClick={test}>Test</Button>
       <Spacer height="30px" />
     </Container>
   );

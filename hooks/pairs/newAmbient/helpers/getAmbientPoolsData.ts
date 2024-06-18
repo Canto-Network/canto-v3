@@ -12,6 +12,7 @@ import { convertTokenAmountToNote } from "@/utils/math";
 import BigNumber from "bignumber.js";
 import { getCantoCoreAddress } from "@/config/consts/addresses";
 import { getTokenPriceInUSDC } from "@/utils/tokens";
+import { tryFetch } from "@/utils/async";
 
 // const for creating all queries to pool
 const poolQueries = (
@@ -64,6 +65,20 @@ export async function getAllAmbientPoolsData(
     return NEW_ERROR("getAllAmbientPoolsData: chainId not supported");
   }
   const { data: cantoPrice } = await getTokenPriceInUSDC(wcantoAddress, 18);
+
+  if (userEthAddress) {
+    const userKnockkout = await tryFetch(
+      `https://ambient-graphcache.fly.dev/gcgo/user_limit_orders?chainId=${
+        "0x" + (7700).toString(16)
+      }&user=${userEthAddress}`
+    );
+    const userPoolKnockout = await tryFetch(
+      `https://ambient-graphcache.fly.dev/gcgo/user_pool_limit_orders?chainId=${
+        "0x" + (7700).toString(16)
+      }&user=${userEthAddress}&base=0x4e71A2E537B7f9D9413D3991D37958c0b5e1e503&quote=0x80b5a32E4F032B2a058b4F29EC95EEfEEB87aDcd&poolIdx=36000`
+    );
+    console.log({ userKnockkout, userPoolKnockout });
+  }
 
   // combine user data with pool to create final object with correct types
   return NO_ERROR(
