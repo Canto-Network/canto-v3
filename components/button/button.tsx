@@ -14,6 +14,7 @@ export interface ButtonProps {
   padding?: "sm" | "md" | "lg" | number;
   fontFamily?: "rm_mono" | "proto_mono";
   fontSize?: "sm" | "md" | "lg" | number;
+  borderRadius?: number;
   weight?: "regular" | "bold";
   children: React.ReactNode;
   isLoading?: boolean;
@@ -190,6 +191,7 @@ const Button = (props: ButtonProps) => {
       disabled={props.disabled}
       style={{
         height: getHeight() + "px",
+        borderRadius: props.borderRadius ? props.borderRadius : undefined,
         // cursor: props.disabled ? "not-allowed" : "pointer",
         fontSize: getFontSize() + "px",
         width: getWidth(),

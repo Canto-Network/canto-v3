@@ -21,6 +21,8 @@ import GravityConfirmationModal from "./components/gravityConfirmationModal";
 import { GRAVITY_BRIDGE } from "@/config/networks";
 import { TX_ERROR_TYPES } from "@/config/consts/errors";
 import useScreenSize from "@/hooks/helpers/useScreenSize";
+import InputNew from "@/components/input/inputNew";
+import SelectorNew from "@/components/input/selectorNew";
 
 const Bridging = ({ props }: { props: BridgeComboReturn }) => {
   const {
@@ -237,7 +239,7 @@ const Bridging = ({ props }: { props: BridgeComboReturn }) => {
 
           <Container width="100%" gap={14}>
             <Text size="sm">Select Token and Enter Amount</Text>
-            <Container
+            {/* <Container
               width="100%"
               direction={!isMobile ? "row" : "column"}
               gap={isMobile ? 50 : 20}
@@ -285,6 +287,52 @@ const Bridging = ({ props }: { props: BridgeComboReturn }) => {
                   className={styles["input"]}
                 />
               </Container>
+            </Container> */}
+            <Container>
+              <InputNew
+                category="bridge"
+                type="amount"
+                height={64}
+                balance={token?.balance ?? "0"}
+                tokenMin="0"
+                tokenMax={Amount.maxBridgeAmount}
+                decimals={token?.decimals ?? 0}
+                placeholder="0.0"
+                value={Amount.amount}
+                onChange={(val) => {
+                  Amount.setAmount(val.target.value);
+                }}
+                className={styles["input"]}
+              >
+                <SelectorNew
+                  title="SELECT TOKEN"
+                  height={40}
+                  activeItem={
+                    token
+                      ? {
+                          ...token,
+                          name:
+                            token.name.length > 24 ? token.symbol : token.name,
+                        }
+                      : {
+                          name: "Select Token",
+                          icon: "loader.svg",
+                          id: "",
+                        }
+                  }
+                  items={sortTokens(
+                    bridge.allOptions.tokens.map((token) => ({
+                      ...token,
+                      name: token.name.length > 24 ? token.symbol : token.name,
+                      secondary: displayAmount(
+                        token.balance ?? "0",
+                        token.decimals
+                      ),
+                    }))
+                  )}
+                  onChange={(tokenId) => bridge.setState("token", tokenId)}
+                />
+              </InputNew>
             </Container>
           </Container>
           {/* <Text size="sm">Select Method</Text>
