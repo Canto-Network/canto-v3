@@ -19,6 +19,7 @@ export interface Item {
 }
 
 interface Props {
+  category: "bridge" | "search";
   title: string;
   height?: number;
   label?: {
@@ -262,7 +263,7 @@ const SelectorNew = (props: Props) => {
         <Container
           width="100%"
           direction="row"
-          gap={20}
+          gap={8}
           center={{
             vertical: true,
           }}
@@ -291,7 +292,7 @@ const SelectorNew = (props: Props) => {
               />
             )
           )}
-          <Text size="md" font="proto_mono">
+          <Text size="x-sm" font="proto_mono">
             {props.activeItem?.name ?? "SELECT ITEM"}
           </Text>
         </Container>

@@ -152,8 +152,9 @@ const InputNew = (props: InputProps) => {
             height={32}
             color="secondary"
             shadow="none"
+            padding={8}
           >
-            MAX
+            <Text size="xx-sm">&nbsp; MAX &nbsp;</Text>
           </Button>
         </div>
       )}
