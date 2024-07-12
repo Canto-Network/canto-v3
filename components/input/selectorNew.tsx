@@ -19,7 +19,7 @@ export interface Item {
 }
 
 interface Props {
-  category: "bridge" | "search";
+  category?: "bridge" | "search";
   title: string;
   height?: number;
   label?: {

@@ -7,12 +7,14 @@ import Button from "../button/button";
 import Container from "../container/container";
 import { Validation } from "@/config/interfaces";
 import { validateNonWeiUserInputTokenAmount } from "@/utils/math";
+import { useState } from "react";
+import Analytics from "@/provider/analytics";
 
 type InputProps = {
   children?: React.ReactNode;
   category?: "bridge" | "pools" | "lending";
   value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onChange: (e: React.ChangeEvent<HTMLInputElement>, max?: boolean) => void;
   backgroundColor?: string;
   height?: "sm" | "md" | "lg" | number;
   placeholder?: string;
@@ -27,10 +29,11 @@ type InputProps = {
   name?: string;
   id?: string;
   maxLength?: number;
-  min?: number;
-  max?: number;
+  min?: string;
+  max?: string;
   step?: number;
   required?: boolean;
+  maxWidth?: number;
 } & (
   | {
       type: "amount";
@@ -42,9 +45,69 @@ type InputProps = {
   | {
       type: "text" | "search" | "number";
     }
-);
+) &
+  (
+    | {
+        category: "bridge";
+      }
+    | {
+        category: "pools";
+        IconURL: string;
+        name: string;
+        limit?: {
+          limitName: string;
+          limit: string;
+        };
+      }
+    | {
+        category: "lending";
+        IconURL: string;
+        name: string;
+        limit?: {
+          limitName: string;
+          limit: string;
+        };
+      }
+  );
 
 const InputNew = (props: InputProps) => {
+  const [focused, setFocused] = useState(false);
+
+  function commify(str: string) {
+    const parts = str.split(".");
+    return (
+      parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",") +
+      (parts[1] ? "." + parts[1] : "")
+    );
+  }
+  function formatAmount(amount: string, decimals: number) {
+    const parts = amount.split(".");
+    if (parts.length === 1) {
+      return amount;
+    }
+    const decimalsPart = parts[1];
+    if (decimalsPart.length > decimals) {
+      return `${parts[0]}.${decimalsPart.slice(0, decimals)}~`;
+    }
+    return amount;
+  }
+  function displayAmountUptoDecimals(amount: string, decimals: number) {
+    return formatAmount(commify(amount), decimals);
+  }
+  function commify2(str: string) {
+    if (str[0] == ".") {
+      return (str = "" + str);
+    }
+    if (str[str.length - 1] == ".") {
+      return commify(str.slice(0, str.length - 1)) + ".";
+    }
+
+    const parts = str.split(".");
+    return (
+      parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",") +
+      (parts[1] ? "." + parts[1] : "")
+    );
+  }
   const inputError: Validation =
     props.type === "amount" && props.value
       ? validateNonWeiUserInputTokenAmount(
@@ -60,6 +123,7 @@ const InputNew = (props: InputProps) => {
       className={styles["input-container"]}
       style={{
         height: 64,
+        maxWidth: props.maxWidth ?? undefined,
       }}
     >
       <div className={styles["label2"]}>
@@ -78,6 +142,24 @@ const InputNew = (props: InputProps) => {
           </Text>
         </label>
       </div>
+      {props.category == "pools" && (
+        <Container
+          direction="row"
+          gap={8}
+          center={{
+            vertical: true,
+          }}
+          className={styles["selector"]}
+        >
+          <Icon
+            icon={{
+              url: props.IconURL,
+              size: 32,
+            }}
+          />
+          <Text font="proto_mono">{props.name}</Text>
+        </Container>
+      )}
       <Container direction="row" center={{ vertical: true }} gap={16}>
         {props.children ? (
           <div className={styles["selector"]}>{props.children}</div>
@@ -87,8 +169,16 @@ const InputNew = (props: InputProps) => {
 
         <section>
           <input
+            onFocus={() => setFocused(true)}
+            onBlur={() => setFocused(false)}
             type={props.type}
-            value={props.value}
+            value={
+              props.category == "bridge"
+                ? props.value
+                : focused
+                  ? commify2(props.value)
+                  : displayAmountUptoDecimals(props.value, 4)
+            }
             onChange={
               props.type === "amount"
                 ? (e) => {
@@ -140,15 +230,35 @@ const InputNew = (props: InputProps) => {
         <div className={styles["max-button"]}>
           <Button
             borderRadius={4}
-            onClick={() => {
-              props.onChange({
-                target: {
-                  value: formatBalance(props.tokenMax, props.decimals, {
-                    precision: props.decimals,
-                  }),
-                },
-              } as any);
-            }}
+            onClick={
+              props.category == "bridge"
+                ? () => {
+                    props.onChange({
+                      target: {
+                        value: formatBalance(props.tokenMax, props.decimals, {
+                          precision: props.decimals,
+                        }),
+                      },
+                    } as any);
+                  }
+                : () => {
+                    Analytics.actions.events.maxClicked("Max Button");
+                    props.onChange(
+                      {
+                        target: {
+                          value: formatBalance(
+                            props.limit?.limit ?? props.max ?? "0",
+                            props.decimals,
+                            {
+                              precision: props.decimals,
+                            }
+                          ),
+                        },
+                      } as any,
+                      true
+                    );
+                  }
+            }
             height={32}
             color="secondary"
             shadow="none"

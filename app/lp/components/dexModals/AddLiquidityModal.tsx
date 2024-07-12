@@ -19,6 +19,7 @@ import { areEqualAddresses } from "@/utils/address";
 import PopUp from "@/components/popup/popup";
 import { CantoDexTxTypes } from "@/transactions/pairs/cantoDex";
 import BigNumber from "bignumber.js";
+import InputNew from "@/components/input/inputNew";
 
 interface AddLiquidityProps {
   pair: CantoDexPairWithUserCTokenData;
@@ -117,8 +118,46 @@ export const AddLiquidityModal = ({
           {pair.symbol}
         </Text>
       </div>
-      <Spacer height="10px" />
-      <Amount
+      <Spacer height="40px" />
+      <Container direction="row" gap={12}>
+        <InputNew
+          category="pools"
+          IconURL={pair.token1.logoURI}
+          name={tokenSymbol(pair.token1)}
+          type="amount"
+          height={64}
+          balance={tokenBalance(pair.token1)}
+          tokenMin="0"
+          tokenMax={tokenBalance(pair.token1)}
+          decimals={pair.token1?.decimals ?? 0}
+          placeholder="0.0"
+          value={valueToken1}
+          onChange={(e) => setValue(e.target.value, true)}
+          className={styles["input"]}
+          min="1"
+          max={tokenBalance(pair.token1)}
+          //maxWidth={332}
+        />
+        <InputNew
+          category="pools"
+          IconURL={pair.token2.logoURI}
+          name={tokenSymbol(pair.token2)}
+          type="amount"
+          height={64}
+          balance={tokenBalance(pair.token2)}
+          tokenMin="0"
+          tokenMax={tokenBalance(pair.token2)}
+          decimals={pair.token2?.decimals ?? 0}
+          placeholder="0.0"
+          value={valueToken1}
+          onChange={(e) => setValue(e.target.value, true)}
+          className={styles["input"]}
+          min="1"
+          max={tokenBalance(pair.token2)}
+        />
+      </Container>
+      <Spacer height="20px" />
+      {/* <Amount
         decimals={pair.token1.decimals}
         value={valueToken1}
         onChange={(e) => setValue(e.target.value, true)}
@@ -142,7 +181,7 @@ export const AddLiquidityModal = ({
         max={tokenBalance(pair.token2)}
         maxName="LP Modal"
         symbol={tokenSymbol(pair.token2)}
-      />
+      /> */}
       <Spacer height="20px" />
       <Container className={styles.card}>
         <ModalItem

@@ -11,13 +11,14 @@
     background: var(--input-bg, #FBFBFB);
     position: relative;
     section {
+        max-width: 50%;
         border: none;
         &:focus {
             border: 3px solid green;
         }
     }
     input {
-        width: auto;
+        max-width: 100%;
         border-color: white;
         border: none;
         border-width: 0;
@@ -34,7 +35,7 @@
         right: 0px;
         justify-content: flex-end;
         border-radius: 4px;
-        border: 1px solid var(--Input-Stroke, #D6D6D6);
+        border: 1px solid var(--input-stroke, #D6D6D6);
     }
     .label2 {
         position: absolute;
@@ -62,8 +63,8 @@
     align-items: center;
     gap: 10px;
     border-radius: 4px;
-    border: 1px solid var(--Input-Stroke, #D6D6D6);
-    background: var(--Input-BG-Hover, #F4F4F4);
+    border: 1px solid var(--input-stroke, #D6D6D6);
+    background: var(--input-bg-hover, #F4F4F4);
 }
 .error-message {
     position: absolute;
