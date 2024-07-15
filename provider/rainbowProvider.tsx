@@ -6,8 +6,11 @@ import {
   RainbowKitProvider,
 } from "@rainbow-me/rainbowkit";
 import {
+  coinbaseWallet,
   injectedWallet,
-  rainbowWallet,
+  metaMaskWallet,
+  okxWallet,
+  rabbyWallet,
   walletConnectWallet,
 } from "@rainbow-me/rainbowkit/wallets";
 import {
@@ -66,27 +69,51 @@ const formattedChains: Chain[] = [...Object.values(EVM_CHAINS)].map(
 const { chains, publicClient } = configureChains(formattedChains, [
   publicProvider(),
 ]);
-const { connectors } = getDefaultWallets({
-  appName: "Canto v3",
-  projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID as string,
-  chains,
-});
+// const { connectors } = getDefaultWallets({
+//   appName: "Canto v3",
+//   projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID as string,
+//   chains,
+// });
 
-// const specificConnectors = connectorsForWallets([
-//   {
-//     groupName: "Recommended",
-//     wallets: [
-//       injectedWallet({
-//         chains,
-//       }),
-//     ],
-//   },
-// ]);
+const specificConnectors = connectorsForWallets([
+  {
+    groupName: "Recommended",
+    wallets: [
+      rabbyWallet({
+        chains,
+      }),
+      metaMaskWallet({
+        chains,
+        projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID as string,
+      }),
+    ],
+  },
+  {
+    groupName: "Other",
+    wallets: [
+      injectedWallet({
+        chains,
+      }),
+      okxWallet({
+        chains,
+        projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID as string,
+      }),
+      walletConnectWallet({
+        chains,
+        projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID as string,
+      }),
+      coinbaseWallet({
+        appName: "Canto v3",
+        chains,
+      }),
+    ],
+  },
+]);
 
 const wagmiConfig = createConfig({
   autoConnect: true,
   connectors: [
-    ...connectors(),
+    ...specificConnectors(),
     new SafeConnector({
       chains,
       options: {
