@@ -6,8 +6,11 @@ import {
   RainbowKitProvider,
 } from "@rainbow-me/rainbowkit";
 import {
+  coinbaseWallet,
   injectedWallet,
-  rainbowWallet,
+  metaMaskWallet,
+  okxWallet,
+  rabbyWallet,
   walletConnectWallet,
 } from "@rainbow-me/rainbowkit/wallets";
 import {
@@ -72,21 +75,38 @@ const { connectors } = getDefaultWallets({
   chains,
 });
 
-// const specificConnectors = connectorsForWallets([
-//   {
-//     groupName: "Recommended",
-//     wallets: [
-//       injectedWallet({
-//         chains,
-//       }),
-//     ],
-//   },
-// ]);
+const specificConnectors = connectorsForWallets([
+  {
+    groupName: "Popular",
+    wallets: [
+      injectedWallet({
+        chains,
+      }),
+      okxWallet({
+        chains,
+        projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID as string,
+      }),
+    ],
+  },
+  {
+    groupName: "Recommended",
+    wallets: [
+      rabbyWallet({
+        chains,
+      }),
+      metaMaskWallet({
+        chains,
+        projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID as string,
+      }),
+    ],
+  },
+]);
 
 const wagmiConfig = createConfig({
   autoConnect: true,
   connectors: [
-    ...connectors(),
+    ...specificConnectors(),
+    ...connectors().filter((connector) => connector.name !== "MetaMask"),
     new SafeConnector({
       chains,
       options: {
