@@ -69,25 +69,13 @@ const formattedChains: Chain[] = [...Object.values(EVM_CHAINS)].map(
 const { chains, publicClient } = configureChains(formattedChains, [
   publicProvider(),
 ]);
-const { connectors } = getDefaultWallets({
-  appName: "Canto v3",
-  projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID as string,
-  chains,
-});
+// const { connectors } = getDefaultWallets({
+//   appName: "Canto v3",
+//   projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID as string,
+//   chains,
+// });
 
 const specificConnectors = connectorsForWallets([
-  {
-    groupName: "Popular",
-    wallets: [
-      injectedWallet({
-        chains,
-      }),
-      okxWallet({
-        chains,
-        projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID as string,
-      }),
-    ],
-  },
   {
     groupName: "Recommended",
     wallets: [
@@ -100,13 +88,32 @@ const specificConnectors = connectorsForWallets([
       }),
     ],
   },
+  {
+    groupName: "Other",
+    wallets: [
+      injectedWallet({
+        chains,
+      }),
+      okxWallet({
+        chains,
+        projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID as string,
+      }),
+      walletConnectWallet({
+        chains,
+        projectId: process.env.NEXT_PUBLIC_WALLET_CONNECT_PROJECT_ID as string,
+      }),
+      coinbaseWallet({
+        appName: "Canto v3",
+        chains,
+      }),
+    ],
+  },
 ]);
 
 const wagmiConfig = createConfig({
   autoConnect: true,
   connectors: [
     ...specificConnectors(),
-    ...connectors().filter((connector) => connector.name !== "MetaMask"),
     new SafeConnector({
       chains,
       options: {
