@@ -14,7 +14,7 @@ export const AKASH: CosmosNetwork = {
   name: "Akash",
   isTestChain: false,
   rpcUrl: "https://akash-rpc.polkachu.com",
-  restEndpoint: "https://api-akash-ia.cosmosia.notional.ventures",
+  restEndpoint: "https://rest-akash.ecostake.com",
   addressPrefix: "akash",
   checkAddress: function (address) {
     return checkCosmosAddress(this.addressPrefix)(address);
