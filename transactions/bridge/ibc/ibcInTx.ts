@@ -108,6 +108,31 @@ export async function ibcInKeplr(
       await ethToCantoAddress(txParams.cantoEthReceiverAddress);
     if (ethToCantoError) throw ethToCantoError;
 
+    /** check for canto native balance */
+    const { data: nativeBalance } = await getCosmosTokenBalance(
+      CANTO_MAINNET_COSMOS.chainId,
+      cantoReceiver,
+      txParams.token.ibcDenom
+    );
+    if (nativeBalance && BigInt(nativeBalance) >= BigInt(txParams.amount)) {
+      // only convert coin will be needed
+      return NO_ERROR({
+        transactions: [
+          _convertCoinTx(
+            CANTO_MAINNET_EVM.chainId,
+            cantoReceiver,
+            txParams.cantoEthReceiverAddress,
+            txParams.token.ibcDenom,
+            txParams.amount,
+            TX_DESCRIPTIONS.CONVERT_COIN(
+              txParams.token.symbol,
+              displayAmount(txParams.amount, txParams.token.decimals)
+            )
+          ),
+        ],
+      });
+    }
+
     /** check public key */
     const { data: hasPubKey, error: checkPubKeyError } = await checkCantoPubKey(
       cantoReceiver,

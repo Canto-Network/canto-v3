@@ -14,7 +14,7 @@ import { useQuery } from "react-query";
 import { getCosmosEIPChainObject } from "@/utils/networks";
 import { ethToCantoAddress } from "@/utils/address";
 import { addTokenBalances } from "@/utils/math";
-import { CANTO_MAINNET_COSMOS, INJECTIVE } from "@/config/networks";
+import { CANTO_MAINNET_COSMOS, INJECTIVE, AKASH } from "@/config/networks";
 
 /**
  * @notice hook to get an object of token balances for a given address and available tokens
@@ -65,6 +65,22 @@ export default function useTokenBalances(
             balances["inj"] = addTokenBalances(
               balances["inj"],
               injCantoBalance
+            );
+          }
+        }
+
+        // if akash add special canto native balance
+        if (chainId === AKASH.chainId) {
+          const { data: akashCantoBalance, error: akashError } =
+            await getCosmosTokenBalance(
+              CANTO_MAINNET_COSMOS.chainId,
+              (await ethToCantoAddress(userEthAddress as string)).data,
+              "ibc/C7B08BE4C7765726030DF899C78DE8FC8DFA6B580920B18AE04A3A70447BE299"
+            );
+          if (akashCantoBalance) {
+            balances["uakt"] = addTokenBalances(
+              balances["uakt"] ?? "0",
+              akashCantoBalance
             );
           }
         }
