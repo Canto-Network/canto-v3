@@ -150,7 +150,9 @@ export async function ibcInKeplr(
     /** timeout */
     const { data: blockTimestamp, error: timestampError } =
       await getBlockTimestamp(
-        getCosmosAPIEndpoint(CANTO_MAINNET_COSMOS.chainId).data
+        getCosmosAPIEndpoint(CANTO_MAINNET_COSMOS.chainId).data,
+        CANTO_MAINNET_COSMOS.extraEndpoints,
+        CANTO_MAINNET_COSMOS.latestBlockEndpoint
       );
     if (timestampError) throw timestampError;
 

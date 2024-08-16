@@ -30,5 +30,8 @@ export const GRAVITY_BRIDGE: CosmosNetwork = {
     getAddressLink: getCosmosAddressLink(gravityBridgeBlockExplorer),
     getTransactionLink: getCosmosTransactionLink(gravityBridgeBlockExplorer),
   },
-  extraEndpoints: ["https://gravity-api.polkachu.com"],
+  extraEndpoints: [
+    "https://gravity-api.polkachu.com",
+    "https://gravitybridge-rpc.lavenderfive.com",
+  ],
 };

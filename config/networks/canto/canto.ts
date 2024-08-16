@@ -47,6 +47,7 @@ export const CANTO_MAINNET_COSMOS: CosmosNetwork = {
   checkAddress: function (address) {
     return checkCosmosAddress(this.addressPrefix)(address);
   },
+  latestBlockEndpoint: "/cosmos/base/tendermint/v1beta1",
   blockExplorer: {
     url: cantoMainBlockExplorerCosmos,
     getAddressLink: getCosmosAddressLink(cantoMainBlockExplorerCosmos),
