@@ -4,7 +4,10 @@ import Icon from "@/components/icon/icon";
 import Text from "@/components/text";
 import { BridgeToken } from "@/hooks/bridge/interfaces/tokens";
 import useRecovery from "@/hooks/bridge/useRecovery";
-import { getGravityBridgeFeesFromToken } from "@/transactions/bridge/gravityBridge/gravityFees";
+import {
+  getGravityBridgeFeesFromToken,
+  getGravityChainFeeInPercent,
+} from "@/transactions/bridge/gravityBridge/gravityFees";
 import { displayAmount } from "@/utils/formatting";
 import { useEffect, useState } from "react";
 
@@ -14,6 +17,7 @@ export default function Recovery() {
     { slow: string; medium: string; fast: string }[]
   >([]);
   const [selectedGravityFee, setSelectedGravityFee] = useState("0");
+  const [gravityChainFee, setGravityChainFee] = useState<null | number>(null);
   useEffect(() => {
     async function getGravityFees() {
       const feesObjects = await Promise.all(
@@ -31,6 +35,7 @@ export default function Recovery() {
           fast: fee.data.fast.fee,
         }))
       );
+      getGravityChainFeeInPercent().then((fee) => setGravityChainFee(fee.data));
     }
     getGravityFees();
   }, [recovery.userGravityTokens.length]);
@@ -73,7 +78,7 @@ export default function Recovery() {
               symbol: token.symbol,
             })}
           </Text>
-          {gravityRecoveryFees.length > 0 && (
+          {gravityRecoveryFees.length > 0 && gravityChainFee && (
             <Container direction="row" gap={10} center={{ vertical: true }}>
               <Text>Fee</Text>
               <FeeButton idx={idx} feeTier="slow" token={token} />
@@ -81,7 +86,11 @@ export default function Recovery() {
               <FeeButton idx={idx} feeTier="fast" token={token} />
               <Button
                 onClick={() =>
-                  recovery.recoverGravityToken(token, 0.01, selectedGravityFee)
+                  recovery.recoverGravityToken(
+                    token,
+                    gravityChainFee,
+                    selectedGravityFee
+                  )
                 }
               >
                 Send To ETH
