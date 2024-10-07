@@ -69,7 +69,7 @@ export const GenerateValidatorTableRow = (
       {displayAmount(validator.commission, -2, { precision: 2 })}%
     </Text>
   </Container>,
-  !isMobile && (
+  !isMobile && index > 9 && (
     <Container key={`button_${index}`}>
       <Button
         onClick={() => {
