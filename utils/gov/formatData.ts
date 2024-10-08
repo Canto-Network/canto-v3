@@ -8,7 +8,10 @@ const proposalTypes = {
   "/canto.govshuttle.v1.LendingMarketProposal": "Lending Market",
   "/cosmos.gov.v1beta1.TextProposal": "Text",
   "/canto.erc20.v1.RegisterCoinProposal": "Register Coin",
-  "/ibc.core.client.v1.ClientUpdateProposal": "Client Update Proposal",
+  "/ibc.core.client.v1.ClientUpdateProposal": "IBC Client Update",
+  "/cosmos.gov.v1.MsgUpdateParams": "Governance Update Params",
+  "/canto.govshuttle.v1.MsgLendingMarketProposal": "Lending Market",
+  "/cosmos.slashing.v1beta1.MsgUpdateParams": "Slashing Update Params",
 };
 
 export function formatProposalStatus(status: string): string | undefined {
