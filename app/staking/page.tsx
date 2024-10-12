@@ -597,7 +597,8 @@ export default function StakingPage() {
                           validator,
                           index,
                           () => handleClick(validator),
-                          isMobile
+                          isMobile,
+                          currentFilter
                         )
                       ),
                       <Pagination
