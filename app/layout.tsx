@@ -1,14 +1,13 @@
 "use client";
 
-import "./globals.scss";
-import InfoBar from "@/components/info_bar/infoBar";
 import Footer from "@/components/footer/footer";
 import NavBar from "@/components/nav_bar/navBar";
-import CantoWalletProvider from "@/provider/rainbowProvider";
-import localFont from "next/font/local";
-import DesktopOnly from "@/components/desktop-only/desktop-only";
-import { ReactQueryClientProvider } from "@/provider/reactQueryProvider";
 import { ToastContainer } from "@/components/toast";
+import CantoWalletProvider from "@/provider/rainbowProvider";
+import { ReactQueryClientProvider } from "@/provider/reactQueryProvider";
+import { Analytics } from "@vercel/analytics/react";
+import localFont from "next/font/local";
+import "./globals.scss";
 
 const rm_mono = localFont({
   src: "../fonts/rm-mono-regular.ttf",
@@ -118,6 +117,7 @@ export default function RootLayout({
             </ToastContainer>
           </ReactQueryClientProvider>
         </CantoWalletProvider>
+        <Analytics />
       </body>
     </html>
   );
