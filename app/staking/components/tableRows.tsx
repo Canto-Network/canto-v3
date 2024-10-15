@@ -15,7 +15,8 @@ export const GenerateValidatorTableRow = (
   validator: Validator,
   index: number,
   onDelegate: (validator: Validator) => void,
-  isMobile: boolean
+  isMobile: boolean,
+  currentFilter: string
 ) => [
   !isMobile && (
     <Container key={`rank_${index}`}>
@@ -69,7 +70,8 @@ export const GenerateValidatorTableRow = (
       {displayAmount(validator.commission, -2, { precision: 2 })}%
     </Text>
   </Container>,
-  !isMobile && (
+  ((!isMobile && index > 9 && currentFilter === "ACTIVE") ||
+    currentFilter !== "ACTIVE") && (
     <Container key={`button_${index}`}>
       <Button
         onClick={() => {

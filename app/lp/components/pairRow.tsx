@@ -207,10 +207,10 @@ export const GeneralCantoDexPairRow = ({
       {pair.symbol}
     </Text>
   </Container>,
-  <Text key={pair.address + "apr"}>
-    {(pair.clmData?.distApy ?? "0.00") + "%"}
-  </Text>,
-
+  // <Text key={pair.address + "apr"}>
+  //   {(pair.clmData?.distApy ?? "0.00") + "%"}
+  // </Text>,
+  <Text key={pair.address}>0</Text>,
   <Text key={pair.address + "tvl"}>
     {displayAmount(pair.tvl, 18, {
       precision: 2,
@@ -265,13 +265,12 @@ export const GeneralAmbientPairRow = ({
     <Text theme="primary-dark" key={pool.address + "symbol"}>
       {pool.symbol}
     </Text>
-    {pool.symbol === "cNOTE / USDC" && (
-      <InfoPop>
-        <Text>All emissions to this pool will be removed soon.</Text>
-      </InfoPop>
-    )}
+    <InfoPop>
+      <Text>Pools will be transitioned to fee for rewards soon.</Text>
+    </InfoPop>
   </Container>,
-  <AprBlock key={"apr"} pool={pool} />,
+  // <AprBlock key={"apr"} pool={pool} />,
+  <Text key={pool.address}>0</Text>,
   <Text key={pool.address + "tvl"}>
     {displayAmount(pool.totals.noteTvl, 18, {
       precision: 2,
