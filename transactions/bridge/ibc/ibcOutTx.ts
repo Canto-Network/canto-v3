@@ -145,7 +145,7 @@ export async function IBCOutTx(
       cantoAddress,
       Number(ibcData.height.revision_number),
       Number(ibcData.height.revision_height) + 1000,
-      String(Number(blockTimestamp) + 1000),
+      blockTimestamp.slice(0, 9) + "00000000000",
       "ibc from canto",
       TX_DESCRIPTIONS.BRIDGE(
         txParams.token.symbol,
