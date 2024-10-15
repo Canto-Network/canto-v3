@@ -207,10 +207,9 @@ export const GeneralCantoDexPairRow = ({
       {pair.symbol}
     </Text>
   </Container>,
-  // <Text key={pair.address + "apr"}>
-  //   {(pair.clmData?.distApy ?? "0.00") + "%"}
-  // </Text>,
-  <Text key={pair.address}>0</Text>,
+  <Text key={pair.address + "apr"}>
+    {(pair.clmData?.distApy ?? "0.00") + "%"}
+  </Text>,
   <Text key={pair.address + "tvl"}>
     {displayAmount(pair.tvl, 18, {
       precision: 2,
