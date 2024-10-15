@@ -4,7 +4,6 @@ import Icon from "@/components/icon/icon";
 import Spacer from "@/components/layout/spacer";
 import Modal from "@/components/modal/modal";
 import Text from "@/components/text";
-import { TX_SIGN_ERRORS } from "@/config/consts/errors";
 import { GRAVITY_BRIGDE_EVM } from "@/config/networks";
 import useScreenSize from "@/hooks/helpers/useScreenSize";
 import { useState } from "react";
@@ -27,10 +26,9 @@ const GravityConfirmationModal = ({
 
   async function handleConfirm() {
     try {
-      await switchNetwork({ chainId: GRAVITY_BRIGDE_EVM.chainId });
       const network = getNetwork();
       if (!network.chain || network.chain.id !== GRAVITY_BRIGDE_EVM.chainId) {
-        throw new Error(TX_SIGN_ERRORS.SWITCH_CHAIN_ERROR());
+        await switchNetwork({ chainId: GRAVITY_BRIGDE_EVM.chainId });
       }
 
       setAddChainError(null);
