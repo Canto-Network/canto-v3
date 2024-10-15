@@ -39,7 +39,8 @@ export async function getBlockTimestamp(
 ): PromiseWithError<string> {
   const urlEnding = latestBlockEndpoint ?? "";
   const allEndpoints = [restEndpoint, ...(extraEndpoints ?? [])].map(
-    (endpoint) => endpoint + urlEnding + "/blocks/latest"
+    (endpoint) =>
+      endpoint + urlEnding + "/cosmos/base/tendermint/v1beta1/blocks/latest"
   );
   const { data, error } = await tryFetchMultipleEndpoints<{
     block: { header: { time: string } };
