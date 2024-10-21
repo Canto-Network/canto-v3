@@ -266,6 +266,10 @@ interface CosmosTxResponse {
   tx: object;
   tx_response: {
     code: number;
+    events: Array<{
+      type: string;
+      attributes: Array<{ key: string; value: string; index: boolean }>;
+    }>;
     logs: Array<{
       events: Array<{
         type: string;
