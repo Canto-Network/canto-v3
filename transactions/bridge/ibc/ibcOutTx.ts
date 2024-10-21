@@ -24,7 +24,7 @@ import { _convertERC20Tx, _ibcOutTx } from "./txCreators";
 import { CANTO_MAINNET_COSMOS } from "@/config/networks";
 import { BridgingMethod, getBridgeMethodInfo } from "..";
 import { getCosmosTxDetailsFromHash } from "@/transactions/signTx/cosmosEIP/signCosmosEIP";
-import { tryFetch } from "@/utils/async";
+import { tryFetch, tryFetchWithRetry } from "@/utils/async";
 
 type IBCOutTxParams = {
   senderEthAddress: string;
@@ -267,8 +267,7 @@ async function verifyIBCComplete(
     if (error) throw error;
 
     // grab all events from tx
-    const allEvents = txData.tx_response.logs.flatMap((log) => log.events);
-
+    const allEvents = txData.tx_response.events;
     // check events for "send_packet"
     const sendPacketEvent = allEvents.find(
       (event) => event.type === "send_packet"
@@ -288,11 +287,12 @@ async function verifyIBCComplete(
     if (!channelId) throw new Error("no packet_src_channel attribute");
 
     // check ibc module for acknowledgement of this packet sequence
-    const { data: ackData, error: ackError } = await tryFetch<{
+    const { data: ackData, error: ackError } = await tryFetchWithRetry<{
       acknowledgement: string;
       proof: any;
     }>(
-      `${originNetwork.restEndpoint}/ibc/core/channel/v1/channels/${channelId}/ports/transfer/packet_acks/${packetSequence}`
+      `${originNetwork.restEndpoint}/ibc/core/channel/v1/channels/${channelId}/ports/transfer/packet_acks/${packetSequence}`,
+      5
     );
     if (ackError) throw ackError;
 
