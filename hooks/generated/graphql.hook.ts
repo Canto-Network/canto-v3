@@ -1570,12 +1570,74 @@ export type SubgraphErrorPolicy =
   /** If the subgraph has indexing errors, data will be omitted. The default. */
   | 'deny';
 
+export type MyPositionsQueryVariables = Exact<{
+  account: Scalars['String']['input'];
+}>;
+
+
+export type MyPositionsQuery = { accountCTokens: Array<{ id: string, storedBorrowBalance: string, cTokenBalance: string, totalUnderlyingRepaid: string, totalUnderlyingSupplied: string, totalUnderlyingBorrowed: string, market: { name: string }, account: { id: string } }> };
+
 export type PositionsQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type PositionsQuery = { accountCTokens: Array<{ id: string, storedBorrowBalance: string, cTokenBalance: string, totalUnderlyingRepaid: string, totalUnderlyingSupplied: string, totalUnderlyingBorrowed: string, market: { name: string }, account: { id: string } }> };
 
 
+export const MyPositionsDocument = gql`
+    query MyPositions($account: String!) {
+  accountCTokens(
+    orderBy: storedBorrowBalance
+    orderDirection: desc
+    where: {account: $account}
+  ) {
+    id
+    market {
+      name
+    }
+    account {
+      id
+    }
+    storedBorrowBalance
+    cTokenBalance
+    totalUnderlyingRepaid
+    totalUnderlyingSupplied
+    totalUnderlyingBorrowed
+  }
+}
+    `;
+
+/**
+ * __useMyPositionsQuery__
+ *
+ * To run a query within a React component, call `useMyPositionsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useMyPositionsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useMyPositionsQuery({
+ *   variables: {
+ *      account: // value for 'account'
+ *   },
+ * });
+ */
+export function useMyPositionsQuery(baseOptions: Apollo.QueryHookOptions<MyPositionsQuery, MyPositionsQueryVariables> & ({ variables: MyPositionsQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<MyPositionsQuery, MyPositionsQueryVariables>(MyPositionsDocument, options);
+      }
+export function useMyPositionsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<MyPositionsQuery, MyPositionsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<MyPositionsQuery, MyPositionsQueryVariables>(MyPositionsDocument, options);
+        }
+export function useMyPositionsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<MyPositionsQuery, MyPositionsQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<MyPositionsQuery, MyPositionsQueryVariables>(MyPositionsDocument, options);
+        }
+export type MyPositionsQueryHookResult = ReturnType<typeof useMyPositionsQuery>;
+export type MyPositionsLazyQueryHookResult = ReturnType<typeof useMyPositionsLazyQuery>;
+export type MyPositionsSuspenseQueryHookResult = ReturnType<typeof useMyPositionsSuspenseQuery>;
+export type MyPositionsQueryResult = Apollo.QueryResult<MyPositionsQuery, MyPositionsQueryVariables>;
 export const PositionsDocument = gql`
     query Positions {
   accountCTokens(orderBy: storedBorrowBalance, orderDirection: desc) {

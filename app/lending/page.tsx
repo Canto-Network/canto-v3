@@ -25,7 +25,11 @@ import { CTokenWithUserData } from "@/hooks/lending/interfaces/tokens";
 import Splash from "@/components/splash/splash";
 import Button from "@/components/button/button";
 import { Pagination } from "@/components/pagination/Pagination";
-import { usePositionsQuery } from "@/hooks/generated/graphql.hook";
+import { useAccount } from "wagmi";
+import {
+  useMyPositionsQuery,
+  usePositionsQuery,
+} from "@/hooks/generated/graphql.hook";
 
 enum CLMModalTypes {
   SUPPLY = "supply",
@@ -88,16 +92,30 @@ export default function LendingPage() {
   const { selectedCToken, setSelectedCToken } = selection;
   const { isMobile } = useScreenSize();
 
-  const { data: positionsData, loading: positionsLoading } =
-    usePositionsQuery();
+  const [positionsToggle, setPositionsToggle] = useState<"All" | "My">("All");
+  const { address } = useAccount();
 
-  // Move this useMemo before any conditional returns
+  const { data: allPositionsData, loading: allPositionsLoading } =
+    usePositionsQuery();
+  const { data: myPositionsData, loading: myPositionsLoading } =
+    useMyPositionsQuery({
+      variables: { account: address ?? "" },
+      skip: !address || positionsToggle === "All",
+    });
+
   const paginatedPositions = useMemo(() => {
+    const positionsData =
+      positionsToggle === "All" ? allPositionsData : myPositionsData;
     if (!positionsData?.accountCTokens) return [];
     const startIndex = (currentPositionsPage - 1) * POSITIONS_PER_PAGE;
     const endIndex = startIndex + POSITIONS_PER_PAGE;
     return positionsData.accountCTokens.slice(startIndex, endIndex);
-  }, [positionsData?.accountCTokens, currentPositionsPage]);
+  }, [
+    allPositionsData,
+    myPositionsData,
+    positionsToggle,
+    currentPositionsPage,
+  ]);
 
   if (isLoading || cNote === undefined || stableCoins === undefined) {
     return (
@@ -423,11 +441,23 @@ export default function LendingPage() {
         )}
       </div>
       <div className={clsx(styles.positionsContainer, "separator")}>
-        <Text size="x-lg" font="proto_mono">
-          Positions
-        </Text>
+        <div className={styles.positionsHeader}>
+          <Text size="x-lg" font="proto_mono">
+            Positions
+          </Text>
+          <Container
+            width={isMobile ? "100%" : "200px"}
+            style={{ padding: isMobile ? "0 8px 0 8px" : "" }}
+          >
+            <ToggleGroup
+              options={["All", "My"]}
+              selected={positionsToggle}
+              setSelected={(value) => setPositionsToggle(value as "All" | "My")}
+            />
+          </Container>
+        </div>
         <Spacer height="20px" />
-        {positionsLoading ? (
+        {allPositionsLoading || myPositionsLoading ? (
           <Splash themed />
         ) : (
           <Table
@@ -435,46 +465,61 @@ export default function LendingPage() {
             headers={[
               { value: "Account Address", ratio: 3 },
               { value: "Market Address", ratio: 3 },
-              { value: "Borrowed Amount", ratio: 2 },
+              { value: "Borrowed Amount", ratio: 3 },
               { value: "Borrow Balance", ratio: 2 },
-              { value: "Health Factor", ratio: 1 },
+              { value: "Health Factor", ratio: 2 },
               { value: "", ratio: 1 },
             ]}
-            content={[
-              ...paginatedPositions.map((position, index) => [
-                <Text key={`account-${index}`} font="proto_mono">
-                  {position.account.id}
-                </Text>,
-                <Text key={`market-${index}`} font="proto_mono">
-                  {position.market.name}
-                </Text>,
-                <Text key={`borrowed-${index}`} font="proto_mono">
-                  {displayAmount(position.storedBorrowBalance, 18, {
-                    precision: 2,
-                  })}
-                </Text>,
-                <Text key={`balance-${index}`} font="proto_mono">
-                  {/* Call for balance if available */}
-                  N/A
-                </Text>,
-                <Text key={`health-${index}`} font="proto_mono">
-                  {/* Calculate health factor if available */}
-                  N/A
-                </Text>,
-                <Button key={`manage-${index}`} onClick={() => {}}>
-                  Liquidate
-                </Button>,
-              ]),
-              <Pagination
-                key="pagination"
-                currentPage={currentPositionsPage}
-                totalPages={Math.ceil(
-                  (positionsData?.accountCTokens?.length || 0) /
-                    POSITIONS_PER_PAGE
-                )}
-                handlePageClick={handlePositionsPageClick}
-              />,
-            ]}
+            content={
+              paginatedPositions.length > 0
+                ? [
+                    ...paginatedPositions.map((position, index) => [
+                      <Text key={`account-${index}`} font="proto_mono">
+                        {`${position.account.id.slice(
+                          0,
+                          4
+                        )}...${position.account.id.slice(-5)}`}
+                      </Text>,
+                      <Text key={`market-${index}`} font="proto_mono">
+                        {position.market.name}
+                      </Text>,
+                      <Text key={`borrowed-${index}`} font="proto_mono">
+                        {displayAmount(position.storedBorrowBalance, 18, {
+                          precision: 2,
+                        })}
+                      </Text>,
+                      <Text key={`balance-${index}`} font="proto_mono">
+                        {/* Call for balance if available */}
+                        N/A
+                      </Text>,
+                      <Text key={`health-${index}`} font="proto_mono">
+                        {/* Calculate health factor if available */}
+                        N/A
+                      </Text>,
+                      <Button key={`manage-${index}`} onClick={() => {}}>
+                        Liquidate
+                      </Button>,
+                    ]),
+                    <Pagination
+                      key="pagination"
+                      currentPage={currentPositionsPage}
+                      totalPages={Math.ceil(
+                        ((positionsToggle === "All"
+                          ? allPositionsData
+                          : myPositionsData
+                        )?.accountCTokens?.length || 0) / POSITIONS_PER_PAGE
+                      )}
+                      handlePageClick={handlePositionsPageClick}
+                    />,
+                  ]
+                : [
+                    <div key="noData" className={styles.noPositionsContainer}>
+                      <Text font="proto_mono" size="lg">
+                        NO POSITIONS FOUND
+                      </Text>
+                    </div>,
+                  ]
+            }
           />
         )}
       </div>

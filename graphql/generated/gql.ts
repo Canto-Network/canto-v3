@@ -14,6 +14,7 @@ import type { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-
  * Learn more about it here: https://the-guild.dev/graphql/codegen/plugins/presets/preset-client#reducing-bundle-size
  */
 const documents = {
+    "\n  query MyPositions($account: String!) {\n    accountCTokens(\n      orderBy: storedBorrowBalance\n      orderDirection: desc\n      where: { account: $account }\n    ) {\n      id\n      market {\n        name\n      }\n      account {\n        id\n      }\n      storedBorrowBalance\n      cTokenBalance\n      totalUnderlyingRepaid\n      totalUnderlyingSupplied\n      totalUnderlyingBorrowed\n    }\n  }\n": types.MyPositionsDocument,
     "\n  query Positions {\n    accountCTokens(orderBy: storedBorrowBalance, orderDirection: desc) {\n      id\n      market {\n        name\n      }\n      account {\n        id\n      }\n      storedBorrowBalance\n      cTokenBalance\n      totalUnderlyingRepaid\n      totalUnderlyingSupplied\n      totalUnderlyingBorrowed\n    }\n  }\n  ": types.PositionsDocument,
 };
 
@@ -31,6 +32,10 @@ const documents = {
  */
 export function gql(source: string): unknown;
 
+/**
+ * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function gql(source: "\n  query MyPositions($account: String!) {\n    accountCTokens(\n      orderBy: storedBorrowBalance\n      orderDirection: desc\n      where: { account: $account }\n    ) {\n      id\n      market {\n        name\n      }\n      account {\n        id\n      }\n      storedBorrowBalance\n      cTokenBalance\n      totalUnderlyingRepaid\n      totalUnderlyingSupplied\n      totalUnderlyingBorrowed\n    }\n  }\n"): (typeof documents)["\n  query MyPositions($account: String!) {\n    accountCTokens(\n      orderBy: storedBorrowBalance\n      orderDirection: desc\n      where: { account: $account }\n    ) {\n      id\n      market {\n        name\n      }\n      account {\n        id\n      }\n      storedBorrowBalance\n      cTokenBalance\n      totalUnderlyingRepaid\n      totalUnderlyingSupplied\n      totalUnderlyingBorrowed\n    }\n  }\n"];
 /**
  * The gql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
