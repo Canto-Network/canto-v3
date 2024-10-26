@@ -8,7 +8,7 @@ import { useLendingCombo } from "./utils";
 import Text from "@/components/text";
 import Container from "@/components/container/container";
 import { LendingModal } from "./components/modal/modal";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Spacer from "@/components/layout/spacer";
 import ToggleGroup from "@/components/groupToggle/ToggleGroup";
 import AccountHealth from "./components/accountHealth/accountHealth";
@@ -23,6 +23,9 @@ import useScreenSize from "@/hooks/helpers/useScreenSize";
 import clsx from "clsx";
 import { CTokenWithUserData } from "@/hooks/lending/interfaces/tokens";
 import Splash from "@/components/splash/splash";
+import Button from "@/components/button/button";
+import { Pagination } from "@/components/pagination/Pagination";
+import { usePositionsQuery } from "@/hooks/generated/graphql.hook";
 
 enum CLMModalTypes {
   SUPPLY = "supply",
@@ -49,6 +52,9 @@ function sortCTokens(
   // if no balance, sort by symbol
   return a.underlying.symbol.localeCompare(b.underlying.symbol);
 }
+
+const POSITIONS_PER_PAGE = 10;
+
 export default function LendingPage() {
   // track current modal type
   const [currentModal, setCurrentModal] = useState<CLMModalTypes>(
@@ -58,6 +64,12 @@ export default function LendingPage() {
   const [currentToggle, setCurrentToggle] = useState<"Supply" | "Borrow">(
     "Supply"
   );
+
+  const [currentPositionsPage, setCurrentPositionsPage] = useState(1);
+
+  const handlePositionsPageClick = (pageNumber: number) => {
+    setCurrentPositionsPage(pageNumber);
+  };
 
   // get all data from lending combo
   const {
@@ -75,6 +87,17 @@ export default function LendingPage() {
   const { cNote, rwas, stableCoins } = cTokens;
   const { selectedCToken, setSelectedCToken } = selection;
   const { isMobile } = useScreenSize();
+
+  const { data: positionsData, loading: positionsLoading } =
+    usePositionsQuery();
+
+  // Move this useMemo before any conditional returns
+  const paginatedPositions = useMemo(() => {
+    if (!positionsData?.accountCTokens) return [];
+    const startIndex = (currentPositionsPage - 1) * POSITIONS_PER_PAGE;
+    const endIndex = startIndex + POSITIONS_PER_PAGE;
+    return positionsData.accountCTokens.slice(startIndex, endIndex);
+  }, [positionsData?.accountCTokens, currentPositionsPage]);
 
   if (isLoading || cNote === undefined || stableCoins === undefined) {
     return (
@@ -397,6 +420,62 @@ export default function LendingPage() {
               ]}
             />
           </Container>
+        )}
+      </div>
+      <div className={clsx(styles.positionsContainer, "separator")}>
+        <Text size="x-lg" font="proto_mono">
+          Positions
+        </Text>
+        <Spacer height="20px" />
+        {positionsLoading ? (
+          <Splash themed />
+        ) : (
+          <Table
+            headerFont="proto_mono"
+            headers={[
+              { value: "Account Address", ratio: 3 },
+              { value: "Market Address", ratio: 3 },
+              { value: "Borrowed Amount", ratio: 2 },
+              { value: "Borrow Balance", ratio: 2 },
+              { value: "Health Factor", ratio: 1 },
+              { value: "", ratio: 1 },
+            ]}
+            content={[
+              ...paginatedPositions.map((position, index) => [
+                <Text key={`account-${index}`} font="proto_mono">
+                  {position.account.id}
+                </Text>,
+                <Text key={`market-${index}`} font="proto_mono">
+                  {position.market.name}
+                </Text>,
+                <Text key={`borrowed-${index}`} font="proto_mono">
+                  {displayAmount(position.storedBorrowBalance, 18, {
+                    precision: 2,
+                  })}
+                </Text>,
+                <Text key={`balance-${index}`} font="proto_mono">
+                  {/* Call for balance if available */}
+                  N/A
+                </Text>,
+                <Text key={`health-${index}`} font="proto_mono">
+                  {/* Calculate health factor if available */}
+                  N/A
+                </Text>,
+                <Button key={`manage-${index}`} onClick={() => {}}>
+                  Liquidate
+                </Button>,
+              ]),
+              <Pagination
+                key="pagination"
+                currentPage={currentPositionsPage}
+                totalPages={Math.ceil(
+                  (positionsData?.accountCTokens?.length || 0) /
+                    POSITIONS_PER_PAGE
+                )}
+                handlePageClick={handlePositionsPageClick}
+              />,
+            ]}
+          />
         )}
       </div>
     </div>

@@ -16,19 +16,29 @@ const nextConfig = {
     config.externals.push("pino-pretty", "lokijs", "encoding");
     return config;
   },
-  // Adding CORS Headers for safe to access the manifest.json 
+  rewrites: () => {
+    return [
+      {
+        source: "/graphql/:slug*",
+        destination: `${process.env.BACKEND_SUBGRAPH_URL}:slug*`,
+      },
+    ];
+  },
+  // Adding CORS Headers for safe to access the manifest.json
   headers: async () => {
     return [
       {
         source: "/:path*",
         headers: [
           { key: "Access-Control-Allow-Credentials", value: "true" },
-          { key: "Access-Control-Allow-Origin", value: "https://safe.neobase.one" },
+          {
+            key: "Access-Control-Allow-Origin",
+            value: "https://safe.neobase.one",
+          },
           { key: "Access-Control-Allow-Methods", value: "GET" },
           {
             key: "Access-Control-Allow-Headers",
-            value:
-            "X-Requested-With, content-type, Authorization",
+            value: "X-Requested-With, content-type, Authorization",
           },
         ],
       },
