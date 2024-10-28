@@ -16,6 +16,7 @@ const HEALTH_COLORS = {
 
 export default function HealthBar({ value }: HealthBarProps) {
   const activeSteps = useMemo(() => {
+    if (value >= 1) return 5;
     return Math.ceil(value * 5);
   }, [value]);
 
@@ -30,7 +31,9 @@ export default function HealthBar({ value }: HealthBarProps) {
           style={{
             backgroundColor:
               step <= activeSteps
-                ? HEALTH_COLORS[activeSteps as keyof typeof HEALTH_COLORS]
+                ? value >= 1
+                  ? HEALTH_COLORS[5] // Force red color when value >= 1
+                  : HEALTH_COLORS[activeSteps as keyof typeof HEALTH_COLORS]
                 : "#ffffff",
           }}
         />

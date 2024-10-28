@@ -610,7 +610,10 @@ export default function LendingPage() {
                       gap={10}
                       center={{ horizontal: true }}
                     >
-                      <Button onClick={() => {}}>Liquidate</Button>
+                      {borrowBalances[position.id] &&
+                        Number(borrowBalances[position.id].liquidity) >= 1 && (
+                          <Button onClick={() => {}}>Liquidate</Button>
+                        )}
                     </Container>,
                   ]),
                   <Pagination
