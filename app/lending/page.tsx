@@ -33,6 +33,7 @@ import {
   useMyPositionsCountQuery,
 } from "@/hooks/generated/graphql.hook";
 import HealthBar from "./components/healthBar/healthBar";
+import { useBorrowBalances } from "@/hooks/lending/useBorrowBalances";
 
 enum CLMModalTypes {
   SUPPLY = "supply",
@@ -133,49 +134,7 @@ export default function LendingPage() {
     return positionsData?.accountCTokens ?? [];
   }, [allPositionsData, myPositionsData, positionsToggle]);
 
-  // Update the state interface to include liquidity
-  const [borrowBalances, setBorrowBalances] = useState<{
-    [key: string]: {
-      borrowBalance: string;
-      decimals: string;
-      liquidity: string;
-    };
-  }>({});
-
-  useEffect(() => {
-    const fetchBorrowBalances = async () => {
-      if (paginatedPositions.length === 0) return;
-
-      const addresses = paginatedPositions
-        .map((position) => position.id)
-        .join(",");
-
-      try {
-        const response = await fetch(
-          `https://mcu40116n5.execute-api.us-east-1.amazonaws.com/clm/borrowBalance/${addresses}`
-        );
-        const data = await response.json();
-
-        const balanceMap = data.accountsBorrowInterest.reduce(
-          (acc: any, item: any) => {
-            acc[item.cTokenAccountAddress] = {
-              borrowBalance: item.borrowBalance,
-              decimals: item.decimals,
-              liquidity: item.liquidity,
-            };
-            return acc;
-          },
-          {}
-        );
-
-        setBorrowBalances(balanceMap);
-      } catch (error) {
-        console.error("Error fetching borrow balances:", error);
-      }
-    };
-
-    fetchBorrowBalances();
-  }, [paginatedPositions]);
+  const borrowBalances = useBorrowBalances(paginatedPositions);
 
   if (isLoading || cNote === undefined || stableCoins === undefined) {
     return (
