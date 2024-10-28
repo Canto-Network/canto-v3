@@ -75,7 +75,8 @@
       "title "
       "accountHealth"
       "highlightCard"
-      "mainContent";
+      "mainContent"
+      "positionsContainer";
 
     &::after {
       display: none;
@@ -126,6 +127,53 @@
 
 @media screen and (max-width: 768px) {
   .positionsContainer {
-    padding: 1rem;
+    padding: 0.5rem;
+    font-size: 14px;
+  }
+
+  .positionsHeader {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+    
+    h2 {
+      font-size: 20px;
+    }
+  }
+
+  .tableWrapper {
+    :global {
+      .table-row {
+        padding: 8px 4px;
+      }
+
+      .table-cell {
+        padding: 4px;
+      }
+    }
+  }
+}
+
+.liquidateButton {
+  background-color: #1E1E1E;
+  color: #EEEEEE;
+  padding: 8px 8px;
+  font-family: var(--proto-mono);
+  font-size: 9px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+  box-shadow: 4px 4px 0px 0px #222222;
+
+  &:hover {
+    opacity: 0.9;
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px 0px #222222;
+  }
+
+  @media (min-width: 768px) {
+    padding: 12px 24px;
+    font-size: 16px;
   }
 }

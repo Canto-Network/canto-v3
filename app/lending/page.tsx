@@ -481,12 +481,31 @@ export default function LendingPage() {
           title="Positions"
           headerFont="proto_mono"
           headers={[
-            { value: "Account Address", ratio: 3 },
-            { value: "Market Address", ratio: 3 },
-            { value: "Borrowed Amount", ratio: 3 },
-            { value: "Borrow Balance", ratio: 3 },
-            { value: "Health Factor", ratio: 3 },
-            { value: "", ratio: 3 },
+            {
+              value: "Account Address",
+              ratio: isMobile ? 1 : 3,
+            },
+            {
+              value: "Market Address",
+              ratio: isMobile ? 1 : 3,
+            },
+            {
+              value: "Borrowed Amount",
+              ratio: isMobile ? 0 : 3,
+              hideOnMobile: isMobile,
+            },
+            {
+              value: "Borrow Balance",
+              ratio: isMobile ? 1 : 3,
+            },
+            {
+              value: "Health Factor",
+              ratio: isMobile ? 1 : 3,
+            },
+            {
+              value: "",
+              ratio: isMobile ? 1 : 3,
+            },
           ]}
           isLoading={allPositionsLoading || myPositionsLoading}
           content={
@@ -500,7 +519,7 @@ export default function LendingPage() {
                       gap={10}
                       center={{ horizontal: true }}
                     >
-                      <Text font="proto_mono">
+                      <Text font="proto_mono" size={isMobile ? "sm" : "md"}>
                         {`${position.account.id.slice(
                           0,
                           4
@@ -514,21 +533,25 @@ export default function LendingPage() {
                       gap={10}
                       center={{ horizontal: true }}
                     >
-                      <Text font="proto_mono">{position.market.name}</Text>
-                    </Container>,
-                    <Container
-                      key={`borrowed-${index}`}
-                      width="100%"
-                      direction="row"
-                      gap={10}
-                      center={{ horizontal: true }}
-                    >
-                      <Text font="proto_mono">
-                        {displayAmount(position.storedBorrowBalance, 18, {
-                          precision: 2,
-                        })}
+                      <Text font="proto_mono" size={isMobile ? "sm" : "md"}>
+                        {position.market.name}
                       </Text>
                     </Container>,
+                    isMobile ? null : (
+                      <Container
+                        key={`borrowed-${index}`}
+                        width="100%"
+                        direction="row"
+                        gap={10}
+                        center={{ horizontal: true }}
+                      >
+                        <Text font="proto_mono" size={isMobile ? "sm" : "md"}>
+                          {displayAmount(position.storedBorrowBalance, 18, {
+                            precision: 2,
+                          })}
+                        </Text>
+                      </Container>
+                    ),
                     <Container
                       key={`balance-${index}`}
                       width="100%"
@@ -536,7 +559,7 @@ export default function LendingPage() {
                       gap={10}
                       center={{ horizontal: true }}
                     >
-                      <Text font="proto_mono">
+                      <Text font="proto_mono" size={isMobile ? "sm" : "md"}>
                         {borrowBalances[position.id]
                           ? displayAmount(
                               borrowBalances[position.id].borrowBalance,
@@ -549,12 +572,12 @@ export default function LendingPage() {
                     <Container
                       key={`health-${index}`}
                       width="100%"
-                      direction="row"
-                      gap={10}
+                      direction={isMobile ? "column" : "row"}
+                      gap={isMobile ? 4 : 10}
                       center={{ vertical: true, horizontal: true }}
                       style={{ justifyContent: "center" }}
                     >
-                      <Text font="proto_mono">
+                      <Text font="proto_mono" size={isMobile ? "sm" : "md"}>
                         {borrowBalances[position.id]
                           ? Number(
                               borrowBalances[position.id].liquidity
@@ -576,7 +599,12 @@ export default function LendingPage() {
                     >
                       {borrowBalances[position.id] &&
                         Number(borrowBalances[position.id].liquidity) >= 1 && (
-                          <Button onClick={() => {}}>Liquidate</Button>
+                          <button
+                            className={styles.liquidateButton}
+                            onClick={() => {}}
+                          >
+                            Liquidate
+                          </button>
                         )}
                     </Container>,
                   ]),
@@ -592,7 +620,7 @@ export default function LendingPage() {
                     key="noData"
                     className={styles.noPositionsContainer}
                   >
-                    <Text font="proto_mono" size="lg">
+                    <Text font="proto_mono" size={isMobile ? "md" : "lg"}>
                       NO POSITIONS FOUND
                     </Text>
                   </Container>,
