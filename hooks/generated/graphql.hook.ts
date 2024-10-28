@@ -1577,7 +1577,7 @@ export type MyPositionsQueryVariables = Exact<{
 }>;
 
 
-export type MyPositionsQuery = { accountCTokens: Array<{ id: string, storedBorrowBalance: string, cTokenBalance: string, totalUnderlyingRepaid: string, totalUnderlyingSupplied: string, totalUnderlyingBorrowed: string, market: { name: string }, account: { id: string } }> };
+export type MyPositionsQuery = { accountCTokens: Array<{ id: string, storedBorrowBalance: string, cTokenBalance: string, totalUnderlyingRepaid: string, totalUnderlyingSupplied: string, totalUnderlyingBorrowed: string, market: { name: string, id: string }, account: { id: string } }> };
 
 export type PositionsCountQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1597,7 +1597,7 @@ export type PositionsQueryVariables = Exact<{
 }>;
 
 
-export type PositionsQuery = { accountCTokens: Array<{ id: string, storedBorrowBalance: string, cTokenBalance: string, totalUnderlyingRepaid: string, totalUnderlyingSupplied: string, totalUnderlyingBorrowed: string, market: { name: string }, account: { id: string } }> };
+export type PositionsQuery = { accountCTokens: Array<{ id: string, storedBorrowBalance: string, cTokenBalance: string, totalUnderlyingRepaid: string, totalUnderlyingSupplied: string, totalUnderlyingBorrowed: string, market: { name: string, id: string }, account: { id: string } }> };
 
 
 export const MyPositionsDocument = gql`
@@ -1612,6 +1612,7 @@ export const MyPositionsDocument = gql`
     id
     market {
       name
+      id
     }
     account {
       id
@@ -1753,6 +1754,7 @@ export const PositionsDocument = gql`
     id
     market {
       name
+      id
     }
     account {
       id

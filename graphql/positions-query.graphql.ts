@@ -11,6 +11,7 @@ export const positionsQuery = gql(`
       id
       market {
         name
+        id
       }
       account {
         id
