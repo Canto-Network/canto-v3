@@ -498,6 +498,7 @@ export default function LendingPage() {
                       width="100%"
                       direction="row"
                       gap={10}
+                      center={{ horizontal: true }}
                     >
                       <Text font="proto_mono">
                         {`${position.account.id.slice(
@@ -511,6 +512,7 @@ export default function LendingPage() {
                       width="100%"
                       direction="row"
                       gap={10}
+                      center={{ horizontal: true }}
                     >
                       <Text font="proto_mono">{position.market.name}</Text>
                     </Container>,
@@ -519,6 +521,7 @@ export default function LendingPage() {
                       width="100%"
                       direction="row"
                       gap={10}
+                      center={{ horizontal: true }}
                     >
                       <Text font="proto_mono">
                         {displayAmount(position.storedBorrowBalance, 18, {
@@ -531,6 +534,7 @@ export default function LendingPage() {
                       width="100%"
                       direction="row"
                       gap={10}
+                      center={{ horizontal: true }}
                     >
                       <Text font="proto_mono">
                         {borrowBalances[position.id]
@@ -547,7 +551,8 @@ export default function LendingPage() {
                       width="100%"
                       direction="row"
                       gap={10}
-                      center={{ vertical: true }}
+                      center={{ vertical: true, horizontal: true }}
+                      style={{ justifyContent: "center" }}
                     >
                       <Text font="proto_mono">
                         {borrowBalances[position.id]
