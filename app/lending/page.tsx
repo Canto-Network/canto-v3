@@ -8,7 +8,7 @@ import { useLendingCombo } from "./utils";
 import Text from "@/components/text";
 import Container from "@/components/container/container";
 import { LendingModal } from "./components/modal/modal";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Spacer from "@/components/layout/spacer";
 import ToggleGroup from "@/components/groupToggle/ToggleGroup";
 import AccountHealth from "./components/accountHealth/accountHealth";
@@ -32,6 +32,7 @@ import {
   usePositionsCountQuery,
   useMyPositionsCountQuery,
 } from "@/hooks/generated/graphql.hook";
+import HealthBar from "./components/healthBar/healthBar";
 
 enum CLMModalTypes {
   SUPPLY = "supply",
@@ -131,6 +132,50 @@ export default function LendingPage() {
       positionsToggle === "All" ? allPositionsData : myPositionsData;
     return positionsData?.accountCTokens ?? [];
   }, [allPositionsData, myPositionsData, positionsToggle]);
+
+  // Update the state interface to include liquidity
+  const [borrowBalances, setBorrowBalances] = useState<{
+    [key: string]: {
+      borrowBalance: string;
+      decimals: string;
+      liquidity: string;
+    };
+  }>({});
+
+  useEffect(() => {
+    const fetchBorrowBalances = async () => {
+      if (paginatedPositions.length === 0) return;
+
+      const addresses = paginatedPositions
+        .map((position) => position.id)
+        .join(",");
+
+      try {
+        const response = await fetch(
+          `https://mcu40116n5.execute-api.us-east-1.amazonaws.com/clm/borrowBalance/${addresses}`
+        );
+        const data = await response.json();
+
+        const balanceMap = data.accountsBorrowInterest.reduce(
+          (acc: any, item: any) => {
+            acc[item.cTokenAccountAddress] = {
+              borrowBalance: item.borrowBalance,
+              decimals: item.decimals,
+              liquidity: item.liquidity,
+            };
+            return acc;
+          },
+          {}
+        );
+
+        setBorrowBalances(balanceMap);
+      } catch (error) {
+        console.error("Error fetching borrow balances:", error);
+      }
+    };
+
+    fetchBorrowBalances();
+  }, [paginatedPositions]);
 
   if (isLoading || cNote === undefined || stableCoins === undefined) {
     return (
@@ -528,15 +573,35 @@ export default function LendingPage() {
                       direction="row"
                       gap={10}
                     >
-                      <Text font="proto_mono">N/A</Text>
+                      <Text font="proto_mono">
+                        {borrowBalances[position.id]
+                          ? displayAmount(
+                              borrowBalances[position.id].borrowBalance,
+                              Number(borrowBalances[position.id].decimals),
+                              { precision: 2 }
+                            )
+                          : "Loading..."}
+                      </Text>
                     </Container>,
                     <Container
                       key={`health-${index}`}
                       width="100%"
                       direction="row"
                       gap={10}
+                      center={{ vertical: true }}
                     >
-                      <Text font="proto_mono">N/A</Text>
+                      <Text font="proto_mono">
+                        {borrowBalances[position.id]
+                          ? Number(
+                              borrowBalances[position.id].liquidity
+                            ).toFixed(2)
+                          : "Loading..."}
+                      </Text>
+                      {borrowBalances[position.id] && (
+                        <HealthBar
+                          value={Number(borrowBalances[position.id].liquidity)}
+                        />
+                      )}
                     </Container>,
                     <Container
                       key={`manage-${index}`}
