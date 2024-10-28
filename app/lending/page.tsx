@@ -456,49 +456,84 @@ export default function LendingPage() {
             />
           </Container>
         </div>
+
         <Spacer height="20px" />
         {allPositionsLoading || myPositionsLoading ? (
           <Splash themed />
         ) : (
           <Table
+            title="Positions"
             headerFont="proto_mono"
             headers={[
               { value: "Account Address", ratio: 3 },
               { value: "Market Address", ratio: 3 },
               { value: "Borrowed Amount", ratio: 3 },
-              { value: "Borrow Balance", ratio: 2 },
-              { value: "Health Factor", ratio: 2 },
-              { value: "", ratio: 1 },
+              { value: "Borrow Balance", ratio: 3 },
+              { value: "Health Factor", ratio: 3 },
+              { value: "", ratio: 3 },
             ]}
             content={
               paginatedPositions.length > 0
                 ? [
                     ...paginatedPositions.map((position, index) => [
-                      <Text key={`account-${index}`} font="proto_mono">
-                        {`${position.account.id.slice(
-                          0,
-                          4
-                        )}...${position.account.id.slice(-5)}`}
-                      </Text>,
-                      <Text key={`market-${index}`} font="proto_mono">
-                        {position.market.name}
-                      </Text>,
-                      <Text key={`borrowed-${index}`} font="proto_mono">
-                        {displayAmount(position.storedBorrowBalance, 18, {
-                          precision: 2,
-                        })}
-                      </Text>,
-                      <Text key={`balance-${index}`} font="proto_mono">
-                        {/* Call for balance if available */}
-                        N/A
-                      </Text>,
-                      <Text key={`health-${index}`} font="proto_mono">
-                        {/* Calculate health factor if available */}
-                        N/A
-                      </Text>,
-                      <Button key={`manage-${index}`} onClick={() => {}}>
-                        Liquidate
-                      </Button>,
+                      <Container
+                        key={`account-${index}`}
+                        width="100%"
+                        direction="row"
+                        gap={10}
+                      >
+                        <Text font="proto_mono">
+                          {`${position.account.id.slice(
+                            0,
+                            4
+                          )}...${position.account.id.slice(-5)}`}
+                        </Text>
+                      </Container>,
+                      <Container
+                        key={`market-${index}`}
+                        width="100%"
+                        direction="row"
+                        gap={10}
+                      >
+                        <Text font="proto_mono">{position.market.name}</Text>
+                      </Container>,
+                      <Container
+                        key={`borrowed-${index}`}
+                        width="100%"
+                        direction="row"
+                        gap={10}
+                      >
+                        <Text font="proto_mono">
+                          {displayAmount(position.storedBorrowBalance, 18, {
+                            precision: 2,
+                          })}
+                        </Text>
+                      </Container>,
+                      <Container
+                        key={`balance-${index}`}
+                        width="100%"
+                        direction="row"
+                        gap={10}
+                      >
+                        <Text font="proto_mono">N/A</Text>
+                      </Container>,
+                      <Container
+                        key={`health-${index}`}
+                        width="100%"
+                        direction="row"
+                        gap={10}
+                      >
+                        <Text font="proto_mono">N/A</Text>
+                      </Container>,
+                      <Container
+                        key={`manage-${index}`}
+                        width="100%"
+                        direction="row"
+                        gap={10}
+                        center={{ horizontal: true }}
+                      >
+                        <Button onClick={() => {}}>Liquidate</Button>
+                      </Container>,
                     ]),
                     <Pagination
                       key="pagination"
@@ -513,11 +548,14 @@ export default function LendingPage() {
                     />,
                   ]
                 : [
-                    <div key="noData" className={styles.noPositionsContainer}>
+                    <Container
+                      key="noData"
+                      className={styles.noPositionsContainer}
+                    >
                       <Text font="proto_mono" size="lg">
                         NO POSITIONS FOUND
                       </Text>
-                    </div>,
+                    </Container>,
                   ]
             }
           />
