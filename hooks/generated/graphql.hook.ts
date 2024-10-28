@@ -1572,23 +1572,42 @@ export type SubgraphErrorPolicy =
 
 export type MyPositionsQueryVariables = Exact<{
   account: Scalars['String']['input'];
+  skip: Scalars['Int']['input'];
+  first: Scalars['Int']['input'];
 }>;
 
 
 export type MyPositionsQuery = { accountCTokens: Array<{ id: string, storedBorrowBalance: string, cTokenBalance: string, totalUnderlyingRepaid: string, totalUnderlyingSupplied: string, totalUnderlyingBorrowed: string, market: { name: string }, account: { id: string } }> };
 
-export type PositionsQueryVariables = Exact<{ [key: string]: never; }>;
+export type PositionsCountQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type PositionsCountQuery = { accountCTokens: Array<{ id: string }> };
+
+export type MyPositionsCountQueryVariables = Exact<{
+  account: Scalars['String']['input'];
+}>;
+
+
+export type MyPositionsCountQuery = { accountCTokens: Array<{ id: string }> };
+
+export type PositionsQueryVariables = Exact<{
+  skip: Scalars['Int']['input'];
+  first: Scalars['Int']['input'];
+}>;
 
 
 export type PositionsQuery = { accountCTokens: Array<{ id: string, storedBorrowBalance: string, cTokenBalance: string, totalUnderlyingRepaid: string, totalUnderlyingSupplied: string, totalUnderlyingBorrowed: string, market: { name: string }, account: { id: string } }> };
 
 
 export const MyPositionsDocument = gql`
-    query MyPositions($account: String!) {
+    query MyPositions($account: String!, $skip: Int!, $first: Int!) {
   accountCTokens(
     orderBy: storedBorrowBalance
     orderDirection: desc
     where: {account: $account}
+    skip: $skip
+    first: $first
   ) {
     id
     market {
@@ -1619,6 +1638,8 @@ export const MyPositionsDocument = gql`
  * const { data, loading, error } = useMyPositionsQuery({
  *   variables: {
  *      account: // value for 'account'
+ *      skip: // value for 'skip'
+ *      first: // value for 'first'
  *   },
  * });
  */
@@ -1638,9 +1659,97 @@ export type MyPositionsQueryHookResult = ReturnType<typeof useMyPositionsQuery>;
 export type MyPositionsLazyQueryHookResult = ReturnType<typeof useMyPositionsLazyQuery>;
 export type MyPositionsSuspenseQueryHookResult = ReturnType<typeof useMyPositionsSuspenseQuery>;
 export type MyPositionsQueryResult = Apollo.QueryResult<MyPositionsQuery, MyPositionsQueryVariables>;
-export const PositionsDocument = gql`
-    query Positions {
+export const PositionsCountDocument = gql`
+    query PositionsCount {
   accountCTokens(orderBy: storedBorrowBalance, orderDirection: desc) {
+    id
+  }
+}
+    `;
+
+/**
+ * __usePositionsCountQuery__
+ *
+ * To run a query within a React component, call `usePositionsCountQuery` and pass it any options that fit your needs.
+ * When your component renders, `usePositionsCountQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = usePositionsCountQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function usePositionsCountQuery(baseOptions?: Apollo.QueryHookOptions<PositionsCountQuery, PositionsCountQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<PositionsCountQuery, PositionsCountQueryVariables>(PositionsCountDocument, options);
+      }
+export function usePositionsCountLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<PositionsCountQuery, PositionsCountQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<PositionsCountQuery, PositionsCountQueryVariables>(PositionsCountDocument, options);
+        }
+export function usePositionsCountSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<PositionsCountQuery, PositionsCountQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<PositionsCountQuery, PositionsCountQueryVariables>(PositionsCountDocument, options);
+        }
+export type PositionsCountQueryHookResult = ReturnType<typeof usePositionsCountQuery>;
+export type PositionsCountLazyQueryHookResult = ReturnType<typeof usePositionsCountLazyQuery>;
+export type PositionsCountSuspenseQueryHookResult = ReturnType<typeof usePositionsCountSuspenseQuery>;
+export type PositionsCountQueryResult = Apollo.QueryResult<PositionsCountQuery, PositionsCountQueryVariables>;
+export const MyPositionsCountDocument = gql`
+    query MyPositionsCount($account: String!) {
+  accountCTokens(
+    where: {account: $account}
+    orderBy: storedBorrowBalance
+    orderDirection: desc
+  ) {
+    id
+  }
+}
+    `;
+
+/**
+ * __useMyPositionsCountQuery__
+ *
+ * To run a query within a React component, call `useMyPositionsCountQuery` and pass it any options that fit your needs.
+ * When your component renders, `useMyPositionsCountQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useMyPositionsCountQuery({
+ *   variables: {
+ *      account: // value for 'account'
+ *   },
+ * });
+ */
+export function useMyPositionsCountQuery(baseOptions: Apollo.QueryHookOptions<MyPositionsCountQuery, MyPositionsCountQueryVariables> & ({ variables: MyPositionsCountQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<MyPositionsCountQuery, MyPositionsCountQueryVariables>(MyPositionsCountDocument, options);
+      }
+export function useMyPositionsCountLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<MyPositionsCountQuery, MyPositionsCountQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<MyPositionsCountQuery, MyPositionsCountQueryVariables>(MyPositionsCountDocument, options);
+        }
+export function useMyPositionsCountSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<MyPositionsCountQuery, MyPositionsCountQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<MyPositionsCountQuery, MyPositionsCountQueryVariables>(MyPositionsCountDocument, options);
+        }
+export type MyPositionsCountQueryHookResult = ReturnType<typeof useMyPositionsCountQuery>;
+export type MyPositionsCountLazyQueryHookResult = ReturnType<typeof useMyPositionsCountLazyQuery>;
+export type MyPositionsCountSuspenseQueryHookResult = ReturnType<typeof useMyPositionsCountSuspenseQuery>;
+export type MyPositionsCountQueryResult = Apollo.QueryResult<MyPositionsCountQuery, MyPositionsCountQueryVariables>;
+export const PositionsDocument = gql`
+    query Positions($skip: Int!, $first: Int!) {
+  accountCTokens(
+    orderBy: storedBorrowBalance
+    orderDirection: desc
+    skip: $skip
+    first: $first
+  ) {
     id
     market {
       name
@@ -1669,10 +1778,12 @@ export const PositionsDocument = gql`
  * @example
  * const { data, loading, error } = usePositionsQuery({
  *   variables: {
+ *      skip: // value for 'skip'
+ *      first: // value for 'first'
  *   },
  * });
  */
-export function usePositionsQuery(baseOptions?: Apollo.QueryHookOptions<PositionsQuery, PositionsQueryVariables>) {
+export function usePositionsQuery(baseOptions: Apollo.QueryHookOptions<PositionsQuery, PositionsQueryVariables> & ({ variables: PositionsQueryVariables; skip?: boolean; } | { skip: boolean; }) ) {
         const options = {...defaultOptions, ...baseOptions}
         return Apollo.useQuery<PositionsQuery, PositionsQueryVariables>(PositionsDocument, options);
       }

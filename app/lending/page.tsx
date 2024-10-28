@@ -29,6 +29,8 @@ import { useAccount } from "wagmi";
 import {
   useMyPositionsQuery,
   usePositionsQuery,
+  usePositionsCountQuery,
+  useMyPositionsCountQuery,
 } from "@/hooks/generated/graphql.hook";
 
 enum CLMModalTypes {
@@ -96,26 +98,39 @@ export default function LendingPage() {
   const { address } = useAccount();
 
   const { data: allPositionsData, loading: allPositionsLoading } =
-    usePositionsQuery();
+    usePositionsQuery({
+      variables: {
+        skip: (currentPositionsPage - 1) * POSITIONS_PER_PAGE,
+        first: POSITIONS_PER_PAGE,
+      },
+    });
   const { data: myPositionsData, loading: myPositionsLoading } =
     useMyPositionsQuery({
-      variables: { account: address ?? "" },
+      variables: {
+        account: address ?? "",
+        skip: (currentPositionsPage - 1) * POSITIONS_PER_PAGE,
+        first: POSITIONS_PER_PAGE,
+      },
       skip: !address || positionsToggle === "All",
     });
+
+  const { data: allPositionsCount } = usePositionsCountQuery();
+  const { data: myPositionsCount } = useMyPositionsCountQuery({
+    variables: { account: address ?? "" },
+    skip: !address || positionsToggle === "All",
+  });
+
+  const totalPages = Math.ceil(
+    ((positionsToggle === "All"
+      ? allPositionsCount?.accountCTokens?.length
+      : myPositionsCount?.accountCTokens?.length) ?? 0) / POSITIONS_PER_PAGE
+  );
 
   const paginatedPositions = useMemo(() => {
     const positionsData =
       positionsToggle === "All" ? allPositionsData : myPositionsData;
-    if (!positionsData?.accountCTokens) return [];
-    const startIndex = (currentPositionsPage - 1) * POSITIONS_PER_PAGE;
-    const endIndex = startIndex + POSITIONS_PER_PAGE;
-    return positionsData.accountCTokens.slice(startIndex, endIndex);
-  }, [
-    allPositionsData,
-    myPositionsData,
-    positionsToggle,
-    currentPositionsPage,
-  ]);
+    return positionsData?.accountCTokens ?? [];
+  }, [allPositionsData, myPositionsData, positionsToggle]);
 
   if (isLoading || cNote === undefined || stableCoins === undefined) {
     return (
@@ -458,108 +473,100 @@ export default function LendingPage() {
         </div>
 
         <Spacer height="20px" />
-        {allPositionsLoading || myPositionsLoading ? (
-          <Splash themed />
-        ) : (
-          <Table
-            title="Positions"
-            headerFont="proto_mono"
-            headers={[
-              { value: "Account Address", ratio: 3 },
-              { value: "Market Address", ratio: 3 },
-              { value: "Borrowed Amount", ratio: 3 },
-              { value: "Borrow Balance", ratio: 3 },
-              { value: "Health Factor", ratio: 3 },
-              { value: "", ratio: 3 },
-            ]}
-            content={
-              paginatedPositions.length > 0
-                ? [
-                    ...paginatedPositions.map((position, index) => [
-                      <Container
-                        key={`account-${index}`}
-                        width="100%"
-                        direction="row"
-                        gap={10}
-                      >
-                        <Text font="proto_mono">
-                          {`${position.account.id.slice(
-                            0,
-                            4
-                          )}...${position.account.id.slice(-5)}`}
-                        </Text>
-                      </Container>,
-                      <Container
-                        key={`market-${index}`}
-                        width="100%"
-                        direction="row"
-                        gap={10}
-                      >
-                        <Text font="proto_mono">{position.market.name}</Text>
-                      </Container>,
-                      <Container
-                        key={`borrowed-${index}`}
-                        width="100%"
-                        direction="row"
-                        gap={10}
-                      >
-                        <Text font="proto_mono">
-                          {displayAmount(position.storedBorrowBalance, 18, {
-                            precision: 2,
-                          })}
-                        </Text>
-                      </Container>,
-                      <Container
-                        key={`balance-${index}`}
-                        width="100%"
-                        direction="row"
-                        gap={10}
-                      >
-                        <Text font="proto_mono">N/A</Text>
-                      </Container>,
-                      <Container
-                        key={`health-${index}`}
-                        width="100%"
-                        direction="row"
-                        gap={10}
-                      >
-                        <Text font="proto_mono">N/A</Text>
-                      </Container>,
-                      <Container
-                        key={`manage-${index}`}
-                        width="100%"
-                        direction="row"
-                        gap={10}
-                        center={{ horizontal: true }}
-                      >
-                        <Button onClick={() => {}}>Liquidate</Button>
-                      </Container>,
-                    ]),
-                    <Pagination
-                      key="pagination"
-                      currentPage={currentPositionsPage}
-                      totalPages={Math.ceil(
-                        ((positionsToggle === "All"
-                          ? allPositionsData
-                          : myPositionsData
-                        )?.accountCTokens?.length || 0) / POSITIONS_PER_PAGE
-                      )}
-                      handlePageClick={handlePositionsPageClick}
-                    />,
-                  ]
-                : [
+        <Table
+          title="Positions"
+          headerFont="proto_mono"
+          headers={[
+            { value: "Account Address", ratio: 3 },
+            { value: "Market Address", ratio: 3 },
+            { value: "Borrowed Amount", ratio: 3 },
+            { value: "Borrow Balance", ratio: 3 },
+            { value: "Health Factor", ratio: 3 },
+            { value: "", ratio: 3 },
+          ]}
+          isLoading={allPositionsLoading || myPositionsLoading}
+          content={
+            paginatedPositions.length > 0
+              ? [
+                  ...paginatedPositions.map((position, index) => [
                     <Container
-                      key="noData"
-                      className={styles.noPositionsContainer}
+                      key={`account-${index}`}
+                      width="100%"
+                      direction="row"
+                      gap={10}
                     >
-                      <Text font="proto_mono" size="lg">
-                        NO POSITIONS FOUND
+                      <Text font="proto_mono">
+                        {`${position.account.id.slice(
+                          0,
+                          4
+                        )}...${position.account.id.slice(-5)}`}
                       </Text>
                     </Container>,
-                  ]
-            }
-          />
-        )}
+                    <Container
+                      key={`market-${index}`}
+                      width="100%"
+                      direction="row"
+                      gap={10}
+                    >
+                      <Text font="proto_mono">{position.market.name}</Text>
+                    </Container>,
+                    <Container
+                      key={`borrowed-${index}`}
+                      width="100%"
+                      direction="row"
+                      gap={10}
+                    >
+                      <Text font="proto_mono">
+                        {displayAmount(position.storedBorrowBalance, 18, {
+                          precision: 2,
+                        })}
+                      </Text>
+                    </Container>,
+                    <Container
+                      key={`balance-${index}`}
+                      width="100%"
+                      direction="row"
+                      gap={10}
+                    >
+                      <Text font="proto_mono">N/A</Text>
+                    </Container>,
+                    <Container
+                      key={`health-${index}`}
+                      width="100%"
+                      direction="row"
+                      gap={10}
+                    >
+                      <Text font="proto_mono">N/A</Text>
+                    </Container>,
+                    <Container
+                      key={`manage-${index}`}
+                      width="100%"
+                      direction="row"
+                      gap={10}
+                      center={{ horizontal: true }}
+                    >
+                      <Button onClick={() => {}}>Liquidate</Button>
+                    </Container>,
+                  ]),
+                  <Pagination
+                    key="pagination"
+                    currentPage={currentPositionsPage}
+                    totalPages={totalPages}
+                    handlePageClick={handlePositionsPageClick}
+                  />,
+                ]
+              : [
+                  <Container
+                    key="noData"
+                    className={styles.noPositionsContainer}
+                  >
+                    <Text font="proto_mono" size="lg">
+                      NO POSITIONS FOUND
+                    </Text>
+                  </Container>,
+                ]
+          }
+        />
       </div>
     </div>
   );

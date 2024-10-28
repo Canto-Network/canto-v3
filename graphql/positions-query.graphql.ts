@@ -1,8 +1,13 @@
 import { gql } from "./generated";
 
 export const positionsQuery = gql(`
-  query Positions {
-    accountCTokens(orderBy: storedBorrowBalance, orderDirection: desc) {
+  query Positions($skip: Int!, $first: Int!) {
+    accountCTokens(
+      orderBy: storedBorrowBalance, 
+      orderDirection: desc,
+      skip: $skip,
+      first: $first
+    ) {
       id
       market {
         name
@@ -17,4 +22,4 @@ export const positionsQuery = gql(`
       totalUnderlyingBorrowed
     }
   }
-  `);
+`);
