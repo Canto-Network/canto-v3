@@ -13,8 +13,8 @@ export const GRAVITY_BRIDGE: CosmosNetwork = {
   icon: "/icons/grav.svg",
   name: "Gravity Bridge",
   isTestChain: false,
-  rpcUrl: "https://rpc.cosmos.directory/gravitybridge",
-  restEndpoint: "https://rest.cosmos.directory/gravitybridge",
+  rpcUrl: "https://gravitychain.io:26657",
+  restEndpoint: "https://gravitychain.io:1317",
   addressPrefix: "gravity",
   checkAddress: function (address) {
     return checkCosmosAddress(this.addressPrefix)(address);
