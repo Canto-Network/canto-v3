@@ -15,6 +15,17 @@ export const positionsQuery = gql(`
       }
       account {
         id
+        tokens{
+        id
+        totalUnderlyingRepaid
+        totalUnderlyingSupplied
+        totalUnderlyingBorrowed
+        market{
+          collateralFactor
+          underlyingAddress
+          underlyingPriceUSD
+        }
+      }
       }
       storedBorrowBalance
       cTokenBalance

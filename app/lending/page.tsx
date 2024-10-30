@@ -32,7 +32,7 @@ import {
   usePositionsCountQuery,
   useMyPositionsCountQuery,
 } from "@/hooks/generated/graphql.hook";
-import HealthBar from "./components/healthBar/healthBar";
+import { HEALTH_THRESHOLDS, HealthBar } from "./components/healthBar/healthBar";
 import { useBorrowBalances } from "@/hooks/lending/useBorrowBalances";
 
 enum CLMModalTypes {
@@ -62,6 +62,27 @@ function sortCTokens(
 }
 
 const POSITIONS_PER_PAGE = 10;
+
+const calculateHealthFactor = (tokens: any[]) => {
+  let totalCollateral = 0;
+  let totalBorrowed = 0;
+
+  tokens.forEach((token) => {
+    const price = Number(token.market.underlyingPriceUSD) || 0;
+    const collateralFactor = Number(token.market.collateralFactor) || 0;
+    const supplied = Number(token.totalUnderlyingSupplied) || 0;
+    const borrowed = Number(token.totalUnderlyingBorrowed) || 0;
+
+    const collateralValue = supplied * collateralFactor * price;
+    const borrowedValue = borrowed * price;
+
+    totalCollateral += collateralValue;
+    totalBorrowed += borrowedValue;
+  });
+
+  if (totalBorrowed === 0) return Infinity;
+  return totalCollateral / totalBorrowed;
+};
 
 export default function LendingPage() {
   // track current modal type
@@ -578,15 +599,18 @@ export default function LendingPage() {
                       style={{ justifyContent: "center" }}
                     >
                       <Text font="proto_mono" size={isMobile ? "sm" : "md"}>
-                        {borrowBalances[position.id]
-                          ? Number(
-                              borrowBalances[position.id].liquidity
-                            ).toFixed(2)
+                        {position.account.tokens
+                          ? (() => {
+                              const hf = calculateHealthFactor(
+                                position.account.tokens
+                              );
+                              return hf === Infinity ? "N/A" : hf.toFixed(2);
+                            })()
                           : "Loading..."}
                       </Text>
-                      {borrowBalances[position.id] && (
+                      {position.account.tokens && (
                         <HealthBar
-                          value={Number(borrowBalances[position.id].liquidity)}
+                          value={calculateHealthFactor(position.account.tokens)}
                         />
                       )}
                     </Container>,
@@ -597,15 +621,15 @@ export default function LendingPage() {
                       gap={10}
                       center={{ horizontal: true }}
                     >
-                      {borrowBalances[position.id] &&
-                        Number(borrowBalances[position.id].liquidity) >= 1 && (
-                          <button
-                            className={styles.liquidateButton}
-                            onClick={() => {}}
-                          >
-                            Liquidate
-                          </button>
-                        )}
+                      {calculateHealthFactor(position.account.tokens) <
+                        HEALTH_THRESHOLDS.DANGER && (
+                        <button
+                          className={styles.liquidateButton}
+                          onClick={() => {}}
+                        >
+                          Liquidate
+                        </button>
+                      )}
                     </Container>,
                   ]),
                   <Pagination

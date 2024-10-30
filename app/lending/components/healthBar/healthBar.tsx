@@ -6,18 +6,49 @@ interface HealthBarProps {
   value: number;
 }
 
-const HEALTH_COLORS = {
-  1: "#06FC99", // Green
-  2: "#FCD506", // Yellow
-  3: "#D79B00", // Orange
-  4: "#FC8B06", // Dark Orange
-  5: "#FF0000", // Red
+export const HEALTH_THRESHOLDS = {
+  DANGER: 1, // When borrowed >= collateral
+  WARNING: 1.25,
+  CAUTION: 1.5,
+  MODERATE: 1.75,
+  SAFE: 2,
 };
 
-export default function HealthBar({ value }: HealthBarProps) {
-  const activeSteps = useMemo(() => {
-    if (value >= 1) return 5;
-    return Math.ceil(value * 5);
+const HEALTH_COLORS = {
+  DANGER: "#FF0000", // Red - HF < 1
+  WARNING: "#FC8B06", // Dark Orange - HF < 1.25
+  CAUTION: "#D79B00", // Orange - HF < 1.5
+  MODERATE: "#FCD506", // Yellow - HF < 1.75
+  SAFE: "#06FC99", // Green - HF >= 2
+};
+
+export const HealthBar = ({ value }: HealthBarProps) => {
+  const { activeSteps, barColor } = useMemo(() => {
+    if (value === Infinity) {
+      return { activeSteps: 1, barColor: HEALTH_COLORS.SAFE };
+    }
+
+    let color = HEALTH_COLORS.DANGER;
+    let steps = 5;
+
+    if (value >= HEALTH_THRESHOLDS.SAFE) {
+      color = HEALTH_COLORS.SAFE;
+      steps = 1;
+    } else if (value >= HEALTH_THRESHOLDS.MODERATE) {
+      color = HEALTH_COLORS.MODERATE;
+      steps = 2;
+    } else if (value >= HEALTH_THRESHOLDS.CAUTION) {
+      color = HEALTH_COLORS.CAUTION;
+      steps = 3;
+    } else if (value >= HEALTH_THRESHOLDS.WARNING) {
+      color = HEALTH_COLORS.WARNING;
+      steps = 4;
+    } else if (value >= HEALTH_THRESHOLDS.DANGER) {
+      color = HEALTH_COLORS.WARNING;
+      steps = 4;
+    }
+
+    return { activeSteps: steps, barColor: color };
   }, [value]);
 
   return (
@@ -29,15 +60,10 @@ export default function HealthBar({ value }: HealthBarProps) {
             [styles.active]: step <= activeSteps,
           })}
           style={{
-            backgroundColor:
-              step <= activeSteps
-                ? value >= 1
-                  ? HEALTH_COLORS[5] // Force red color when value >= 1
-                  : HEALTH_COLORS[activeSteps as keyof typeof HEALTH_COLORS]
-                : "#ffffff",
+            backgroundColor: step <= activeSteps ? barColor : "#ffffff",
           }}
         />
       ))}
     </div>
   );
-}
+};
