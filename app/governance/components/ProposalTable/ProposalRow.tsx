@@ -4,6 +4,7 @@ import Text from "@/components/text";
 import { Proposal } from "@/hooks/gov/interfaces/proposal";
 import {
   formatProposalStatus,
+  formatProposalTitle,
   formatProposalType,
 } from "@/utils/gov/formatData";
 import { VoteGraphBox } from "../votingChart/voteGraph";
@@ -111,7 +112,7 @@ export const ProposalRow = ({
       >
         <div className={styles.rowTitle}>
           <Text font="rm_mono" size={isMobile ? "md" : "sm"}>
-            {proposal.title}
+            {proposal.title || formatProposalTitle(proposal.type_url)}
           </Text>
         </div>
       </Container>

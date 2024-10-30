@@ -6,6 +6,7 @@ import styles from "./proposalModal.module.scss";
 import {
   calculateVotePercentages,
   formatProposalStatus,
+  formatProposalTitle,
   formatProposalType,
   formatTime,
 } from "@/utils/gov/formatData";
@@ -205,7 +206,9 @@ export default function Page() {
         </div>
 
         <div>
-          <Text opacity={0.4}>{proposal.description}</Text>
+          <Text opacity={0.4}>
+            {proposal.description || formatProposalTitle(proposal.type_url)}
+          </Text>
         </div>
       </div>
       <div className={styles.proposalInfoContainer}>
