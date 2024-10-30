@@ -14,6 +14,15 @@ const proposalTypes = {
   "/cosmos.slashing.v1beta1.MsgUpdateParams": "Slashing Update Params",
 };
 
+const hardcodedProposalsDescriptions = {
+  "/cosmos.gov.v1.MsgUpdateParams":
+    "Governance Proposal to update Proposal params",
+  "/canto.govshuttle.v1.MsgLendingMarketProposal":
+    "Governance Proposal to Update Note Interest Rate",
+  "/cosmos.slashing.v1beta1.MsgUpdateParams":
+    "Governance Proposal to update slashing params",
+};
+
 export function formatProposalStatus(status: string): string | undefined {
   switch (status) {
     case "PROPOSAL_STATUS_ACTIVE":
@@ -38,6 +47,14 @@ export function formatProposalStatus(status: string): string | undefined {
 export function formatProposalType(type_url: string) {
   return (proposalTypes as any)[type_url] || "Proposal type not found";
 }
+
+export function formatProposalTitle(type_url: string) {
+  return (
+    (hardcodedProposalsDescriptions as any)[type_url] ||
+    "Proposal type not found"
+  );
+}
+
 interface FinalTallyResult {
   yes: string;
   abstain: string;
