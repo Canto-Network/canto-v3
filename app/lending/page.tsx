@@ -137,21 +137,30 @@ export default function LendingPage() {
   const handleLiquidate = async (position: any) => {
     try {
       const repayAmount =
-        (BigInt(parseUnits(position.totalUnderlyingBorrowed, 18)) *
-          BigInt(98)) /
+        (BigInt(parseUnits(position.totalUnderlyingBorrowed, 18)) * BigInt(5)) /
         BigInt(100);
-      const cTokenCollateral = position.account.tokens[0].market.id;
+
+      const cTokenCollateral = position.account.tokens
+        .find(
+          (token: any) =>
+            token.market.id.toLowerCase() !==
+              position.market.id.toLowerCase() &&
+            token.totalUnderlyingSupplied !== "0"
+        )
+        ?.market.id.toLowerCase();
 
       const { hash } = await writeContract({
-        address: position.market.id,
+        address: position.market.id.toLowerCase() as `0x${string}`,
         abi: CERC20_ABI,
         functionName: "liquidateBorrow",
-        args: [position.account.id, repayAmount, cTokenCollateral],
+        args: [
+          position.account.id.toLowerCase() as `0x${string}`,
+          repayAmount,
+          cTokenCollateral as `0x${string}`,
+        ],
       });
-      const { status } = await waitForTransaction({
-        hash,
-      });
-      console.log("Transaction status:", status);
+
+      const { status } = await waitForTransaction({ hash });
 
       if (status) {
         toast.add({
@@ -166,7 +175,7 @@ export default function LendingPage() {
           duration: 4000,
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Liquidation failed:", error);
       toast.add({
         primary: "Failed to liquidate position",
