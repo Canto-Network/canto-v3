@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 "use client";
 
 import styles from "./lending.module.scss";
@@ -35,6 +36,10 @@ import {
 import { HEALTH_THRESHOLDS, HealthBar } from "./components/healthBar/healthBar";
 import { useBorrowBalances } from "@/hooks/lending/useBorrowBalances";
 import { Codex } from "@codex-data/sdk";
+import { writeContract, waitForTransaction } from "@wagmi/core";
+import { CERC20_ABI } from "@/config/abis/clm/cErc20";
+import { parseUnits } from "viem";
+import { useToast } from "@/components/toast/useToast";
 
 enum CLMModalTypes {
   SUPPLY = "supply",
@@ -87,8 +92,7 @@ const calculateHealthFactor = async (tokens: any[]) => {
   );
 
   const prices = await Promise.all(pricePromises);
-  // eslint-disable-next-line no-console
-  console.log("prices", prices);
+  // console.log("prices", prices);
 
   tokens.forEach((token, index) => {
     const priceData = prices[index]?.getTokenPrices?.[0];
@@ -114,7 +118,6 @@ const calculateHealthFactor = async (tokens: any[]) => {
   });
 
   if (missingPriceTokens.length > 0) {
-    // eslint-disable-next-line no-console
     console.log(
       "Tokens with missing prices:",
       missingPriceTokens.map((token) => ({
@@ -129,6 +132,50 @@ const calculateHealthFactor = async (tokens: any[]) => {
 };
 
 export default function LendingPage() {
+  const toast = useToast();
+
+  const handleLiquidate = async (position: any) => {
+    try {
+      const repayAmount =
+        (BigInt(parseUnits(position.totalUnderlyingBorrowed, 18)) *
+          BigInt(98)) /
+        BigInt(100);
+      const cTokenCollateral = position.account.tokens[0].market.id;
+
+      const { hash } = await writeContract({
+        address: position.market.id,
+        abi: CERC20_ABI,
+        functionName: "liquidateBorrow",
+        args: [position.account.id, repayAmount, cTokenCollateral],
+      });
+      const { status } = await waitForTransaction({
+        hash,
+      });
+      console.log("Transaction status:", status);
+
+      if (status) {
+        toast.add({
+          primary: "Position liquidated successfully",
+          state: "success",
+          duration: 4000,
+        });
+      } else {
+        toast.add({
+          primary: "Liquidation transaction reverted",
+          state: "failure",
+          duration: 4000,
+        });
+      }
+    } catch (error) {
+      console.error("Liquidation failed:", error);
+      toast.add({
+        primary: "Failed to liquidate position",
+        state: "failure",
+        duration: 4000,
+      });
+    }
+  };
+
   // track current modal type
   const [currentModal, setCurrentModal] = useState<CLMModalTypes>(
     CLMModalTypes.NONE
@@ -695,7 +742,7 @@ export default function LendingPage() {
                           HEALTH_THRESHOLDS.DANGER && (
                           <button
                             className={styles.liquidateButton}
-                            onClick={() => {}}
+                            onClick={() => handleLiquidate(position)}
                           >
                             Liquidate
                           </button>
