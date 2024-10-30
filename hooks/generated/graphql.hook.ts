@@ -1577,7 +1577,7 @@ export type MyPositionsQueryVariables = Exact<{
 }>;
 
 
-export type MyPositionsQuery = { accountCTokens: Array<{ id: string, storedBorrowBalance: string, cTokenBalance: string, totalUnderlyingRepaid: string, totalUnderlyingSupplied: string, totalUnderlyingBorrowed: string, market: { name: string, id: string }, account: { id: string, tokens: Array<{ id: string, totalUnderlyingRepaid: string, totalUnderlyingSupplied: string, totalUnderlyingBorrowed: string, market: { collateralFactor: string, underlyingAddress: string, underlyingPriceUSD: string } }> } }> };
+export type MyPositionsQuery = { accountCTokens: Array<{ id: string, storedBorrowBalance: string, cTokenBalance: string, totalUnderlyingRepaid: string, totalUnderlyingSupplied: string, totalUnderlyingBorrowed: string, market: { name: string, id: string }, account: { id: string, tokens: Array<{ id: string, totalUnderlyingRepaid: string, totalUnderlyingSupplied: string, totalUnderlyingBorrowed: string, market: { id: string, name: string, collateralFactor: string, underlyingAddress: string } }> } }> };
 
 export type PositionsCountQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -1597,7 +1597,7 @@ export type PositionsQueryVariables = Exact<{
 }>;
 
 
-export type PositionsQuery = { accountCTokens: Array<{ id: string, storedBorrowBalance: string, cTokenBalance: string, totalUnderlyingRepaid: string, totalUnderlyingSupplied: string, totalUnderlyingBorrowed: string, market: { name: string, id: string }, account: { id: string, tokens: Array<{ id: string, totalUnderlyingRepaid: string, totalUnderlyingSupplied: string, totalUnderlyingBorrowed: string, market: { collateralFactor: string, underlyingAddress: string, underlyingPriceUSD: string } }> } }> };
+export type PositionsQuery = { accountCTokens: Array<{ id: string, storedBorrowBalance: string, cTokenBalance: string, totalUnderlyingRepaid: string, totalUnderlyingSupplied: string, totalUnderlyingBorrowed: string, market: { name: string, id: string }, account: { id: string, tokens: Array<{ id: string, totalUnderlyingRepaid: string, totalUnderlyingSupplied: string, totalUnderlyingBorrowed: string, market: { id: string, name: string, collateralFactor: string, underlyingAddress: string } }> } }> };
 
 
 export const MyPositionsDocument = gql`
@@ -1622,9 +1622,10 @@ export const MyPositionsDocument = gql`
         totalUnderlyingSupplied
         totalUnderlyingBorrowed
         market {
+          id
+          name
           collateralFactor
           underlyingAddress
-          underlyingPriceUSD
         }
       }
     }
@@ -1775,9 +1776,10 @@ export const PositionsDocument = gql`
         totalUnderlyingSupplied
         totalUnderlyingBorrowed
         market {
+          id
+          name
           collateralFactor
           underlyingAddress
-          underlyingPriceUSD
         }
       }
     }

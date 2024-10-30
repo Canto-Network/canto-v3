@@ -21,9 +21,10 @@ export const positionsQuery = gql(`
         totalUnderlyingSupplied
         totalUnderlyingBorrowed
         market{
+          id
+          name
           collateralFactor
           underlyingAddress
-          underlyingPriceUSD
         }
       }
       }

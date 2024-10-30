@@ -34,6 +34,7 @@ import {
 } from "@/hooks/generated/graphql.hook";
 import { HEALTH_THRESHOLDS, HealthBar } from "./components/healthBar/healthBar";
 import { useBorrowBalances } from "@/hooks/lending/useBorrowBalances";
+import { Codex } from "@codex-data/sdk";
 
 enum CLMModalTypes {
   SUPPLY = "supply",
@@ -63,12 +64,44 @@ function sortCTokens(
 
 const POSITIONS_PER_PAGE = 10;
 
-const calculateHealthFactor = (tokens: any[]) => {
+const sdk = new Codex(process.env.NEXT_PUBLIC_CODEX_API_KEY ?? "");
+
+const calculateHealthFactor = async (tokens: any[]) => {
   let totalCollateral = 0;
   let totalBorrowed = 0;
+  const missingPriceTokens: Array<{
+    address: string;
+    marketName: string;
+    marketId: string;
+  }> = [];
 
-  tokens.forEach((token) => {
-    const price = Number(token.market.underlyingPriceUSD) || 0;
+  const pricePromises = tokens.map((token) =>
+    sdk.queries.getTokenPrices({
+      inputs: [
+        {
+          address: token.market.underlyingAddress,
+          networkId: 7700,
+        },
+      ],
+    })
+  );
+
+  const prices = await Promise.all(pricePromises);
+  // eslint-disable-next-line no-console
+  console.log("prices", prices);
+
+  tokens.forEach((token, index) => {
+    const priceData = prices[index]?.getTokenPrices?.[0];
+    if (!priceData) {
+      missingPriceTokens.push({
+        address: token.market.underlyingAddress,
+        marketName: token.market.name,
+        marketId: token.market.id,
+      });
+      return;
+    }
+
+    const price = priceData.priceUsd ?? 0;
     const collateralFactor = Number(token.market.collateralFactor) || 0;
     const supplied = Number(token.totalUnderlyingSupplied) || 0;
     const borrowed = Number(token.totalUnderlyingBorrowed) || 0;
@@ -79,6 +112,17 @@ const calculateHealthFactor = (tokens: any[]) => {
     totalCollateral += collateralValue;
     totalBorrowed += borrowedValue;
   });
+
+  if (missingPriceTokens.length > 0) {
+    // eslint-disable-next-line no-console
+    console.log(
+      "Tokens with missing prices:",
+      missingPriceTokens.map((token) => ({
+        address: token.address,
+        market: `${token.marketName} (${token.marketId})`,
+      }))
+    );
+  }
 
   if (totalBorrowed === 0) return Infinity;
   return totalCollateral / totalBorrowed;
@@ -156,6 +200,32 @@ export default function LendingPage() {
   }, [allPositionsData, myPositionsData, positionsToggle]);
 
   const borrowBalances = useBorrowBalances(paginatedPositions);
+
+  const [healthFactors, setHealthFactors] = useState<Record<string, number>>(
+    {}
+  );
+
+  useEffect(() => {
+    const calculateHealthFactors = async () => {
+      const newHealthFactors: Record<string, number> = {};
+
+      for (const position of paginatedPositions) {
+        if (position.account.tokens) {
+          try {
+            const hf = await calculateHealthFactor(position.account.tokens);
+            newHealthFactors[position.id] = hf;
+          } catch (error) {
+            console.error("Error calculating health factor:", error);
+            newHealthFactors[position.id] = 0;
+          }
+        }
+      }
+
+      setHealthFactors(newHealthFactors);
+    };
+
+    calculateHealthFactors();
+  }, [paginatedPositions]);
 
   if (isLoading || cNote === undefined || stableCoins === undefined) {
     return (
@@ -600,19 +670,18 @@ export default function LendingPage() {
                     >
                       <Text font="proto_mono" size={isMobile ? "sm" : "md"}>
                         {position.account.tokens
-                          ? (() => {
-                              const hf = calculateHealthFactor(
-                                position.account.tokens
-                              );
-                              return hf === Infinity ? "N/A" : hf.toFixed(2);
-                            })()
+                          ? healthFactors[position.id] === undefined
+                            ? "Loading..."
+                            : healthFactors[position.id] === Infinity
+                              ? "N/A"
+                              : healthFactors[position.id].toFixed(2)
                           : "Loading..."}
                       </Text>
-                      {position.account.tokens && (
-                        <HealthBar
-                          value={calculateHealthFactor(position.account.tokens)}
-                        />
-                      )}
+                      {position.account.tokens &&
+                        healthFactors[position.id] !== undefined &&
+                        healthFactors[position.id] !== Infinity && (
+                          <HealthBar value={healthFactors[position.id]} />
+                        )}
                     </Container>,
                     <Container
                       key={`manage-${index}`}
@@ -621,15 +690,16 @@ export default function LendingPage() {
                       gap={10}
                       center={{ horizontal: true }}
                     >
-                      {calculateHealthFactor(position.account.tokens) <
-                        HEALTH_THRESHOLDS.DANGER && (
-                        <button
-                          className={styles.liquidateButton}
-                          onClick={() => {}}
-                        >
-                          Liquidate
-                        </button>
-                      )}
+                      {healthFactors[position.id] !== undefined &&
+                        healthFactors[position.id] <
+                          HEALTH_THRESHOLDS.DANGER && (
+                          <button
+                            className={styles.liquidateButton}
+                            onClick={() => {}}
+                          >
+                            Liquidate
+                          </button>
+                        )}
                     </Container>,
                   ]),
                   <Pagination
