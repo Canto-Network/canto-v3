@@ -207,10 +207,26 @@ const NavBar = () => {
                       setIsMoreModalOpen(false);
                       Analytics.actions.events.clickedNavLink("Governance");
                     }}
-                    style={{ borderBottom: "none" }}
                   >
                     <div>
                       <Text size="sm">Governance</Text>
+                    </div>
+                  </Link>
+                }
+                {
+                  <Link
+                    href="https://forum.canto.io/"
+                    className={clsx(styles["dropdownlink"])}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    onClick={() => {
+                      setIsMoreModalOpen(false);
+                      Analytics.actions.events.clickedNavLink("Forum");
+                    }}
+                    style={{ borderBottom: "none" }}
+                  >
+                    <div>
+                      <Text size="sm">Forum</Text>
                     </div>
                   </Link>
                 }
