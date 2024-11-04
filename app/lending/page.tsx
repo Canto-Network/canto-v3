@@ -220,11 +220,14 @@ export default function LendingPage() {
   const [positionsToggle, setPositionsToggle] = useState<"All" | "My">("All");
   const { address } = useAccount();
 
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+
   const { data: allPositionsData, loading: allPositionsLoading } =
     usePositionsQuery({
       variables: {
         skip: (currentPositionsPage - 1) * POSITIONS_PER_PAGE,
         first: POSITIONS_PER_PAGE,
+        orderDirection: sortDirection,
       },
     });
   const { data: myPositionsData, loading: myPositionsLoading } =
@@ -233,6 +236,7 @@ export default function LendingPage() {
         account: address ?? "",
         skip: (currentPositionsPage - 1) * POSITIONS_PER_PAGE,
         first: POSITIONS_PER_PAGE,
+        orderDirection: sortDirection,
       },
       skip: !address || positionsToggle === "All",
     });
@@ -637,7 +641,20 @@ export default function LendingPage() {
               ratio: isMobile ? 1 : 3,
             },
             {
-              value: "Borrowed Amount",
+              value: (
+                <Container
+                  direction="row"
+                  className={styles.headerWithSort}
+                  onClick={() =>
+                    setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+                  }
+                >
+                  <Text>Borrowed Amount</Text>
+                  <span
+                    className={clsx(styles.sortIcon, styles[sortDirection])}
+                  />
+                </Container>
+              ),
               ratio: isMobile ? 0 : 3,
               hideOnMobile: isMobile,
             },

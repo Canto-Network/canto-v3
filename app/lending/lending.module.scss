@@ -177,3 +177,31 @@
     font-size: 16px;
   }
 }
+
+.sortIcon {
+  display: inline-block;
+  margin-left: 4px;
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+
+  &.asc {
+    border-bottom: 4px solid currentColor;
+  }
+
+  &.desc {
+    border-top: 4px solid currentColor;
+  }
+}
+
+.headerWithSort {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+
+  &:hover {
+    opacity: 0.8;
+  }
+}

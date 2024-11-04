@@ -1,10 +1,10 @@
 import { gql } from "./generated";
 
 export const myPositionsQuery = gql(`
-  query MyPositions($account: String!, $skip: Int!, $first: Int!) {
+  query MyPositions($account: String!, $skip: Int!, $first: Int!, $orderDirection: OrderDirection!) {
     accountCTokens(
       orderBy: storedBorrowBalance
-      orderDirection: desc
+      orderDirection: $orderDirection
       where: { account: $account }
       skip: $skip
       first: $first
@@ -16,18 +16,18 @@ export const myPositionsQuery = gql(`
       }
       account {
         id
-        tokens{
-        id
-        totalUnderlyingRepaid
-        totalUnderlyingSupplied
-        totalUnderlyingBorrowed
-        market{
+        tokens {
           id
-          name
-          collateralFactor
-          underlyingAddress
+          totalUnderlyingRepaid
+          totalUnderlyingSupplied
+          totalUnderlyingBorrowed
+          market {
+            id
+            name
+            collateralFactor
+            underlyingAddress
+          }
         }
-      }
       }
       storedBorrowBalance
       cTokenBalance
