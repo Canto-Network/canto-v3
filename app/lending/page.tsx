@@ -43,6 +43,7 @@ import { ApolloContext } from "@/enums/apollo-context.enum";
 import { GET_TOKEN_PRICES } from "@/graphql/dex/token-prices-query.graphql";
 import { apolloClient } from "@/config/apollo.config";
 import { CLM_TOKENS } from "@/config/consts/addresses";
+import { ConnectButton } from "@rainbow-me/rainbowkit";
 
 enum CLMModalTypes {
   SUPPLY = "supply",
@@ -127,6 +128,15 @@ export default function LendingPage() {
   const toast = useToast();
 
   const handleLiquidate = async (position: any) => {
+    if (!address) {
+      toast.add({
+        primary: "Please connect your wallet to liquidate positions",
+        state: "failure",
+        duration: 4000,
+      });
+      return;
+    }
+
     try {
       const tokenDecimals =
         CLM_TOKENS.find(
@@ -835,6 +845,11 @@ export default function LendingPage() {
                           <button
                             className={styles.liquidateButton}
                             onClick={() => handleLiquidate(position)}
+                            disabled={!address}
+                            style={{
+                              opacity: address ? 1 : 0.5,
+                              cursor: address ? "pointer" : "not-allowed",
+                            }}
                           >
                             Liquidate
                           </button>
@@ -853,9 +868,19 @@ export default function LendingPage() {
                     key="noData"
                     className={styles.noPositionsContainer}
                   >
-                    <Text font="proto_mono" size={isMobile ? "md" : "lg"}>
-                      NO POSITIONS FOUND
-                    </Text>
+                    {!address ? (
+                      <>
+                        <Text font="proto_mono" size={isMobile ? "md" : "lg"}>
+                          PLEASE CONNECT YOUR WALLET
+                        </Text>
+                        <Spacer height="20px" />
+                        <ConnectButton />
+                      </>
+                    ) : (
+                      <Text font="proto_mono" size={isMobile ? "md" : "lg"}>
+                        NO POSITIONS FOUND
+                      </Text>
+                    )}
                   </Container>,
                 ]
           }
