@@ -137,34 +137,28 @@ const NavBar = () => {
         >
           <Text size="sm">Explore</Text>
         </Link> */}
-        {isMobile && (
-          <Link
-            href="/staking"
-            className={clsx(
-              styles["nav-link"],
-              currentPath == "/staking" && styles.active
-            )}
-            onClick={() => Analytics.actions.events.clickedNavLink("Staking")}
-          >
-            <Text size="sm">Staking</Text>
-          </Link>
-        )}
-        {isMobile && (
-          <Link
-            href="/governance"
-            className={clsx(
-              styles["nav-link"],
-              (currentPath == "/governance" ||
-                currentPath == "/governance/proposal") &&
-                styles.active
-            )}
-            onClick={() =>
-              Analytics.actions.events.clickedNavLink("Governance")
-            }
-          >
-            <Text size="sm">Governance</Text>
-          </Link>
-        )}
+        <Link
+          href="/staking"
+          className={clsx(
+            styles["nav-link"],
+            currentPath == "/staking" && styles.active
+          )}
+          onClick={() => Analytics.actions.events.clickedNavLink("Staking")}
+        >
+          <Text size="sm">Staking</Text>
+        </Link>
+        <Link
+          href="/governance"
+          className={clsx(
+            styles["nav-link"],
+            (currentPath == "/governance" ||
+              currentPath == "/governance/proposal") &&
+              styles.active
+          )}
+          onClick={() => Analytics.actions.events.clickedNavLink("Governance")}
+        >
+          <Text size="sm">Governance</Text>
+        </Link>
         {!isMobile && (
           <div
             className={styles.moreLink}
@@ -185,34 +179,6 @@ const NavBar = () => {
             </div>
             {isMoreModalOpen && (
               <div className={styles.popUp}>
-                {
-                  <Link
-                    href="/staking"
-                    className={clsx(styles["dropdownlink"])}
-                    onClick={() => {
-                      setIsMoreModalOpen(false);
-                      Analytics.actions.events.clickedNavLink("Staking");
-                    }}
-                  >
-                    <div>
-                      <Text size="sm">Staking</Text>
-                    </div>
-                  </Link>
-                }
-                {
-                  <Link
-                    href="/governance"
-                    className={clsx(styles["dropdownlink"])}
-                    onClick={() => {
-                      setIsMoreModalOpen(false);
-                      Analytics.actions.events.clickedNavLink("Governance");
-                    }}
-                  >
-                    <div>
-                      <Text size="sm">Governance</Text>
-                    </div>
-                  </Link>
-                }
                 {
                   <Link
                     href="https://forum.canto.io/"
