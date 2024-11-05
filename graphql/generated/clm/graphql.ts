@@ -1,6 +1,5 @@
 /* eslint-disable */
 import type { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-node/core';
-import type { FieldPolicy, FieldReadFunction, TypePolicies, TypePolicy } from '@apollo/client/cache';
 export type Maybe<T> = T | null;
 export type InputMaybe<T> = Maybe<T>;
 export type Exact<T extends { [key: string]: unknown }> = { [K in keyof T]: T[K] };
@@ -182,54 +181,55 @@ export type AccountCTokenFilter = {
   transactionTimes_not_contains_nocase?: InputMaybe<Array<Scalars['Int']['input']>>;
 };
 
-export type AccountCTokenOrderBy =
-  | 'account'
-  | 'accountBorrowIndex'
-  | 'account__countLiquidated'
-  | 'account__countLiquidator'
-  | 'account__hasBorrowed'
-  | 'account__id'
-  | 'accrualBlockNumber'
-  | 'cTokenBalance'
-  | 'enteredMarket'
-  | 'id'
-  | 'market'
-  | 'market__accrualBlockNumber'
-  | 'market__blockTimestamp'
-  | 'market__borrowAPY'
-  | 'market__borrowDistributionAPY'
-  | 'market__borrowIndex'
-  | 'market__borrowRate'
-  | 'market__cash'
-  | 'market__collateralFactor'
-  | 'market__exchangeRate'
-  | 'market__id'
-  | 'market__interestRateModelAddress'
-  | 'market__name'
-  | 'market__numberOfBorrowers'
-  | 'market__numberOfSuppliers'
-  | 'market__reserveFactor'
-  | 'market__reserves'
-  | 'market__supplyAPY'
-  | 'market__supplyDistributionAPY'
-  | 'market__supplyRate'
-  | 'market__symbol'
-  | 'market__totalBorrows'
-  | 'market__totalSupply'
-  | 'market__underlyingAddress'
-  | 'market__underlyingDecimals'
-  | 'market__underlyingName'
-  | 'market__underlyingPrice'
-  | 'market__underlyingPriceUSD'
-  | 'market__underlyingSymbol'
-  | 'storedBorrowBalance'
-  | 'symbol'
-  | 'totalUnderlyingBorrowed'
-  | 'totalUnderlyingRedeemed'
-  | 'totalUnderlyingRepaid'
-  | 'totalUnderlyingSupplied'
-  | 'transactionHashes'
-  | 'transactionTimes';
+export enum AccountCTokenOrderBy {
+  ACCOUNT = 'account',
+  ACCOUNTBORROWINDEX = 'accountBorrowIndex',
+  ACCOUNT__COUNTLIQUIDATED = 'account__countLiquidated',
+  ACCOUNT__COUNTLIQUIDATOR = 'account__countLiquidator',
+  ACCOUNT__HASBORROWED = 'account__hasBorrowed',
+  ACCOUNT__ID = 'account__id',
+  ACCRUALBLOCKNUMBER = 'accrualBlockNumber',
+  CTOKENBALANCE = 'cTokenBalance',
+  ENTEREDMARKET = 'enteredMarket',
+  ID = 'id',
+  MARKET = 'market',
+  MARKET__ACCRUALBLOCKNUMBER = 'market__accrualBlockNumber',
+  MARKET__BLOCKTIMESTAMP = 'market__blockTimestamp',
+  MARKET__BORROWAPY = 'market__borrowAPY',
+  MARKET__BORROWDISTRIBUTIONAPY = 'market__borrowDistributionAPY',
+  MARKET__BORROWINDEX = 'market__borrowIndex',
+  MARKET__BORROWRATE = 'market__borrowRate',
+  MARKET__CASH = 'market__cash',
+  MARKET__COLLATERALFACTOR = 'market__collateralFactor',
+  MARKET__EXCHANGERATE = 'market__exchangeRate',
+  MARKET__ID = 'market__id',
+  MARKET__INTERESTRATEMODELADDRESS = 'market__interestRateModelAddress',
+  MARKET__NAME = 'market__name',
+  MARKET__NUMBEROFBORROWERS = 'market__numberOfBorrowers',
+  MARKET__NUMBEROFSUPPLIERS = 'market__numberOfSuppliers',
+  MARKET__RESERVEFACTOR = 'market__reserveFactor',
+  MARKET__RESERVES = 'market__reserves',
+  MARKET__SUPPLYAPY = 'market__supplyAPY',
+  MARKET__SUPPLYDISTRIBUTIONAPY = 'market__supplyDistributionAPY',
+  MARKET__SUPPLYRATE = 'market__supplyRate',
+  MARKET__SYMBOL = 'market__symbol',
+  MARKET__TOTALBORROWS = 'market__totalBorrows',
+  MARKET__TOTALSUPPLY = 'market__totalSupply',
+  MARKET__UNDERLYINGADDRESS = 'market__underlyingAddress',
+  MARKET__UNDERLYINGDECIMALS = 'market__underlyingDecimals',
+  MARKET__UNDERLYINGNAME = 'market__underlyingName',
+  MARKET__UNDERLYINGPRICE = 'market__underlyingPrice',
+  MARKET__UNDERLYINGPRICEUSD = 'market__underlyingPriceUSD',
+  MARKET__UNDERLYINGSYMBOL = 'market__underlyingSymbol',
+  STOREDBORROWBALANCE = 'storedBorrowBalance',
+  SYMBOL = 'symbol',
+  TOTALUNDERLYINGBORROWED = 'totalUnderlyingBorrowed',
+  TOTALUNDERLYINGREDEEMED = 'totalUnderlyingRedeemed',
+  TOTALUNDERLYINGREPAID = 'totalUnderlyingRepaid',
+  TOTALUNDERLYINGSUPPLIED = 'totalUnderlyingSupplied',
+  TRANSACTIONHASHES = 'transactionHashes',
+  TRANSACTIONTIMES = 'transactionTimes'
+}
 
 export type AccountFilter = {
   /** Filter for the block changed event. */
@@ -267,12 +267,13 @@ export type AccountFilter = {
   tokens_?: InputMaybe<AccountCTokenFilter>;
 };
 
-export type AccountOrderBy =
-  | 'countLiquidated'
-  | 'countLiquidator'
-  | 'hasBorrowed'
-  | 'id'
-  | 'tokens';
+export enum AccountOrderBy {
+  COUNTLIQUIDATED = 'countLiquidated',
+  COUNTLIQUIDATOR = 'countLiquidator',
+  HASBORROWED = 'hasBorrowed',
+  ID = 'id',
+  TOKENS = 'tokens'
+}
 
 export type BlockChangedFilter = {
   number_gte: Scalars['Int']['input'];
@@ -371,17 +372,18 @@ export type ComptrollerDayDataFilter = {
   totalLiquidityUSD_not_in?: InputMaybe<Array<Scalars['BigDecimal']['input']>>;
 };
 
-export type ComptrollerDayDataOrderBy =
-  | 'dailyBorrowTxns'
-  | 'dailyBorrowVolumeNOTE'
-  | 'dailyBorrowVolumeUSD'
-  | 'dailySupplyTxns'
-  | 'dailySupplyVolumeNOTE'
-  | 'dailySupplyVolumeUSD'
-  | 'date'
-  | 'id'
-  | 'totalLiquidityNOTE'
-  | 'totalLiquidityUSD';
+export enum ComptrollerDayDataOrderBy {
+  DAILYBORROWTXNS = 'dailyBorrowTxns',
+  DAILYBORROWVOLUMENOTE = 'dailyBorrowVolumeNOTE',
+  DAILYBORROWVOLUMEUSD = 'dailyBorrowVolumeUSD',
+  DAILYSUPPLYTXNS = 'dailySupplyTxns',
+  DAILYSUPPLYVOLUMENOTE = 'dailySupplyVolumeNOTE',
+  DAILYSUPPLYVOLUMEUSD = 'dailySupplyVolumeUSD',
+  DATE = 'date',
+  ID = 'id',
+  TOTALLIQUIDITYNOTE = 'totalLiquidityNOTE',
+  TOTALLIQUIDITYUSD = 'totalLiquidityUSD'
+}
 
 export type ComptrollerFilter = {
   /** Filter for the block changed event. */
@@ -448,14 +450,15 @@ export type ComptrollerFilter = {
   totalLiquidityUSD_not_in?: InputMaybe<Array<Scalars['BigDecimal']['input']>>;
 };
 
-export type ComptrollerOrderBy =
-  | 'closeFactor'
-  | 'id'
-  | 'liquidationIncentive'
-  | 'maxAssets'
-  | 'priceOracle'
-  | 'totalLiquidityNOTE'
-  | 'totalLiquidityUSD';
+export enum ComptrollerOrderBy {
+  CLOSEFACTOR = 'closeFactor',
+  ID = 'id',
+  LIQUIDATIONINCENTIVE = 'liquidationIncentive',
+  MAXASSETS = 'maxAssets',
+  PRICEORACLE = 'priceOracle',
+  TOTALLIQUIDITYNOTE = 'totalLiquidityNOTE',
+  TOTALLIQUIDITYUSD = 'totalLiquidityUSD'
+}
 
 export type MarketDayDataFilter = {
   /** Filter for the block changed event. */
@@ -565,46 +568,47 @@ export type MarketDayDataFilter = {
   totalLiquidityUSD_not_in?: InputMaybe<Array<Scalars['BigDecimal']['input']>>;
 };
 
-export type MarketDayDataOrderBy =
-  | 'dailyBorrowTxns'
-  | 'dailyBorrowVolumeNOTE'
-  | 'dailyBorrowVolumeUSD'
-  | 'dailySupplyTxns'
-  | 'dailySupplyVolumeNOTE'
-  | 'dailySupplyVolumeUSD'
-  | 'date'
-  | 'id'
-  | 'market'
-  | 'market__accrualBlockNumber'
-  | 'market__blockTimestamp'
-  | 'market__borrowAPY'
-  | 'market__borrowDistributionAPY'
-  | 'market__borrowIndex'
-  | 'market__borrowRate'
-  | 'market__cash'
-  | 'market__collateralFactor'
-  | 'market__exchangeRate'
-  | 'market__id'
-  | 'market__interestRateModelAddress'
-  | 'market__name'
-  | 'market__numberOfBorrowers'
-  | 'market__numberOfSuppliers'
-  | 'market__reserveFactor'
-  | 'market__reserves'
-  | 'market__supplyAPY'
-  | 'market__supplyDistributionAPY'
-  | 'market__supplyRate'
-  | 'market__symbol'
-  | 'market__totalBorrows'
-  | 'market__totalSupply'
-  | 'market__underlyingAddress'
-  | 'market__underlyingDecimals'
-  | 'market__underlyingName'
-  | 'market__underlyingPrice'
-  | 'market__underlyingPriceUSD'
-  | 'market__underlyingSymbol'
-  | 'totalLiquidityNOTE'
-  | 'totalLiquidityUSD';
+export enum MarketDayDataOrderBy {
+  DAILYBORROWTXNS = 'dailyBorrowTxns',
+  DAILYBORROWVOLUMENOTE = 'dailyBorrowVolumeNOTE',
+  DAILYBORROWVOLUMEUSD = 'dailyBorrowVolumeUSD',
+  DAILYSUPPLYTXNS = 'dailySupplyTxns',
+  DAILYSUPPLYVOLUMENOTE = 'dailySupplyVolumeNOTE',
+  DAILYSUPPLYVOLUMEUSD = 'dailySupplyVolumeUSD',
+  DATE = 'date',
+  ID = 'id',
+  MARKET = 'market',
+  MARKET__ACCRUALBLOCKNUMBER = 'market__accrualBlockNumber',
+  MARKET__BLOCKTIMESTAMP = 'market__blockTimestamp',
+  MARKET__BORROWAPY = 'market__borrowAPY',
+  MARKET__BORROWDISTRIBUTIONAPY = 'market__borrowDistributionAPY',
+  MARKET__BORROWINDEX = 'market__borrowIndex',
+  MARKET__BORROWRATE = 'market__borrowRate',
+  MARKET__CASH = 'market__cash',
+  MARKET__COLLATERALFACTOR = 'market__collateralFactor',
+  MARKET__EXCHANGERATE = 'market__exchangeRate',
+  MARKET__ID = 'market__id',
+  MARKET__INTERESTRATEMODELADDRESS = 'market__interestRateModelAddress',
+  MARKET__NAME = 'market__name',
+  MARKET__NUMBEROFBORROWERS = 'market__numberOfBorrowers',
+  MARKET__NUMBEROFSUPPLIERS = 'market__numberOfSuppliers',
+  MARKET__RESERVEFACTOR = 'market__reserveFactor',
+  MARKET__RESERVES = 'market__reserves',
+  MARKET__SUPPLYAPY = 'market__supplyAPY',
+  MARKET__SUPPLYDISTRIBUTIONAPY = 'market__supplyDistributionAPY',
+  MARKET__SUPPLYRATE = 'market__supplyRate',
+  MARKET__SYMBOL = 'market__symbol',
+  MARKET__TOTALBORROWS = 'market__totalBorrows',
+  MARKET__TOTALSUPPLY = 'market__totalSupply',
+  MARKET__UNDERLYINGADDRESS = 'market__underlyingAddress',
+  MARKET__UNDERLYINGDECIMALS = 'market__underlyingDecimals',
+  MARKET__UNDERLYINGNAME = 'market__underlyingName',
+  MARKET__UNDERLYINGPRICE = 'market__underlyingPrice',
+  MARKET__UNDERLYINGPRICEUSD = 'market__underlyingPriceUSD',
+  MARKET__UNDERLYINGSYMBOL = 'market__underlyingSymbol',
+  TOTALLIQUIDITYNOTE = 'totalLiquidityNOTE',
+  TOTALLIQUIDITYUSD = 'totalLiquidityUSD'
+}
 
 export type MarketHourDataFilter = {
   /** Filter for the block changed event. */
@@ -714,46 +718,47 @@ export type MarketHourDataFilter = {
   totalLiquidityUSD_not_in?: InputMaybe<Array<Scalars['BigDecimal']['input']>>;
 };
 
-export type MarketHourDataOrderBy =
-  | 'hourStartUnix'
-  | 'hourlyBorrowTxns'
-  | 'hourlyBorrowVolumeNOTE'
-  | 'hourlyBorrowVolumeUSD'
-  | 'hourlySupplyTxns'
-  | 'hourlySupplyVolumeNOTE'
-  | 'hourlySupplyVolumeUSD'
-  | 'id'
-  | 'market'
-  | 'market__accrualBlockNumber'
-  | 'market__blockTimestamp'
-  | 'market__borrowAPY'
-  | 'market__borrowDistributionAPY'
-  | 'market__borrowIndex'
-  | 'market__borrowRate'
-  | 'market__cash'
-  | 'market__collateralFactor'
-  | 'market__exchangeRate'
-  | 'market__id'
-  | 'market__interestRateModelAddress'
-  | 'market__name'
-  | 'market__numberOfBorrowers'
-  | 'market__numberOfSuppliers'
-  | 'market__reserveFactor'
-  | 'market__reserves'
-  | 'market__supplyAPY'
-  | 'market__supplyDistributionAPY'
-  | 'market__supplyRate'
-  | 'market__symbol'
-  | 'market__totalBorrows'
-  | 'market__totalSupply'
-  | 'market__underlyingAddress'
-  | 'market__underlyingDecimals'
-  | 'market__underlyingName'
-  | 'market__underlyingPrice'
-  | 'market__underlyingPriceUSD'
-  | 'market__underlyingSymbol'
-  | 'totalLiquidityNOTE'
-  | 'totalLiquidityUSD';
+export enum MarketHourDataOrderBy {
+  HOURSTARTUNIX = 'hourStartUnix',
+  HOURLYBORROWTXNS = 'hourlyBorrowTxns',
+  HOURLYBORROWVOLUMENOTE = 'hourlyBorrowVolumeNOTE',
+  HOURLYBORROWVOLUMEUSD = 'hourlyBorrowVolumeUSD',
+  HOURLYSUPPLYTXNS = 'hourlySupplyTxns',
+  HOURLYSUPPLYVOLUMENOTE = 'hourlySupplyVolumeNOTE',
+  HOURLYSUPPLYVOLUMEUSD = 'hourlySupplyVolumeUSD',
+  ID = 'id',
+  MARKET = 'market',
+  MARKET__ACCRUALBLOCKNUMBER = 'market__accrualBlockNumber',
+  MARKET__BLOCKTIMESTAMP = 'market__blockTimestamp',
+  MARKET__BORROWAPY = 'market__borrowAPY',
+  MARKET__BORROWDISTRIBUTIONAPY = 'market__borrowDistributionAPY',
+  MARKET__BORROWINDEX = 'market__borrowIndex',
+  MARKET__BORROWRATE = 'market__borrowRate',
+  MARKET__CASH = 'market__cash',
+  MARKET__COLLATERALFACTOR = 'market__collateralFactor',
+  MARKET__EXCHANGERATE = 'market__exchangeRate',
+  MARKET__ID = 'market__id',
+  MARKET__INTERESTRATEMODELADDRESS = 'market__interestRateModelAddress',
+  MARKET__NAME = 'market__name',
+  MARKET__NUMBEROFBORROWERS = 'market__numberOfBorrowers',
+  MARKET__NUMBEROFSUPPLIERS = 'market__numberOfSuppliers',
+  MARKET__RESERVEFACTOR = 'market__reserveFactor',
+  MARKET__RESERVES = 'market__reserves',
+  MARKET__SUPPLYAPY = 'market__supplyAPY',
+  MARKET__SUPPLYDISTRIBUTIONAPY = 'market__supplyDistributionAPY',
+  MARKET__SUPPLYRATE = 'market__supplyRate',
+  MARKET__SYMBOL = 'market__symbol',
+  MARKET__TOTALBORROWS = 'market__totalBorrows',
+  MARKET__TOTALSUPPLY = 'market__totalSupply',
+  MARKET__UNDERLYINGADDRESS = 'market__underlyingAddress',
+  MARKET__UNDERLYINGDECIMALS = 'market__underlyingDecimals',
+  MARKET__UNDERLYINGNAME = 'market__underlyingName',
+  MARKET__UNDERLYINGPRICE = 'market__underlyingPrice',
+  MARKET__UNDERLYINGPRICEUSD = 'market__underlyingPriceUSD',
+  MARKET__UNDERLYINGSYMBOL = 'market__underlyingSymbol',
+  TOTALLIQUIDITYNOTE = 'totalLiquidityNOTE',
+  TOTALLIQUIDITYUSD = 'totalLiquidityUSD'
+}
 
 export type MarketFilter = {
   /** Filter for the block changed event. */
@@ -1038,46 +1043,49 @@ export type MarketFilter = {
   underlyingSymbol_starts_with_nocase?: InputMaybe<Scalars['String']['input']>;
 };
 
-export type MarketOrderBy =
-  | 'accrualBlockNumber'
-  | 'blockTimestamp'
-  | 'borrowAPY'
-  | 'borrowDistributionAPY'
-  | 'borrowIndex'
-  | 'borrowRate'
-  | 'cash'
-  | 'collateralFactor'
-  | 'exchangeRate'
-  | 'id'
-  | 'interestRateModelAddress'
-  | 'name'
-  | 'numberOfBorrowers'
-  | 'numberOfSuppliers'
-  | 'reserveFactor'
-  | 'reserves'
-  | 'supplyAPY'
-  | 'supplyDistributionAPY'
-  | 'supplyRate'
-  | 'symbol'
-  | 'totalBorrows'
-  | 'totalSupply'
-  | 'underlyingAddress'
-  | 'underlyingDecimals'
-  | 'underlyingName'
-  | 'underlyingPrice'
-  | 'underlyingPriceUSD'
-  | 'underlyingSymbol';
+export enum MarketOrderBy {
+  ACCRUALBLOCKNUMBER = 'accrualBlockNumber',
+  BLOCKTIMESTAMP = 'blockTimestamp',
+  BORROWAPY = 'borrowAPY',
+  BORROWDISTRIBUTIONAPY = 'borrowDistributionAPY',
+  BORROWINDEX = 'borrowIndex',
+  BORROWRATE = 'borrowRate',
+  CASH = 'cash',
+  COLLATERALFACTOR = 'collateralFactor',
+  EXCHANGERATE = 'exchangeRate',
+  ID = 'id',
+  INTERESTRATEMODELADDRESS = 'interestRateModelAddress',
+  NAME = 'name',
+  NUMBEROFBORROWERS = 'numberOfBorrowers',
+  NUMBEROFSUPPLIERS = 'numberOfSuppliers',
+  RESERVEFACTOR = 'reserveFactor',
+  RESERVES = 'reserves',
+  SUPPLYAPY = 'supplyAPY',
+  SUPPLYDISTRIBUTIONAPY = 'supplyDistributionAPY',
+  SUPPLYRATE = 'supplyRate',
+  SYMBOL = 'symbol',
+  TOTALBORROWS = 'totalBorrows',
+  TOTALSUPPLY = 'totalSupply',
+  UNDERLYINGADDRESS = 'underlyingAddress',
+  UNDERLYINGDECIMALS = 'underlyingDecimals',
+  UNDERLYINGNAME = 'underlyingName',
+  UNDERLYINGPRICE = 'underlyingPrice',
+  UNDERLYINGPRICEUSD = 'underlyingPriceUSD',
+  UNDERLYINGSYMBOL = 'underlyingSymbol'
+}
 
 /** Defines the order direction, either ascending or descending */
-export type OrderDirection =
-  | 'asc'
-  | 'desc';
+export enum OrderDirection {
+  ASC = 'asc',
+  DESC = 'desc'
+}
 
-export type SubgraphErrorPolicy =
+export enum SubgraphErrorPolicy {
   /** Data will be returned even if the subgraph has indexing errors */
-  | 'allow'
+  ALLOW = 'allow',
   /** If the subgraph has indexing errors, data will be omitted. The default. */
-  | 'deny';
+  DENY = 'deny'
+}
 
 export type MyPositionsQueryVariables = Exact<{
   account: Scalars['String']['input'];
@@ -1087,19 +1095,19 @@ export type MyPositionsQueryVariables = Exact<{
 }>;
 
 
-export type MyPositionsQuery = { accountCTokens: Array<{ id: string, storedBorrowBalance: string, cTokenBalance: string, totalUnderlyingRepaid: string, totalUnderlyingSupplied: string, totalUnderlyingBorrowed: string, market: { name: string, id: string }, account: { id: string, tokens: Array<{ id: string, totalUnderlyingRepaid: string, totalUnderlyingSupplied: string, totalUnderlyingBorrowed: string, market: { id: string, name: string, collateralFactor: string, underlyingAddress: string } }> } }> };
+export type MyPositionsQuery = { __typename?: 'Query', accountCTokens: Array<{ __typename?: 'AccountCToken', id: string, storedBorrowBalance: string, cTokenBalance: string, totalUnderlyingRepaid: string, totalUnderlyingSupplied: string, totalUnderlyingBorrowed: string, market: { __typename?: 'Market', name: string, id: string }, account: { __typename?: 'Account', id: string, tokens: Array<{ __typename?: 'AccountCToken', id: string, totalUnderlyingRepaid: string, totalUnderlyingSupplied: string, totalUnderlyingBorrowed: string, market: { __typename?: 'Market', id: string, name: string, collateralFactor: string, underlyingAddress: string } }> } }> };
 
 export type PositionsCountQueryVariables = Exact<{ [key: string]: never; }>;
 
 
-export type PositionsCountQuery = { accountCTokens: Array<{ id: string }> };
+export type PositionsCountQuery = { __typename?: 'Query', accountCTokens: Array<{ __typename?: 'AccountCToken', id: string }> };
 
 export type MyPositionsCountQueryVariables = Exact<{
   account: Scalars['String']['input'];
 }>;
 
 
-export type MyPositionsCountQuery = { accountCTokens: Array<{ id: string }> };
+export type MyPositionsCountQuery = { __typename?: 'Query', accountCTokens: Array<{ __typename?: 'AccountCToken', id: string }> };
 
 export type PositionsQueryVariables = Exact<{
   skip: Scalars['Int']['input'];
@@ -1108,213 +1116,10 @@ export type PositionsQueryVariables = Exact<{
 }>;
 
 
-export type PositionsQuery = { accountCTokens: Array<{ id: string, storedBorrowBalance: string, cTokenBalance: string, totalUnderlyingRepaid: string, totalUnderlyingSupplied: string, totalUnderlyingBorrowed: string, market: { name: string, id: string }, account: { id: string, tokens: Array<{ id: string, totalUnderlyingRepaid: string, totalUnderlyingSupplied: string, totalUnderlyingBorrowed: string, market: { id: string, name: string, collateralFactor: string, underlyingAddress: string } }> } }> };
+export type PositionsQuery = { __typename?: 'Query', accountCTokens: Array<{ __typename?: 'AccountCToken', id: string, storedBorrowBalance: string, cTokenBalance: string, totalUnderlyingRepaid: string, totalUnderlyingSupplied: string, totalUnderlyingBorrowed: string, market: { __typename?: 'Market', name: string, id: string }, account: { __typename?: 'Account', id: string, tokens: Array<{ __typename?: 'AccountCToken', id: string, totalUnderlyingRepaid: string, totalUnderlyingSupplied: string, totalUnderlyingBorrowed: string, market: { __typename?: 'Market', id: string, name: string, collateralFactor: string, underlyingAddress: string } }> } }> };
 
 
 export const MyPositionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"MyPositions"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"account"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"skip"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderDirection"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"OrderDirection"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"accountCTokens"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"storedBorrowBalance"}},{"kind":"Argument","name":{"kind":"Name","value":"orderDirection"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderDirection"}}},{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"account"},"value":{"kind":"Variable","name":{"kind":"Name","value":"account"}}}]}},{"kind":"Argument","name":{"kind":"Name","value":"skip"},"value":{"kind":"Variable","name":{"kind":"Name","value":"skip"}}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"first"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"market"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"id"}}]}},{"kind":"Field","name":{"kind":"Name","value":"account"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"tokens"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"totalUnderlyingRepaid"}},{"kind":"Field","name":{"kind":"Name","value":"totalUnderlyingSupplied"}},{"kind":"Field","name":{"kind":"Name","value":"totalUnderlyingBorrowed"}},{"kind":"Field","name":{"kind":"Name","value":"market"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"collateralFactor"}},{"kind":"Field","name":{"kind":"Name","value":"underlyingAddress"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"storedBorrowBalance"}},{"kind":"Field","name":{"kind":"Name","value":"cTokenBalance"}},{"kind":"Field","name":{"kind":"Name","value":"totalUnderlyingRepaid"}},{"kind":"Field","name":{"kind":"Name","value":"totalUnderlyingSupplied"}},{"kind":"Field","name":{"kind":"Name","value":"totalUnderlyingBorrowed"}}]}}]}}]} as unknown as DocumentNode<MyPositionsQuery, MyPositionsQueryVariables>;
 export const PositionsCountDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"PositionsCount"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"accountCTokens"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"storedBorrowBalance"}},{"kind":"Argument","name":{"kind":"Name","value":"orderDirection"},"value":{"kind":"EnumValue","value":"desc"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<PositionsCountQuery, PositionsCountQueryVariables>;
 export const MyPositionsCountDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"MyPositionsCount"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"account"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"String"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"accountCTokens"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"where"},"value":{"kind":"ObjectValue","fields":[{"kind":"ObjectField","name":{"kind":"Name","value":"account"},"value":{"kind":"Variable","name":{"kind":"Name","value":"account"}}}]}},{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"storedBorrowBalance"}},{"kind":"Argument","name":{"kind":"Name","value":"orderDirection"},"value":{"kind":"EnumValue","value":"desc"}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}}]}}]}}]} as unknown as DocumentNode<MyPositionsCountQuery, MyPositionsCountQueryVariables>;
 export const PositionsDocument = {"kind":"Document","definitions":[{"kind":"OperationDefinition","operation":"query","name":{"kind":"Name","value":"Positions"},"variableDefinitions":[{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"skip"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"first"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"Int"}}}},{"kind":"VariableDefinition","variable":{"kind":"Variable","name":{"kind":"Name","value":"orderDirection"}},"type":{"kind":"NonNullType","type":{"kind":"NamedType","name":{"kind":"Name","value":"OrderDirection"}}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"accountCTokens"},"arguments":[{"kind":"Argument","name":{"kind":"Name","value":"orderBy"},"value":{"kind":"EnumValue","value":"storedBorrowBalance"}},{"kind":"Argument","name":{"kind":"Name","value":"orderDirection"},"value":{"kind":"Variable","name":{"kind":"Name","value":"orderDirection"}}},{"kind":"Argument","name":{"kind":"Name","value":"skip"},"value":{"kind":"Variable","name":{"kind":"Name","value":"skip"}}},{"kind":"Argument","name":{"kind":"Name","value":"first"},"value":{"kind":"Variable","name":{"kind":"Name","value":"first"}}}],"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"market"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"id"}}]}},{"kind":"Field","name":{"kind":"Name","value":"account"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"tokens"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"totalUnderlyingRepaid"}},{"kind":"Field","name":{"kind":"Name","value":"totalUnderlyingSupplied"}},{"kind":"Field","name":{"kind":"Name","value":"totalUnderlyingBorrowed"}},{"kind":"Field","name":{"kind":"Name","value":"market"},"selectionSet":{"kind":"SelectionSet","selections":[{"kind":"Field","name":{"kind":"Name","value":"id"}},{"kind":"Field","name":{"kind":"Name","value":"name"}},{"kind":"Field","name":{"kind":"Name","value":"collateralFactor"}},{"kind":"Field","name":{"kind":"Name","value":"underlyingAddress"}}]}}]}}]}},{"kind":"Field","name":{"kind":"Name","value":"storedBorrowBalance"}},{"kind":"Field","name":{"kind":"Name","value":"cTokenBalance"}},{"kind":"Field","name":{"kind":"Name","value":"totalUnderlyingRepaid"}},{"kind":"Field","name":{"kind":"Name","value":"totalUnderlyingSupplied"}},{"kind":"Field","name":{"kind":"Name","value":"totalUnderlyingBorrowed"}}]}}]}}]} as unknown as DocumentNode<PositionsQuery, PositionsQueryVariables>;
-export type AccountKeySpecifier = ('countLiquidated' | 'countLiquidator' | 'hasBorrowed' | 'id' | 'tokens' | AccountKeySpecifier)[];
-export type AccountFieldPolicy = {
-	countLiquidated?: FieldPolicy<any> | FieldReadFunction<any>,
-	countLiquidator?: FieldPolicy<any> | FieldReadFunction<any>,
-	hasBorrowed?: FieldPolicy<any> | FieldReadFunction<any>,
-	id?: FieldPolicy<any> | FieldReadFunction<any>,
-	tokens?: FieldPolicy<any> | FieldReadFunction<any>
-};
-export type AccountCTokenKeySpecifier = ('account' | 'accountBorrowIndex' | 'accrualBlockNumber' | 'cTokenBalance' | 'enteredMarket' | 'id' | 'market' | 'storedBorrowBalance' | 'symbol' | 'totalUnderlyingBorrowed' | 'totalUnderlyingRedeemed' | 'totalUnderlyingRepaid' | 'totalUnderlyingSupplied' | 'transactionHashes' | 'transactionTimes' | AccountCTokenKeySpecifier)[];
-export type AccountCTokenFieldPolicy = {
-	account?: FieldPolicy<any> | FieldReadFunction<any>,
-	accountBorrowIndex?: FieldPolicy<any> | FieldReadFunction<any>,
-	accrualBlockNumber?: FieldPolicy<any> | FieldReadFunction<any>,
-	cTokenBalance?: FieldPolicy<any> | FieldReadFunction<any>,
-	enteredMarket?: FieldPolicy<any> | FieldReadFunction<any>,
-	id?: FieldPolicy<any> | FieldReadFunction<any>,
-	market?: FieldPolicy<any> | FieldReadFunction<any>,
-	storedBorrowBalance?: FieldPolicy<any> | FieldReadFunction<any>,
-	symbol?: FieldPolicy<any> | FieldReadFunction<any>,
-	totalUnderlyingBorrowed?: FieldPolicy<any> | FieldReadFunction<any>,
-	totalUnderlyingRedeemed?: FieldPolicy<any> | FieldReadFunction<any>,
-	totalUnderlyingRepaid?: FieldPolicy<any> | FieldReadFunction<any>,
-	totalUnderlyingSupplied?: FieldPolicy<any> | FieldReadFunction<any>,
-	transactionHashes?: FieldPolicy<any> | FieldReadFunction<any>,
-	transactionTimes?: FieldPolicy<any> | FieldReadFunction<any>
-};
-export type ComptrollerKeySpecifier = ('closeFactor' | 'id' | 'liquidationIncentive' | 'maxAssets' | 'priceOracle' | 'totalLiquidityNOTE' | 'totalLiquidityUSD' | ComptrollerKeySpecifier)[];
-export type ComptrollerFieldPolicy = {
-	closeFactor?: FieldPolicy<any> | FieldReadFunction<any>,
-	id?: FieldPolicy<any> | FieldReadFunction<any>,
-	liquidationIncentive?: FieldPolicy<any> | FieldReadFunction<any>,
-	maxAssets?: FieldPolicy<any> | FieldReadFunction<any>,
-	priceOracle?: FieldPolicy<any> | FieldReadFunction<any>,
-	totalLiquidityNOTE?: FieldPolicy<any> | FieldReadFunction<any>,
-	totalLiquidityUSD?: FieldPolicy<any> | FieldReadFunction<any>
-};
-export type ComptrollerDayDataKeySpecifier = ('dailyBorrowTxns' | 'dailyBorrowVolumeNOTE' | 'dailyBorrowVolumeUSD' | 'dailySupplyTxns' | 'dailySupplyVolumeNOTE' | 'dailySupplyVolumeUSD' | 'date' | 'id' | 'totalLiquidityNOTE' | 'totalLiquidityUSD' | ComptrollerDayDataKeySpecifier)[];
-export type ComptrollerDayDataFieldPolicy = {
-	dailyBorrowTxns?: FieldPolicy<any> | FieldReadFunction<any>,
-	dailyBorrowVolumeNOTE?: FieldPolicy<any> | FieldReadFunction<any>,
-	dailyBorrowVolumeUSD?: FieldPolicy<any> | FieldReadFunction<any>,
-	dailySupplyTxns?: FieldPolicy<any> | FieldReadFunction<any>,
-	dailySupplyVolumeNOTE?: FieldPolicy<any> | FieldReadFunction<any>,
-	dailySupplyVolumeUSD?: FieldPolicy<any> | FieldReadFunction<any>,
-	date?: FieldPolicy<any> | FieldReadFunction<any>,
-	id?: FieldPolicy<any> | FieldReadFunction<any>,
-	totalLiquidityNOTE?: FieldPolicy<any> | FieldReadFunction<any>,
-	totalLiquidityUSD?: FieldPolicy<any> | FieldReadFunction<any>
-};
-export type MarketKeySpecifier = ('accrualBlockNumber' | 'blockTimestamp' | 'borrowAPY' | 'borrowDistributionAPY' | 'borrowIndex' | 'borrowRate' | 'cash' | 'collateralFactor' | 'exchangeRate' | 'id' | 'interestRateModelAddress' | 'name' | 'numberOfBorrowers' | 'numberOfSuppliers' | 'reserveFactor' | 'reserves' | 'supplyAPY' | 'supplyDistributionAPY' | 'supplyRate' | 'symbol' | 'totalBorrows' | 'totalSupply' | 'underlyingAddress' | 'underlyingDecimals' | 'underlyingName' | 'underlyingPrice' | 'underlyingPriceUSD' | 'underlyingSymbol' | MarketKeySpecifier)[];
-export type MarketFieldPolicy = {
-	accrualBlockNumber?: FieldPolicy<any> | FieldReadFunction<any>,
-	blockTimestamp?: FieldPolicy<any> | FieldReadFunction<any>,
-	borrowAPY?: FieldPolicy<any> | FieldReadFunction<any>,
-	borrowDistributionAPY?: FieldPolicy<any> | FieldReadFunction<any>,
-	borrowIndex?: FieldPolicy<any> | FieldReadFunction<any>,
-	borrowRate?: FieldPolicy<any> | FieldReadFunction<any>,
-	cash?: FieldPolicy<any> | FieldReadFunction<any>,
-	collateralFactor?: FieldPolicy<any> | FieldReadFunction<any>,
-	exchangeRate?: FieldPolicy<any> | FieldReadFunction<any>,
-	id?: FieldPolicy<any> | FieldReadFunction<any>,
-	interestRateModelAddress?: FieldPolicy<any> | FieldReadFunction<any>,
-	name?: FieldPolicy<any> | FieldReadFunction<any>,
-	numberOfBorrowers?: FieldPolicy<any> | FieldReadFunction<any>,
-	numberOfSuppliers?: FieldPolicy<any> | FieldReadFunction<any>,
-	reserveFactor?: FieldPolicy<any> | FieldReadFunction<any>,
-	reserves?: FieldPolicy<any> | FieldReadFunction<any>,
-	supplyAPY?: FieldPolicy<any> | FieldReadFunction<any>,
-	supplyDistributionAPY?: FieldPolicy<any> | FieldReadFunction<any>,
-	supplyRate?: FieldPolicy<any> | FieldReadFunction<any>,
-	symbol?: FieldPolicy<any> | FieldReadFunction<any>,
-	totalBorrows?: FieldPolicy<any> | FieldReadFunction<any>,
-	totalSupply?: FieldPolicy<any> | FieldReadFunction<any>,
-	underlyingAddress?: FieldPolicy<any> | FieldReadFunction<any>,
-	underlyingDecimals?: FieldPolicy<any> | FieldReadFunction<any>,
-	underlyingName?: FieldPolicy<any> | FieldReadFunction<any>,
-	underlyingPrice?: FieldPolicy<any> | FieldReadFunction<any>,
-	underlyingPriceUSD?: FieldPolicy<any> | FieldReadFunction<any>,
-	underlyingSymbol?: FieldPolicy<any> | FieldReadFunction<any>
-};
-export type MarketDayDataKeySpecifier = ('dailyBorrowTxns' | 'dailyBorrowVolumeNOTE' | 'dailyBorrowVolumeUSD' | 'dailySupplyTxns' | 'dailySupplyVolumeNOTE' | 'dailySupplyVolumeUSD' | 'date' | 'id' | 'market' | 'totalLiquidityNOTE' | 'totalLiquidityUSD' | MarketDayDataKeySpecifier)[];
-export type MarketDayDataFieldPolicy = {
-	dailyBorrowTxns?: FieldPolicy<any> | FieldReadFunction<any>,
-	dailyBorrowVolumeNOTE?: FieldPolicy<any> | FieldReadFunction<any>,
-	dailyBorrowVolumeUSD?: FieldPolicy<any> | FieldReadFunction<any>,
-	dailySupplyTxns?: FieldPolicy<any> | FieldReadFunction<any>,
-	dailySupplyVolumeNOTE?: FieldPolicy<any> | FieldReadFunction<any>,
-	dailySupplyVolumeUSD?: FieldPolicy<any> | FieldReadFunction<any>,
-	date?: FieldPolicy<any> | FieldReadFunction<any>,
-	id?: FieldPolicy<any> | FieldReadFunction<any>,
-	market?: FieldPolicy<any> | FieldReadFunction<any>,
-	totalLiquidityNOTE?: FieldPolicy<any> | FieldReadFunction<any>,
-	totalLiquidityUSD?: FieldPolicy<any> | FieldReadFunction<any>
-};
-export type MarketHourDataKeySpecifier = ('hourStartUnix' | 'hourlyBorrowTxns' | 'hourlyBorrowVolumeNOTE' | 'hourlyBorrowVolumeUSD' | 'hourlySupplyTxns' | 'hourlySupplyVolumeNOTE' | 'hourlySupplyVolumeUSD' | 'id' | 'market' | 'totalLiquidityNOTE' | 'totalLiquidityUSD' | MarketHourDataKeySpecifier)[];
-export type MarketHourDataFieldPolicy = {
-	hourStartUnix?: FieldPolicy<any> | FieldReadFunction<any>,
-	hourlyBorrowTxns?: FieldPolicy<any> | FieldReadFunction<any>,
-	hourlyBorrowVolumeNOTE?: FieldPolicy<any> | FieldReadFunction<any>,
-	hourlyBorrowVolumeUSD?: FieldPolicy<any> | FieldReadFunction<any>,
-	hourlySupplyTxns?: FieldPolicy<any> | FieldReadFunction<any>,
-	hourlySupplyVolumeNOTE?: FieldPolicy<any> | FieldReadFunction<any>,
-	hourlySupplyVolumeUSD?: FieldPolicy<any> | FieldReadFunction<any>,
-	id?: FieldPolicy<any> | FieldReadFunction<any>,
-	market?: FieldPolicy<any> | FieldReadFunction<any>,
-	totalLiquidityNOTE?: FieldPolicy<any> | FieldReadFunction<any>,
-	totalLiquidityUSD?: FieldPolicy<any> | FieldReadFunction<any>
-};
-export type QueryKeySpecifier = ('_meta' | 'account' | 'accountCToken' | 'accountCTokens' | 'accounts' | 'comptroller' | 'comptrollerDayData' | 'comptrollerDayDatas' | 'comptrollers' | 'market' | 'marketDayData' | 'marketDayDatas' | 'marketHourData' | 'marketHourDatas' | 'markets' | QueryKeySpecifier)[];
-export type QueryFieldPolicy = {
-	_meta?: FieldPolicy<any> | FieldReadFunction<any>,
-	account?: FieldPolicy<any> | FieldReadFunction<any>,
-	accountCToken?: FieldPolicy<any> | FieldReadFunction<any>,
-	accountCTokens?: FieldPolicy<any> | FieldReadFunction<any>,
-	accounts?: FieldPolicy<any> | FieldReadFunction<any>,
-	comptroller?: FieldPolicy<any> | FieldReadFunction<any>,
-	comptrollerDayData?: FieldPolicy<any> | FieldReadFunction<any>,
-	comptrollerDayDatas?: FieldPolicy<any> | FieldReadFunction<any>,
-	comptrollers?: FieldPolicy<any> | FieldReadFunction<any>,
-	market?: FieldPolicy<any> | FieldReadFunction<any>,
-	marketDayData?: FieldPolicy<any> | FieldReadFunction<any>,
-	marketDayDatas?: FieldPolicy<any> | FieldReadFunction<any>,
-	marketHourData?: FieldPolicy<any> | FieldReadFunction<any>,
-	marketHourDatas?: FieldPolicy<any> | FieldReadFunction<any>,
-	markets?: FieldPolicy<any> | FieldReadFunction<any>
-};
-export type SubscriptionKeySpecifier = ('_meta' | 'account' | 'accountCToken' | 'accountCTokens' | 'accounts' | 'comptroller' | 'comptrollerDayData' | 'comptrollerDayDatas' | 'comptrollers' | 'market' | 'marketDayData' | 'marketDayDatas' | 'marketHourData' | 'marketHourDatas' | 'markets' | SubscriptionKeySpecifier)[];
-export type SubscriptionFieldPolicy = {
-	_meta?: FieldPolicy<any> | FieldReadFunction<any>,
-	account?: FieldPolicy<any> | FieldReadFunction<any>,
-	accountCToken?: FieldPolicy<any> | FieldReadFunction<any>,
-	accountCTokens?: FieldPolicy<any> | FieldReadFunction<any>,
-	accounts?: FieldPolicy<any> | FieldReadFunction<any>,
-	comptroller?: FieldPolicy<any> | FieldReadFunction<any>,
-	comptrollerDayData?: FieldPolicy<any> | FieldReadFunction<any>,
-	comptrollerDayDatas?: FieldPolicy<any> | FieldReadFunction<any>,
-	comptrollers?: FieldPolicy<any> | FieldReadFunction<any>,
-	market?: FieldPolicy<any> | FieldReadFunction<any>,
-	marketDayData?: FieldPolicy<any> | FieldReadFunction<any>,
-	marketDayDatas?: FieldPolicy<any> | FieldReadFunction<any>,
-	marketHourData?: FieldPolicy<any> | FieldReadFunction<any>,
-	marketHourDatas?: FieldPolicy<any> | FieldReadFunction<any>,
-	markets?: FieldPolicy<any> | FieldReadFunction<any>
-};
-export type _Block_KeySpecifier = ('hash' | 'number' | 'timestamp' | _Block_KeySpecifier)[];
-export type _Block_FieldPolicy = {
-	hash?: FieldPolicy<any> | FieldReadFunction<any>,
-	number?: FieldPolicy<any> | FieldReadFunction<any>,
-	timestamp?: FieldPolicy<any> | FieldReadFunction<any>
-};
-export type _Meta_KeySpecifier = ('block' | 'deployment' | 'hasIndexingErrors' | _Meta_KeySpecifier)[];
-export type _Meta_FieldPolicy = {
-	block?: FieldPolicy<any> | FieldReadFunction<any>,
-	deployment?: FieldPolicy<any> | FieldReadFunction<any>,
-	hasIndexingErrors?: FieldPolicy<any> | FieldReadFunction<any>
-};
-export type StrictTypedTypePolicies = {
-	Account?: Omit<TypePolicy, "fields" | "keyFields"> & {
-		keyFields?: false | AccountKeySpecifier | (() => undefined | AccountKeySpecifier),
-		fields?: AccountFieldPolicy,
-	},
-	AccountCToken?: Omit<TypePolicy, "fields" | "keyFields"> & {
-		keyFields?: false | AccountCTokenKeySpecifier | (() => undefined | AccountCTokenKeySpecifier),
-		fields?: AccountCTokenFieldPolicy,
-	},
-	Comptroller?: Omit<TypePolicy, "fields" | "keyFields"> & {
-		keyFields?: false | ComptrollerKeySpecifier | (() => undefined | ComptrollerKeySpecifier),
-		fields?: ComptrollerFieldPolicy,
-	},
-	ComptrollerDayData?: Omit<TypePolicy, "fields" | "keyFields"> & {
-		keyFields?: false | ComptrollerDayDataKeySpecifier | (() => undefined | ComptrollerDayDataKeySpecifier),
-		fields?: ComptrollerDayDataFieldPolicy,
-	},
-	Market?: Omit<TypePolicy, "fields" | "keyFields"> & {
-		keyFields?: false | MarketKeySpecifier | (() => undefined | MarketKeySpecifier),
-		fields?: MarketFieldPolicy,
-	},
-	MarketDayData?: Omit<TypePolicy, "fields" | "keyFields"> & {
-		keyFields?: false | MarketDayDataKeySpecifier | (() => undefined | MarketDayDataKeySpecifier),
-		fields?: MarketDayDataFieldPolicy,
-	},
-	MarketHourData?: Omit<TypePolicy, "fields" | "keyFields"> & {
-		keyFields?: false | MarketHourDataKeySpecifier | (() => undefined | MarketHourDataKeySpecifier),
-		fields?: MarketHourDataFieldPolicy,
-	},
-	Query?: Omit<TypePolicy, "fields" | "keyFields"> & {
-		keyFields?: false | QueryKeySpecifier | (() => undefined | QueryKeySpecifier),
-		fields?: QueryFieldPolicy,
-	},
-	Subscription?: Omit<TypePolicy, "fields" | "keyFields"> & {
-		keyFields?: false | SubscriptionKeySpecifier | (() => undefined | SubscriptionKeySpecifier),
-		fields?: SubscriptionFieldPolicy,
-	},
-	_Block_?: Omit<TypePolicy, "fields" | "keyFields"> & {
-		keyFields?: false | _Block_KeySpecifier | (() => undefined | _Block_KeySpecifier),
-		fields?: _Block_FieldPolicy,
-	},
-	_Meta_?: Omit<TypePolicy, "fields" | "keyFields"> & {
-		keyFields?: false | _Meta_KeySpecifier | (() => undefined | _Meta_KeySpecifier),
-		fields?: _Meta_FieldPolicy,
-	}
-};
-export type TypedTypePolicies = StrictTypedTypePolicies & TypePolicies;

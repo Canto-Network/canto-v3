@@ -1,4 +1,4 @@
-import { gql } from "./generated";
+import { gql } from "../generated/clm";
 
 export const positionsCountQuery = gql(`
   query PositionsCount {

@@ -7,15 +7,17 @@ const subgraphScalars = {
   Bytes: "string",
   Address: "string",
   Int8: "string",
+  Timestamp: "number",
 };
 
-const config = {
-  schema: [process.env.BACKEND_SUBGRAPH_URL],
-  documents: ["graphql/**/*.ts", "!graphql/generated/**"],
+const config: CodegenConfig = {
   generates: {
-    "./graphql/generated/": {
+    // #region CLM Subgraph
+    "./graphql/generated/clm/": {
       preset: "client",
-      plugins: ["typescript-apollo-client-helpers"],
+      plugins: [],
+      schema: [process.env.BACKEND_SUBGRAPH_URL],
+      documents: ["graphql/clm/**/*.ts"],
       presetConfig: {
         gqlTagName: "gql",
         fragmentMasking: false,
@@ -24,37 +26,68 @@ const config = {
         strictScalars: true,
         scalars: subgraphScalars,
         arrayInputCoercion: false,
-        skipTypename: true,
-        enumsAsTypes: true,
-        useTypeImports: true,
-        dedupeFragments: true,
-        emitLegacyCommonJSImports: false,
-        extractAllFieldsToTypes: true,
-        printFieldsOnNewLines: true,
       },
     },
-    "./graphql/generated/schema.graphql": {
+    "./graphql/generated/clm/schema.graphql": {
       plugins: ["schema-ast"],
+      schema: [process.env.BACKEND_SUBGRAPH_URL],
+      documents: ["graphql/clm/**/*.ts"],
       config: {
         commentDescriptions: true,
       },
     },
-    "./hooks/generated/graphql.hook.ts": {
+    "./hooks/generated/clm-graphql.hook.ts": {
       plugins: [
         "typescript",
         "typescript-operations",
         "typescript-react-apollo",
       ],
+      schema: [process.env.BACKEND_SUBGRAPH_URL],
+      documents: ["graphql/clm/**/*.ts"],
       config: {
         strictScalars: true,
         scalars: subgraphScalars,
         arrayInputCoercion: false,
-        reactApolloVersion: 3,
-        skipTypename: true,
-        enumsAsTypes: true,
-        useTypeImports: true,
-        dedupeFragments: true,
-        emitLegacyCommonJSImports: false,
+      },
+    },
+    // #endregion
+
+    // #region DEX Subgraph
+    "./graphql/generated/dex/": {
+      preset: "client",
+      plugins: [],
+      schema: [process.env.BACKEND_DEX_SUBGRAPH_URL],
+      documents: ["graphql/dex/**/*.ts"],
+      presetConfig: {
+        gqlTagName: "gql",
+        fragmentMasking: false,
+      },
+      config: {
+        strictScalars: true,
+        scalars: subgraphScalars,
+        arrayInputCoercion: false,
+      },
+    },
+    "./graphql/generated/dex/schema.graphql": {
+      plugins: ["schema-ast"],
+      schema: [process.env.BACKEND_DEX_SUBGRAPH_URL],
+      documents: ["graphql/dex/**/*.ts"],
+      config: {
+        commentDescriptions: true,
+      },
+    },
+    "./hooks/generated/dex-graphql.hook.ts": {
+      plugins: [
+        "typescript",
+        "typescript-operations",
+        "typescript-react-apollo",
+      ],
+      schema: [process.env.BACKEND_DEX_SUBGRAPH_URL],
+      documents: ["graphql/dex/**/*.ts"],
+      config: {
+        strictScalars: true,
+        scalars: subgraphScalars,
+        arrayInputCoercion: false,
       },
     },
   },
@@ -67,6 +100,6 @@ const config = {
       transformUnderscore: true,
     },
   },
-} satisfies CodegenConfig;
+};
 
 export default config;

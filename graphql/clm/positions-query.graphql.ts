@@ -1,12 +1,11 @@
-import { gql } from "./generated";
+import { gql } from "../generated/clm";
 
-export const myPositionsQuery = gql(`
-  query MyPositions($account: String!, $skip: Int!, $first: Int!, $orderDirection: OrderDirection!) {
+export const positionsQuery = gql(`
+  query Positions($skip: Int!, $first: Int!, $orderDirection: OrderDirection!) {
     accountCTokens(
-      orderBy: storedBorrowBalance
-      orderDirection: $orderDirection
-      where: { account: $account }
-      skip: $skip
+      orderBy: storedBorrowBalance, 
+      orderDirection: $orderDirection,
+      skip: $skip,
       first: $first
     ) {
       id

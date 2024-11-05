@@ -1,3 +1,4 @@
+import { ApolloContext } from "@/enums/apollo-context.enum";
 import {
   ApolloClient,
   ApolloLink,
@@ -5,8 +6,26 @@ import {
   InMemoryCache,
 } from "@apollo/client";
 
+const mainLink = new HttpLink({ uri: process.env.BACKEND_SUBGRAPH_URL });
+const secondLink = new HttpLink({ uri: process.env.BACKEND_DEX_SUBGRAPH_URL });
+
+const makeApolloLinkSplit = (
+  context: ApolloContext,
+  left: ApolloLink,
+  right: ApolloLink
+) => {
+  return ApolloLink.split(
+    (operation) => {
+      return operation.getContext().endpoint === context;
+    },
+    left,
+    right
+  );
+};
+
 export const apolloClient = new ApolloClient({
+  queryDeduplication: false,
   connectToDevTools: process.env.NODE_ENV === "development",
   cache: new InMemoryCache(),
-  link: ApolloLink.from([new HttpLink({ uri: "/graphql" })]),
+  link: makeApolloLinkSplit(ApolloContext.MAIN, mainLink, secondLink),
 });

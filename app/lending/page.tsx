@@ -27,12 +27,6 @@ import Splash from "@/components/splash/splash";
 import Button from "@/components/button/button";
 import { Pagination } from "@/components/pagination/Pagination";
 import { useAccount } from "wagmi";
-import {
-  useMyPositionsQuery,
-  usePositionsQuery,
-  usePositionsCountQuery,
-  useMyPositionsCountQuery,
-} from "@/hooks/generated/graphql.hook";
 import { HEALTH_THRESHOLDS, HealthBar } from "./components/healthBar/healthBar";
 import { useBorrowBalances } from "@/hooks/lending/useBorrowBalances";
 import { Codex } from "@codex-data/sdk";
@@ -40,6 +34,14 @@ import { writeContract, waitForTransaction } from "@wagmi/core";
 import { CERC20_ABI } from "@/config/abis/clm/cErc20";
 import { parseUnits } from "viem";
 import { useToast } from "@/components/toast/useToast";
+import {
+  useMyPositionsCountQuery,
+  useMyPositionsQuery,
+  usePositionsCountQuery,
+  usePositionsQuery,
+  OrderDirection,
+} from "@/hooks/generated/clm-graphql.hook";
+import { ApolloContext } from "@/enums/apollo-context.enum";
 
 enum CLMModalTypes {
   SUPPLY = "supply",
@@ -137,7 +139,8 @@ export default function LendingPage() {
   const handleLiquidate = async (position: any) => {
     try {
       const repayAmount =
-        (BigInt(parseUnits(position.totalUnderlyingBorrowed, 18)) * BigInt(5)) /
+        (BigInt(parseUnits(position.totalUnderlyingBorrowed, 18)) *
+          BigInt(90)) /
         BigInt(100);
 
       const cTokenCollateral = position.account.tokens
@@ -220,7 +223,9 @@ export default function LendingPage() {
   const [positionsToggle, setPositionsToggle] = useState<"All" | "My">("All");
   const { address } = useAccount();
 
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("desc");
+  const [sortDirection, setSortDirection] = useState<OrderDirection>(
+    OrderDirection.DESC
+  );
 
   const { data: allPositionsData, loading: allPositionsLoading } =
     usePositionsQuery({
@@ -228,6 +233,9 @@ export default function LendingPage() {
         skip: (currentPositionsPage - 1) * POSITIONS_PER_PAGE,
         first: POSITIONS_PER_PAGE,
         orderDirection: sortDirection,
+      },
+      context: {
+        endpoint: ApolloContext.MAIN,
       },
     });
   const { data: myPositionsData, loading: myPositionsLoading } =
@@ -239,12 +247,22 @@ export default function LendingPage() {
         orderDirection: sortDirection,
       },
       skip: !address || positionsToggle === "All",
+      context: {
+        endpoint: ApolloContext.MAIN,
+      },
     });
 
-  const { data: allPositionsCount } = usePositionsCountQuery();
+  const { data: allPositionsCount } = usePositionsCountQuery({
+    context: {
+      endpoint: ApolloContext.MAIN,
+    },
+  });
   const { data: myPositionsCount } = useMyPositionsCountQuery({
     variables: { account: address ?? "" },
     skip: !address || positionsToggle === "All",
+    context: {
+      endpoint: ApolloContext.MAIN,
+    },
   });
 
   const totalPages = Math.ceil(
@@ -646,7 +664,11 @@ export default function LendingPage() {
                   direction="row"
                   className={styles.headerWithSort}
                   onClick={() =>
-                    setSortDirection(sortDirection === "asc" ? "desc" : "asc")
+                    setSortDirection(
+                      sortDirection === OrderDirection.ASC
+                        ? OrderDirection.DESC
+                        : OrderDirection.ASC
+                    )
                   }
                 >
                   <Text>Borrowed Amount</Text>
