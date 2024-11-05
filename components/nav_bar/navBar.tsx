@@ -223,10 +223,44 @@ const NavBar = () => {
                       setIsMoreModalOpen(false);
                       Analytics.actions.events.clickedNavLink("Forum");
                     }}
-                    style={{ borderBottom: "none" }}
                   >
                     <div>
                       <Text size="sm">Forum</Text>
+                    </div>
+                  </Link>
+                }
+                {
+                  <Link
+                    href="https://explorer.canto.io/"
+                    className={clsx(styles["dropdownlink"])}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    onClick={() => {
+                      setIsMoreModalOpen(false);
+                      Analytics.actions.events.clickedNavLink("EVM Explorer");
+                    }}
+                  >
+                    <div>
+                      <Text size="sm">EVM Explorer</Text>
+                    </div>
+                  </Link>
+                }
+                {
+                  <Link
+                    href="https://cosmos-explorer.canto.io/"
+                    className={clsx(styles["dropdownlink"])}
+                    rel="noopener noreferrer"
+                    target="_blank"
+                    onClick={() => {
+                      setIsMoreModalOpen(false);
+                      Analytics.actions.events.clickedNavLink(
+                        "Cosmos Explorer"
+                      );
+                    }}
+                    style={{ borderBottom: "none" }}
+                  >
+                    <div>
+                      <Text size="sm">Cosmos Explorer</Text>
                     </div>
                   </Link>
                 }
