@@ -1574,6 +1574,7 @@ export type MyPositionsQueryVariables = Exact<{
   account: Scalars['String']['input'];
   skip: Scalars['Int']['input'];
   first: Scalars['Int']['input'];
+  orderDirection: OrderDirection;
 }>;
 
 
@@ -1594,6 +1595,7 @@ export type MyPositionsCountQuery = { accountCTokens: Array<{ id: string }> };
 export type PositionsQueryVariables = Exact<{
   skip: Scalars['Int']['input'];
   first: Scalars['Int']['input'];
+  orderDirection: OrderDirection;
 }>;
 
 
@@ -1601,10 +1603,10 @@ export type PositionsQuery = { accountCTokens: Array<{ id: string, storedBorrowB
 
 
 export const MyPositionsDocument = gql`
-    query MyPositions($account: String!, $skip: Int!, $first: Int!) {
+    query MyPositions($account: String!, $skip: Int!, $first: Int!, $orderDirection: OrderDirection!) {
   accountCTokens(
     orderBy: storedBorrowBalance
-    orderDirection: desc
+    orderDirection: $orderDirection
     where: {account: $account}
     skip: $skip
     first: $first
@@ -1653,6 +1655,7 @@ export const MyPositionsDocument = gql`
  *      account: // value for 'account'
  *      skip: // value for 'skip'
  *      first: // value for 'first'
+ *      orderDirection: // value for 'orderDirection'
  *   },
  * });
  */
@@ -1756,10 +1759,10 @@ export type MyPositionsCountLazyQueryHookResult = ReturnType<typeof useMyPositio
 export type MyPositionsCountSuspenseQueryHookResult = ReturnType<typeof useMyPositionsCountSuspenseQuery>;
 export type MyPositionsCountQueryResult = Apollo.QueryResult<MyPositionsCountQuery, MyPositionsCountQueryVariables>;
 export const PositionsDocument = gql`
-    query Positions($skip: Int!, $first: Int!) {
+    query Positions($skip: Int!, $first: Int!, $orderDirection: OrderDirection!) {
   accountCTokens(
     orderBy: storedBorrowBalance
-    orderDirection: desc
+    orderDirection: $orderDirection
     skip: $skip
     first: $first
   ) {
@@ -1806,6 +1809,7 @@ export const PositionsDocument = gql`
  *   variables: {
  *      skip: // value for 'skip'
  *      first: // value for 'first'
+ *      orderDirection: // value for 'orderDirection'
  *   },
  * });
  */
