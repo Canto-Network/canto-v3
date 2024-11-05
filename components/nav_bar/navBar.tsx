@@ -159,6 +159,15 @@ const NavBar = () => {
         >
           <Text size="sm">Governance</Text>
         </Link>
+        <Link
+          href="https://forum.canto.io/"
+          rel="noopener noreferrer"
+          target="_blank"
+          className={clsx(styles["nav-link"])}
+          onClick={() => Analytics.actions.events.clickedNavLink("Forum")}
+        >
+          <Text size="sm">Forum</Text>
+        </Link>
         {!isMobile && (
           <div
             className={styles.moreLink}
@@ -179,22 +188,6 @@ const NavBar = () => {
             </div>
             {isMoreModalOpen && (
               <div className={styles.popUp}>
-                {
-                  <Link
-                    href="https://forum.canto.io/"
-                    className={clsx(styles["dropdownlink"])}
-                    rel="noopener noreferrer"
-                    target="_blank"
-                    onClick={() => {
-                      setIsMoreModalOpen(false);
-                      Analytics.actions.events.clickedNavLink("Forum");
-                    }}
-                  >
-                    <div>
-                      <Text size="sm">Forum</Text>
-                    </div>
-                  </Link>
-                }
                 {
                   <Link
                     href="https://explorer.canto.io/"
