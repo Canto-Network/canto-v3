@@ -205,3 +205,21 @@
     opacity: 0.8;
   }
 }
+
+.clickableAddress {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  
+  &:hover {
+    text-decoration: underline;
+  }
+
+  .externalLink {
+    font-size: 0.8em;
+    line-height: 1;
+    position: relative;
+    top: -1px;
+  }
+}

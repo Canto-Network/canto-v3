@@ -42,6 +42,7 @@ import {
 import { ApolloContext } from "@/enums/apollo-context.enum";
 import { GET_TOKEN_PRICES } from "@/graphql/dex/token-prices-query.graphql";
 import { apolloClient } from "@/config/apollo.config";
+import { CLM_TOKENS } from "@/config/consts/addresses";
 
 enum CLMModalTypes {
   SUPPLY = "supply",
@@ -127,8 +128,13 @@ export default function LendingPage() {
 
   const handleLiquidate = async (position: any) => {
     try {
+      const tokenDecimals =
+        CLM_TOKENS.find(
+          (token) => token.id.toLowerCase() === position.market.id.toLowerCase()
+        )?.decimals ?? 18;
+
       const repayAmount =
-        (BigInt(parseUnits(position.totalUnderlyingBorrowed, 18)) *
+        (BigInt(parseUnits(position.totalUnderlyingBorrowed, tokenDecimals)) *
           BigInt(90)) /
         BigInt(100);
 
@@ -694,7 +700,17 @@ export default function LendingPage() {
                       gap={10}
                       center={{ horizontal: true }}
                     >
-                      <Text font="proto_mono" size={isMobile ? "sm" : "md"}>
+                      <Text
+                        font="proto_mono"
+                        size={isMobile ? "sm" : "md"}
+                        onClick={() =>
+                          window.open(
+                            `https://tuber.build/address/${position.account.id}`,
+                            "_blank"
+                          )
+                        }
+                        className={styles.clickableAddress}
+                      >
                         {`${position.account.id.slice(
                           0,
                           4
@@ -721,9 +737,17 @@ export default function LendingPage() {
                         center={{ horizontal: true }}
                       >
                         <Text font="proto_mono" size={isMobile ? "sm" : "md"}>
-                          {displayAmount(position.storedBorrowBalance, 18, {
-                            precision: 2,
-                          })}
+                          {displayAmount(
+                            position.storedBorrowBalance,
+                            CLM_TOKENS.find(
+                              (token) =>
+                                token.id.toLowerCase() ===
+                                position.market.id.toLowerCase()
+                            )?.decimals ?? 18,
+                            {
+                              precision: 2,
+                            }
+                          )}
                         </Text>
                       </Container>
                     ),
