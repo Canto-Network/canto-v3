@@ -1,4 +1,3 @@
-/* eslint-disable no-console */
 "use client";
 
 import styles from "./lending.module.scss";
@@ -118,16 +117,6 @@ const calculateHealthFactor = async (tokens: any[]) => {
     totalCollateral += collateralValue;
     totalBorrowed += borrowedValue;
   });
-
-  if (missingPriceTokens.length > 0) {
-    console.log(
-      "Tokens with missing prices:",
-      missingPriceTokens.map((token) => ({
-        address: token.address,
-        market: `${token.marketName} (${token.marketId})`,
-      }))
-    );
-  }
 
   if (totalBorrowed === 0) return Infinity;
   return totalCollateral / totalBorrowed;
