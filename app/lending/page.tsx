@@ -29,7 +29,6 @@ import { Pagination } from "@/components/pagination/Pagination";
 import { useAccount } from "wagmi";
 import { HEALTH_THRESHOLDS, HealthBar } from "./components/healthBar/healthBar";
 import { useBorrowBalances } from "@/hooks/lending/useBorrowBalances";
-import { Codex } from "@codex-data/sdk";
 import { writeContract, waitForTransaction } from "@wagmi/core";
 import { CERC20_ABI } from "@/config/abis/clm/cErc20";
 import { parseUnits } from "viem";
@@ -42,6 +41,8 @@ import {
   OrderDirection,
 } from "@/hooks/generated/clm-graphql.hook";
 import { ApolloContext } from "@/enums/apollo-context.enum";
+import { GET_TOKEN_PRICES } from "@/graphql/dex/token-prices-query.graphql";
+import { apolloClient } from "@/config/apollo.config";
 
 enum CLMModalTypes {
   SUPPLY = "supply",
@@ -71,8 +72,6 @@ function sortCTokens(
 
 const POSITIONS_PER_PAGE = 10;
 
-const sdk = new Codex(process.env.NEXT_PUBLIC_CODEX_API_KEY ?? "");
-
 const calculateHealthFactor = async (tokens: any[]) => {
   let totalCollateral = 0;
   let totalBorrowed = 0;
@@ -83,21 +82,21 @@ const calculateHealthFactor = async (tokens: any[]) => {
   }> = [];
 
   const pricePromises = tokens.map((token) =>
-    sdk.queries.getTokenPrices({
-      inputs: [
-        {
-          address: token.market.underlyingAddress,
-          networkId: 7700,
-        },
-      ],
+    apolloClient.query({
+      query: GET_TOKEN_PRICES,
+      variables: {
+        tokenId: token.market.underlyingAddress.toLowerCase(),
+      },
+      context: {
+        endpoint: ApolloContext.DEX,
+      },
     })
   );
 
   const prices = await Promise.all(pricePromises);
-  // console.log("prices", prices);
 
   tokens.forEach((token, index) => {
-    const priceData = prices[index]?.getTokenPrices?.[0];
+    const priceData = prices[index]?.data?.tokenDayDatas?.[0];
     if (!priceData) {
       missingPriceTokens.push({
         address: token.market.underlyingAddress,
@@ -107,7 +106,8 @@ const calculateHealthFactor = async (tokens: any[]) => {
       return;
     }
 
-    const price = priceData.priceUsd ?? 0;
+    const price =
+      Number(priceData.token.derivedETH) * Number(priceData.priceUSD);
     const collateralFactor = Number(token.market.collateralFactor) || 0;
     const supplied = Number(token.totalUnderlyingSupplied) || 0;
     const borrowed = Number(token.totalUnderlyingBorrowed) || 0;
