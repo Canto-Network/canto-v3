@@ -715,6 +715,13 @@ export default function LendingPage() {
                           0,
                           4
                         )}...${position.account.id.slice(-5)}`}
+                        <Icon
+                          icon={{
+                            url: "/arrow.svg",
+                            size: 20,
+                          }}
+                          themed
+                        />
                       </Text>
                     </Container>,
                     <Container
