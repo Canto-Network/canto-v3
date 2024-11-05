@@ -28,7 +28,7 @@ import { Pagination } from "@/components/pagination/Pagination";
 import { useAccount } from "wagmi";
 import { HEALTH_THRESHOLDS, HealthBar } from "./components/healthBar/healthBar";
 import { useBorrowBalances } from "@/hooks/lending/useBorrowBalances";
-import { writeContract, waitForTransaction } from "@wagmi/core";
+import { writeContract, waitForTransaction, readContract } from "@wagmi/core";
 import { CERC20_ABI } from "@/config/abis/clm/cErc20";
 import { parseUnits } from "viem";
 import { useToast } from "@/components/toast/useToast";
@@ -146,6 +146,30 @@ export default function LendingPage() {
             token.totalUnderlyingSupplied !== "0"
         )
         ?.market.id.toLowerCase();
+
+      const allowance = await readContract({
+        address: position.market.id.toLowerCase() as `0x${string}`,
+        abi: CERC20_ABI,
+        functionName: "allowance",
+        args: [address as `0x${string}`, cTokenCollateral as `0x${string}`],
+      });
+
+      if (allowance < repayAmount) {
+        const { hash: approvalHash } = await writeContract({
+          address: position.market.id.toLowerCase() as `0x${string}`,
+          abi: CERC20_ABI,
+          functionName: "approve",
+          args: [cTokenCollateral as `0x${string}`, repayAmount],
+        });
+
+        const { status: approvalStatus } = await waitForTransaction({
+          hash: approvalHash,
+        });
+
+        if (!approvalStatus) {
+          throw new Error("Approval failed");
+        }
+      }
 
       const { hash } = await writeContract({
         address: position.market.id.toLowerCase() as `0x${string}`,
