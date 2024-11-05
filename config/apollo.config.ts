@@ -6,8 +6,8 @@ import {
   InMemoryCache,
 } from "@apollo/client";
 
-const mainLink = new HttpLink({ uri: process.env.BACKEND_SUBGRAPH_URL });
-const secondLink = new HttpLink({ uri: process.env.BACKEND_DEX_SUBGRAPH_URL });
+const mainLink = new HttpLink({ uri: "/graphql" });
+const secondLink = new HttpLink({ uri: "/graphql-dex" });
 
 const makeApolloLinkSplit = (
   context: ApolloContext,
