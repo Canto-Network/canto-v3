@@ -21,7 +21,7 @@ export function useBorrowBalances(positions: Array<{ id: string }>) {
 
       try {
         const response = await fetch(
-          `https://mcu40116n5.execute-api.us-east-1.amazonaws.com/clm/borrowBalance/${addresses}`
+          `${process.env.NEXT_PUBLIC_CLM_API_URL}/borrowBalance/${addresses}`
         );
         const data = await response.json();
 
