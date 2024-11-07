@@ -27,6 +27,7 @@ import {
   getAnalyticsAmbientLiquidityPoolInfo,
 } from "@/utils/analytics";
 import useScreenSize from "@/hooks/helpers/useScreenSize";
+import Icon from "@/components/icon/icon";
 
 export default function Page() {
   const {
@@ -44,6 +45,7 @@ export default function Page() {
     sendClaimRewardsFlow,
     pairNames,
     rewardTime,
+    isLoading,
   } = usePool();
 
   //   if mobile only
@@ -185,61 +187,7 @@ export default function Page() {
           { value: "Type", ratio: 1, hideOnMobile: true },
           { value: "Action", ratio: 1, hideOnMobile: true },
         ]}
-        onRowsClick={
-          isMobile
-            ? [
-                ...pairs.allAmbient
-                  .filter(
-                    (pool) =>
-                      filteredPairs === "all" ||
-                      (filteredPairs === "stable" && pool.stable) ||
-                      (filteredPairs === "volatile" && !pool.stable)
-                  )
-                  .map((pool) => () => {
-                    Analytics.actions.events.liquidityPool.addLPClicked({
-                      lpType: "AMBIENT",
-                      ambientLp: pool.symbol,
-                    });
-                    setPair(pool.address);
-                  }),
-                ...sortedCantoDexPairs
-                  .filter(
-                    (pair) =>
-                      filteredPairs === "all" ||
-                      (filteredPairs === "stable" && pair.stable) ||
-                      (filteredPairs === "volatile" && !pair.stable)
-                  )
-                  .map((pair) => () => {
-                    Analytics.actions.events.liquidityPool.addLPClicked({
-                      lpType: "CANTO",
-                      cantoLp: pair.symbol,
-                    });
-                    setPair(pair.address);
-                  }),
-              ]
-            : undefined
-        }
         content={[
-          ...pairs.allAmbient
-            .filter(
-              (pool) =>
-                filteredPairs === "all" ||
-                (filteredPairs === "stable" && pool.stable) ||
-                (filteredPairs === "volatile" && !pool.stable)
-            )
-            .map((pool) =>
-              GeneralAmbientPairRow({
-                pool,
-                onAddLiquidity: (poolAddress) => {
-                  Analytics.actions.events.liquidityPool.addLPClicked({
-                    lpType: "AMBIENT",
-                    ambientLp: pool.symbol,
-                  });
-                  setPair(poolAddress);
-                },
-                isMobile,
-              })
-            ),
           ...sortedCantoDexPairs
             .filter(
               (pair) =>
@@ -260,7 +208,85 @@ export default function Page() {
                 isMobile,
               })
             ),
+          ...(!isLoading.ambient
+            ? pairs.allAmbient
+                .filter(
+                  (pool) =>
+                    filteredPairs === "all" ||
+                    (filteredPairs === "stable" && pool.stable) ||
+                    (filteredPairs === "volatile" && !pool.stable)
+                )
+                .map((pool) =>
+                  GeneralAmbientPairRow({
+                    pool,
+                    onAddLiquidity: (poolAddress) => {
+                      Analytics.actions.events.liquidityPool.addLPClicked({
+                        lpType: "AMBIENT",
+                        ambientLp: pool.symbol,
+                      });
+                      setPair(poolAddress);
+                    },
+                    isMobile,
+                  })
+                )
+            : []),
+          isLoading.ambient && (
+            <tr key="loading-row" style={{ margin: "0 auto" }}>
+              <td colSpan={5}>
+                <Container
+                  direction="row"
+                  gap={10}
+                  style={{
+                    padding: "20px 0",
+                  }}
+                >
+                  <Icon
+                    themed
+                    icon={{
+                      url: "/icons/spinner.svg",
+                      size: 24,
+                    }}
+                    className={styles.spinnerIcon}
+                  />
+                </Container>
+              </td>
+            </tr>
+          ),
         ]}
+        onRowsClick={
+          isMobile
+            ? [
+                ...sortedCantoDexPairs
+                  .filter(
+                    (pair) =>
+                      filteredPairs === "all" ||
+                      (filteredPairs === "stable" && pair.stable) ||
+                      (filteredPairs === "volatile" && !pair.stable)
+                  )
+                  .map((pair) => () => {
+                    Analytics.actions.events.liquidityPool.addLPClicked({
+                      lpType: "CANTO",
+                      cantoLp: pair.symbol,
+                    });
+                    setPair(pair.address);
+                  }),
+                ...pairs.allAmbient
+                  .filter(
+                    (pool) =>
+                      filteredPairs === "all" ||
+                      (filteredPairs === "stable" && pool.stable) ||
+                      (filteredPairs === "volatile" && !pool.stable)
+                  )
+                  .map((pool) => () => {
+                    Analytics.actions.events.liquidityPool.addLPClicked({
+                      lpType: "AMBIENT",
+                      ambientLp: pool.symbol,
+                    });
+                    setPair(pool.address);
+                  }),
+              ]
+            : undefined
+        }
       />
       <Spacer height="40px" />
     </div>
