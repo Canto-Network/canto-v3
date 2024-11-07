@@ -175,7 +175,7 @@ const NavBar = () => {
             onMouseLeave={() => setIsMoreModalOpen(false)}
           >
             <div className={styles.moreButtonContainer}>
-              <Text size="sm">More</Text>
+              <Text size="sm">Explorers</Text>
               <div className={styles.dropdown}>
                 <Icon
                   icon={{
