@@ -1590,6 +1590,11 @@ export enum SubgraphErrorPolicy {
   DENY = 'deny'
 }
 
+export type MarketsQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type MarketsQuery = { __typename?: 'Query', markets: Array<{ __typename?: 'Market', id: string, name: string, totalBorrows: string, totalSupply: string, underlyingAddress: string, underlyingDecimals: number }> };
+
 export type MyPositionsQueryVariables = Exact<{
   account: Scalars['String']['input'];
   skip: Scalars['Int']['input'];
@@ -1622,6 +1627,50 @@ export type PositionsQueryVariables = Exact<{
 export type PositionsQuery = { __typename?: 'Query', accountCTokens: Array<{ __typename?: 'AccountCToken', id: string, storedBorrowBalance: string, cTokenBalance: string, totalUnderlyingRepaid: string, totalUnderlyingSupplied: string, totalUnderlyingBorrowed: string, market: { __typename?: 'Market', name: string, id: string }, account: { __typename?: 'Account', id: string, tokens: Array<{ __typename?: 'AccountCToken', id: string, totalUnderlyingRepaid: string, totalUnderlyingSupplied: string, totalUnderlyingBorrowed: string, market: { __typename?: 'Market', id: string, name: string, collateralFactor: string, underlyingAddress: string } }> } }> };
 
 
+export const MarketsDocument = gql`
+    query Markets {
+  markets(orderDirection: desc, orderBy: totalSupply) {
+    id
+    name
+    totalBorrows
+    totalSupply
+    underlyingAddress
+    underlyingDecimals
+  }
+}
+    `;
+
+/**
+ * __useMarketsQuery__
+ *
+ * To run a query within a React component, call `useMarketsQuery` and pass it any options that fit your needs.
+ * When your component renders, `useMarketsQuery` returns an object from Apollo Client that contains loading, error, and data properties
+ * you can use to render your UI.
+ *
+ * @param baseOptions options that will be passed into the query, supported options are listed on: https://www.apollographql.com/docs/react/api/react-hooks/#options;
+ *
+ * @example
+ * const { data, loading, error } = useMarketsQuery({
+ *   variables: {
+ *   },
+ * });
+ */
+export function useMarketsQuery(baseOptions?: Apollo.QueryHookOptions<MarketsQuery, MarketsQueryVariables>) {
+        const options = {...defaultOptions, ...baseOptions}
+        return Apollo.useQuery<MarketsQuery, MarketsQueryVariables>(MarketsDocument, options);
+      }
+export function useMarketsLazyQuery(baseOptions?: Apollo.LazyQueryHookOptions<MarketsQuery, MarketsQueryVariables>) {
+          const options = {...defaultOptions, ...baseOptions}
+          return Apollo.useLazyQuery<MarketsQuery, MarketsQueryVariables>(MarketsDocument, options);
+        }
+export function useMarketsSuspenseQuery(baseOptions?: Apollo.SkipToken | Apollo.SuspenseQueryHookOptions<MarketsQuery, MarketsQueryVariables>) {
+          const options = baseOptions === Apollo.skipToken ? baseOptions : {...defaultOptions, ...baseOptions}
+          return Apollo.useSuspenseQuery<MarketsQuery, MarketsQueryVariables>(MarketsDocument, options);
+        }
+export type MarketsQueryHookResult = ReturnType<typeof useMarketsQuery>;
+export type MarketsLazyQueryHookResult = ReturnType<typeof useMarketsLazyQuery>;
+export type MarketsSuspenseQueryHookResult = ReturnType<typeof useMarketsSuspenseQuery>;
+export type MarketsQueryResult = Apollo.QueryResult<MarketsQuery, MarketsQueryVariables>;
 export const MyPositionsDocument = gql`
     query MyPositions($account: String!, $skip: Int!, $first: Int!, $orderDirection: OrderDirection!) {
   accountCTokens(
