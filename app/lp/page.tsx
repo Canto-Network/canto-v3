@@ -27,6 +27,7 @@ import {
   getAnalyticsAmbientLiquidityPoolInfo,
 } from "@/utils/analytics";
 import useScreenSize from "@/hooks/helpers/useScreenSize";
+import Icon from "@/components/icon/icon";
 
 export default function Page() {
   const {
@@ -44,6 +45,7 @@ export default function Page() {
     sendClaimRewardsFlow,
     pairNames,
     rewardTime,
+    isLoading,
   } = usePool();
 
   //   if mobile only
@@ -220,27 +222,65 @@ export default function Page() {
             : undefined
         }
         content={[
-          ...pairs.allAmbient
-            .filter(
-              (pool) =>
-                filteredPairs === "all" ||
-                (filteredPairs === "stable" && pool.stable) ||
-                (filteredPairs === "volatile" && !pool.stable)
-            )
-            .map((pool) =>
-              GeneralAmbientPairRow({
-                pool,
-                onAddLiquidity: (poolAddress) => {
-                  Analytics.actions.events.liquidityPool.addLPClicked({
-                    lpType: "AMBIENT",
-                    ambientLp: pool.symbol,
-                  });
-                  setPair(poolAddress);
-                },
-                isMobile,
-                isAprsLoading: pairs.isAprsLoading,
-              })
-            ),
+          ...(!isLoading.ambient
+            ? pairs.allAmbient
+                .filter(
+                  (pool) =>
+                    filteredPairs === "all" ||
+                    (filteredPairs === "stable" && pool.stable) ||
+                    (filteredPairs === "volatile" && !pool.stable)
+                )
+                .map((pool) =>
+                  GeneralAmbientPairRow({
+                    pool,
+                    onAddLiquidity: (poolAddress) => {
+                      Analytics.actions.events.liquidityPool.addLPClicked({
+                        lpType: "AMBIENT",
+                        ambientLp: pool.symbol,
+                      });
+                      setPair(poolAddress);
+                    },
+                    isMobile,
+                  })
+                )
+            : []),
+          isLoading.ambient && (
+            <tr
+              key="loading-row"
+              style={{
+                margin: "0 auto",
+                width: "100%",
+                border: "1px solid var(--border-stroke-color)",
+                padding: "0 16px",
+                height: "80px",
+              }}
+            >
+              <Container
+                direction="row"
+                gap={10}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                }}
+                center={{
+                  horizontal: true,
+                  vertical: true,
+                }}
+              >
+                <Text size="sm" font="proto_mono">
+                  Loading concentrated pairs
+                </Text>
+                <Icon
+                  themed
+                  icon={{
+                    url: "/icons/spinner.svg",
+                    size: 24,
+                  }}
+                  className={styles.spinnerIcon}
+                />
+              </Container>
+            </tr>
+          ),
           ...sortedCantoDexPairs
             .filter(
               (pair) =>

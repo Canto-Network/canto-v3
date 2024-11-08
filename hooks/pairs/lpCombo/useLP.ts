@@ -23,7 +23,10 @@ interface UseLPProps {
 }
 
 interface UseLPReturn {
-  isLoading: boolean;
+  isLoading: {
+    cantoDex: boolean;
+    ambient: boolean;
+  };
   pairs: {
     allCantoDex: CantoDexPairWithUserCTokenData[];
     userCantoDex: CantoDexPairWithUserCTokenData[];
@@ -142,7 +145,10 @@ export default function useLP(props: UseLPProps): UseLPReturn {
   }
 
   return {
-    isLoading: cantoDex.isLoading && ambient.isLoading,
+    isLoading: {
+      cantoDex: cantoDex.isLoading,
+      ambient: ambient.isLoading,
+    },
     pairs: {
       allCantoDex: cantoDex.pairs,
       userCantoDex: userCantoDexPairs,
