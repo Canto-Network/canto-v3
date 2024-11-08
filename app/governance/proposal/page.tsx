@@ -16,7 +16,7 @@ import {
   calculateVotePercentages,
   formatProposalStatus,
   formatProposalType,
-  formatTime
+  formatTime,
 } from "@/utils/gov/formatData";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
