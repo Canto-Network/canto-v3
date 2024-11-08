@@ -108,8 +108,7 @@ const calculateHealthFactor = async (tokens: any[]) => {
       return;
     }
 
-    const price =
-      Number(priceData.token.derivedETH) * Number(priceData.priceUSD);
+    const price = Number(priceData.priceUSD);
     const collateralFactor = Number(token.market.collateralFactor) || 0;
     const supplied = Number(token.totalUnderlyingSupplied) || 0;
     const borrowed = Number(token.totalUnderlyingBorrowed) || 0;
@@ -370,8 +369,7 @@ export default function LendingPage() {
       marketsData.markets.forEach((market, index) => {
         const priceData = prices[index]?.data?.tokenDayDatas?.[0];
         if (priceData) {
-          const price =
-            Number(priceData.token.derivedETH) * Number(priceData.priceUSD);
+          const price = Number(priceData.priceUSD);
           totalBorrowed += Number(market.totalBorrows) * price;
           totalSupplied += Number(market.totalSupply) * price;
         }
