@@ -238,6 +238,7 @@ export default function Page() {
                   setPair(poolAddress);
                 },
                 isMobile,
+                isAprsLoading: pairs.isAprsLoading,
               })
             ),
           ...sortedCantoDexPairs
