@@ -14,15 +14,6 @@ const proposalTypes = {
   "/cosmos.slashing.v1beta1.MsgUpdateParams": "Slashing Update Params",
 };
 
-const hardcodedProposalsDescriptions = {
-  "/cosmos.gov.v1.MsgUpdateParams":
-    "Governance Proposal to update Proposal params",
-  "/canto.govshuttle.v1.MsgLendingMarketProposal":
-    "Governance Proposal to Update Note Interest Rate",
-  "/cosmos.slashing.v1beta1.MsgUpdateParams":
-    "Governance Proposal to update slashing params",
-};
-
 export function formatProposalStatus(status: string): string | undefined {
   switch (status) {
     case "PROPOSAL_STATUS_ACTIVE":
@@ -48,18 +39,11 @@ export function formatProposalType(type_url: string) {
   return (proposalTypes as any)[type_url] || "Proposal type not found";
 }
 
-export function formatProposalTitle(type_url: string) {
-  return (
-    (hardcodedProposalsDescriptions as any)[type_url] ||
-    "Proposal type not found"
-  );
-}
-
 interface FinalTallyResult {
-  yes: string;
-  abstain: string;
-  no: string;
-  no_with_veto: string;
+  abstain_count: string;
+  no_count: string;
+  no_with_veto_count: string;
+  yes_count: string;
 }
 
 export interface VoteData {
@@ -85,14 +69,14 @@ export function calculateVotePercentages(
   finalTallyResult: FinalTallyResult
 ): VoteData {
   // Destructure the vote counts from the object
-  const { yes, abstain, no, no_with_veto } = finalTallyResult;
-
+  const { yes_count, abstain_count, no_count, no_with_veto_count } =
+    finalTallyResult;
   const factor = BigInt(1e18);
   // Convert the vote counts to BigInts
-  const yesVotes = BigInt(yes);
-  const abstainVotes = BigInt(abstain);
-  const noVotes = BigInt(no);
-  const noWithVetoVotes = BigInt(no_with_veto);
+  const yesVotes = BigInt(yes_count);
+  const abstainVotes = BigInt(abstain_count);
+  const noVotes = BigInt(no_count);
+  const noWithVetoVotes = BigInt(no_with_veto_count);
 
   const yesNumber =
     Number(yesVotes / factor) + Number(yesVotes % factor) / Number(factor);

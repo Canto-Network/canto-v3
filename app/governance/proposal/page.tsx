@@ -1,36 +1,34 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import Text from "@/components/text";
-import styles from "./proposalModal.module.scss";
-import {
-  calculateVotePercentages,
-  formatProposalStatus,
-  formatProposalTitle,
-  formatProposalType,
-  formatTime,
-} from "@/utils/gov/formatData";
-import Icon from "@/components/icon/icon";
 import Button from "@/components/button/button";
-import useProposals from "@/hooks/gov/useProposals";
-import { useState } from "react";
-import useCantoSigner from "@/hooks/helpers/useCantoSigner";
+import Icon from "@/components/icon/icon";
 import Splash from "@/components/splash/splash";
-import { VoteOption } from "@/transactions/gov";
-import { NEW_ERROR } from "@/config/interfaces";
-import { VotingInfoBox } from "../components/VotingInfoBox/VotingInfoBox";
+import Text from "@/components/text";
 import {
   PROPOSAL_QUORUM_VALUE,
   PROPOSAL_VETO_THRESHOLD,
 } from "@/config/consts/config";
+import { NEW_ERROR } from "@/config/interfaces";
+import useProposals from "@/hooks/gov/useProposals";
+import useCantoSigner from "@/hooks/helpers/useCantoSigner";
+import { VoteOption } from "@/transactions/gov";
+import {
+  calculateVotePercentages,
+  formatProposalStatus,
+  formatProposalType,
+  formatTime,
+} from "@/utils/gov/formatData";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useState } from "react";
+import { VotingInfoBox } from "../components/VotingInfoBox/VotingInfoBox";
+import styles from "./proposalModal.module.scss";
 
-import Spacer from "@/components/layout/spacer";
-import useStaking from "@/hooks/staking/useStaking";
-import { VoteBarGraph } from "../components/votingChart/voteGraph";
-import useScreenSize from "@/hooks/helpers/useScreenSize";
 import Container from "@/components/container/container";
+import Spacer from "@/components/layout/spacer";
+import useScreenSize from "@/hooks/helpers/useScreenSize";
 import useUserStaking from "@/hooks/staking/userStaking";
 import { formatBalance } from "@/utils/formatting";
+import { VoteBarGraph } from "../components/votingChart/voteGraph";
 
 const VOTE_OPTION_COLORS = {
   [VoteOption.YES]: [
@@ -206,9 +204,7 @@ export default function Page() {
         </div>
 
         <div>
-          <Text opacity={0.4}>
-            {proposal.description || formatProposalTitle(proposal.type_url)}
-          </Text>
+          <Text opacity={0.4}>{proposal.description}</Text>
         </div>
       </div>
       <div className={styles.proposalInfoContainer}>

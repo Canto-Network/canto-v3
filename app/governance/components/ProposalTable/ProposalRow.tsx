@@ -1,16 +1,15 @@
-import styles from "./ProposalTable.module.scss";
 import Container from "@/components/container/container";
+import Icon from "@/components/icon/icon";
 import Text from "@/components/text";
+import Countdown from "@/components/timer/countdown";
 import { Proposal } from "@/hooks/gov/interfaces/proposal";
+import { formatBalance } from "@/utils/formatting";
 import {
   formatProposalStatus,
-  formatProposalTitle,
   formatProposalType,
 } from "@/utils/gov/formatData";
 import { VoteGraphBox } from "../votingChart/voteGraph";
-import { formatBalance } from "@/utils/formatting";
-import Countdown from "@/components/timer/countdown";
-import Icon from "@/components/icon/icon";
+import styles from "./ProposalTable.module.scss";
 
 interface ProposalRowProps {
   proposal: Proposal;
@@ -25,22 +24,22 @@ export const ProposalRow = ({
   const votes = active
     ? {
         yes: Number(
-          formatBalance(proposal.final_vote.yes, 18, {
+          formatBalance(proposal.final_vote.yes_count, 18, {
             precision: 2,
           })
         ),
         no: Number(
-          formatBalance(proposal.final_vote.no, 18, {
+          formatBalance(proposal.final_vote.no_count, 18, {
             precision: 2,
           })
         ),
         veto: Number(
-          formatBalance(proposal.final_vote.no_with_veto, 18, {
+          formatBalance(proposal.final_vote.no_with_veto_count, 18, {
             precision: 2,
           })
         ),
         abstain: Number(
-          formatBalance(proposal.final_vote.abstain, 18, {
+          formatBalance(proposal.final_vote.abstain_count, 18, {
             precision: 2,
           })
         ),
@@ -112,7 +111,7 @@ export const ProposalRow = ({
       >
         <div className={styles.rowTitle}>
           <Text font="rm_mono" size={isMobile ? "md" : "sm"}>
-            {proposal.title || formatProposalTitle(proposal.type_url)}
+            {proposal.title}
           </Text>
         </div>
       </Container>
