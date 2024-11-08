@@ -60,8 +60,8 @@ interface UseLPReturn {
 // combination of canto dex and ambient pools
 export default function useLP(props: UseLPProps): UseLPReturn {
   // grab data from canto dex and ambient
-  const cantoDex = useCantoDex(props);
   const ambient = useAmbientPools(props);
+  const cantoDex = useCantoDex(props);
 
   // get user pairs
   const userCantoDexPairs = cantoDex.pairs.filter(
