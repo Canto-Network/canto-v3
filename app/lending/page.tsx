@@ -725,61 +725,53 @@ export default function LendingPage() {
         </div>
 
         <div>
-          <Container
-            direction={isMobile ? "column" : "row"}
-            gap={isMobile ? 12 : 20}
-          >
+          <div className={styles.statsContainer}>
             <div className={styles.statsBox}>
-              <div style={{ marginBottom: "8px" }}>
-                <Text
-                  font="rm_mono"
-                  color="#767676"
-                  size={isMobile ? "md" : "x-sm"}
-                >
-                  Total Borrowed
-                </Text>
-              </div>
-              <Container direction="row" center={{ vertical: true }}>
-                <div style={{ margin: "0 4px 0 4px" }}>
+              <div>
+                <div style={{ marginBottom: "8px" }}>
+                  <Text
+                    font="rm_mono"
+                    color="#767676"
+                    size={isMobile ? "md" : "x-sm"}
+                  >
+                    Total Borrowed
+                  </Text>
+                </div>
+                <Container direction="row" center={{ vertical: true }}>
                   <Text
                     font="proto_mono"
                     size={isMobile ? "x-lg" : "lg"}
-                    color="#FFFFFF"
+                    color="#000000"
                   >
-                    {/* {displayAmount(totalStats.totalBorrowed.toString(), 18, {
-                      precision: 2,
-                    })} */}
-                    ${totalStats.totalBorrowed}
+                    ${totalStats.totalBorrowed.toLocaleString()}
+                  </Text>
+                </Container>
+              </div>
+            </div>
+
+            <div className={styles.statsBox}>
+              <div>
+                <div style={{ marginBottom: "8px" }}>
+                  <Text
+                    font="rm_mono"
+                    color="#767676"
+                    size={isMobile ? "md" : "x-sm"}
+                  >
+                    Total Supplied
                   </Text>
                 </div>
-              </Container>
-            </div>
-            <div className={styles.statsBox}>
-              <div style={{ marginBottom: "8px" }}>
-                <Text
-                  font="rm_mono"
-                  color="#767676"
-                  size={isMobile ? "md" : "x-sm"}
-                >
-                  Total Supplied
-                </Text>
-              </div>
-              <Container direction="row" center={{ vertical: true }}>
-                <div style={{ margin: "0 4px 0 4px" }}>
+                <Container direction="row" center={{ vertical: true }}>
                   <Text
                     font="proto_mono"
                     size={isMobile ? "x-lg" : "lg"}
-                    color="#FFFFFF"
+                    color="#000000"
                   >
-                    {/* {displayAmount(totalStats.totalSupplied.toString(), 18, {
-                      precision: 2,
-                    })} */}
-                    ${totalStats.totalSupplied}
+                    ${totalStats.totalSupplied.toLocaleString()}
                   </Text>
-                </div>
-              </Container>
+                </Container>
+              </div>
             </div>
-          </Container>
+          </div>
         </div>
         <Spacer height="5px" />
         <Table
