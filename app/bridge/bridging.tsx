@@ -46,7 +46,8 @@ const Bridging = ({ props }: { props: BridgeComboReturn }) => {
   });
   const { address } = useAccount();
   const { data: gravityBridgeBalance } = useGravityBridgeBalance(
-    address ?? "0x"
+    address ?? "0x",
+    token?.name ?? ""
   );
 
   // State to track if RESCUE has been clicked
@@ -276,7 +277,7 @@ const Bridging = ({ props }: { props: BridgeComboReturn }) => {
           <Spacer height="20px" />
           <Container>
             {Number(gravityBridgeBalance) / 1e6 > 0.1 &&
-              token?.name === "USDC" &&
+              (token?.name === "USDC" || token?.name === "USDT") &&
               Number(selectedGBridgeFee) !== 0 && (
                 <div className={styles["network-box"]}>
                   <Icon
@@ -295,8 +296,8 @@ const Bridging = ({ props }: { props: BridgeComboReturn }) => {
                     <span style={{ color: "red" }}>
                       Incomplete bridging detected:
                     </span>{" "}
-                    Found {(Number(gravityBridgeBalance) / 1e6).toFixed(2)} USDC
-                    stuck on Gravity Bridge
+                    Found {(Number(gravityBridgeBalance) / 1e6).toFixed(2)}{" "}
+                    {token?.name} stuck on Gravity Bridge
                   </Text>
                   <div>
                     <Button
