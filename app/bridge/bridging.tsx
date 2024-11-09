@@ -66,13 +66,15 @@ const Bridging = ({ props }: { props: BridgeComboReturn }) => {
       ).toString();
       Amount.setAmount(amount);
       setRescueClicked(false);
-      if (
-        Direction.direction === "out" &&
-        method === BridgingMethod.GRAVITY_BRIDGE
-      ) {
-        setGravityModalOpen(true);
-      } else {
-        Confirmation.setIsModalOpen(true);
+      if (Number(amount) > 0) {
+        if (
+          Direction.direction === "out" &&
+          method === BridgingMethod.GRAVITY_BRIDGE
+        ) {
+          setGravityModalOpen(true);
+        } else {
+          Confirmation.setIsModalOpen(true);
+        }
       }
     }
   }, [
@@ -277,8 +279,8 @@ const Bridging = ({ props }: { props: BridgeComboReturn }) => {
           <Spacer height="20px" />
           <Container>
             {Number(gravityBridgeBalance) / 1e6 > 0.1 &&
-              (token?.name === "USDC" || token?.name === "USDT") &&
-              Number(selectedGBridgeFee) !== 0 && (
+              bridge.direction === "out" &&
+              (token?.name === "USDC" || token?.name === "USDT") && (
                 <div className={styles["network-box"]}>
                   <Icon
                     icon={{
