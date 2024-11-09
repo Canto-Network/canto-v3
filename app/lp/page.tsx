@@ -268,7 +268,7 @@ export default function Page() {
                 }}
               >
                 <Text size="sm" font="proto_mono">
-                  Loading concentrated pairs
+                  Loading concentrated pairs...
                 </Text>
                 <Icon
                   themed
