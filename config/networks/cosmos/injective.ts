@@ -13,8 +13,8 @@ export const INJECTIVE: CosmosNetwork = {
   icon: "/icons/inj.svg",
   name: "Injective",
   isTestChain: false,
-  rpcUrl: "https://injective-1-public-rpc.mesa.ec1-prod.newmetric.xyz",
-  restEndpoint: "https://injective-1-public-rest.mesa.ec1-prod.newmetric.xyz",
+  rpcUrl: "https://rpc.cosmos.directory/injective",
+  restEndpoint: "https://rest.cosmos.directory/injective",
   latestBlockEndpoint: "/cosmos/base/tendermint/v1beta1",
   addressPrefix: "inj",
   checkAddress: function (address) {
