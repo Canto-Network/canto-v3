@@ -21,6 +21,9 @@ import GravityConfirmationModal from "./components/gravityConfirmationModal";
 import { GRAVITY_BRIDGE } from "@/config/networks";
 import { TX_ERROR_TYPES } from "@/config/consts/errors";
 import useScreenSize from "@/hooks/helpers/useScreenSize";
+import { useGravityBridgeBalance } from "@/hooks/bridge/useGravityBridgeBalance";
+import { useAccount } from "wagmi";
+import Icon from "@/components/icon/icon";
 
 const Bridging = ({ props }: { props: BridgeComboReturn }) => {
   const {
@@ -41,10 +44,48 @@ const Bridging = ({ props }: { props: BridgeComboReturn }) => {
     totalChainFee,
     selected: selectedGBridgeFee,
   });
+  const { address } = useAccount();
+  const { data: gravityBridgeBalance } = useGravityBridgeBalance(
+    address ?? "0x",
+    token?.name ?? ""
+  );
+
+  // State to track if RESCUE has been clicked
+  const [rescueClicked, setRescueClicked] = useState(false);
+  const { isMobile } = useScreenSize();
 
   // special modal for gravity bridge out (check for wallet provider custom chains)
   const [gravityModalOpen, setGravityModalOpen] = useState(false);
-  const { isMobile } = useScreenSize();
+
+  // useEffect to recalculate rescueAmount when totalChainFee updates
+  useEffect(() => {
+    if (rescueClicked && totalChainFee !== null) {
+      const amount = (
+        Number(gravityBridgeBalance) / 1e6 -
+        (Number(selectedGBridgeFee) / 1e6 + Number(totalChainFee) / 1e6)
+      ).toString();
+      Amount.setAmount(amount);
+      setRescueClicked(false);
+      if (
+        Direction.direction === "out" &&
+        method === BridgingMethod.GRAVITY_BRIDGE
+      ) {
+        setGravityModalOpen(true);
+      } else {
+        Confirmation.setIsModalOpen(true);
+      }
+    }
+  }, [
+    totalChainFee,
+    gravityBridgeBalance,
+    selectedGBridgeFee,
+    rescueClicked,
+    Amount,
+    setGravityModalOpen,
+    Direction.direction,
+    method,
+    Confirmation,
+  ]);
 
   return (
     <>
@@ -100,6 +141,7 @@ const Bridging = ({ props }: { props: BridgeComboReturn }) => {
         }}
         showGravityPortalMsg={toNetwork?.id === GRAVITY_BRIDGE.id}
       />
+
       <section className={styles.container}>
         <div
           className={styles["network-selection"]}
@@ -233,8 +275,48 @@ const Bridging = ({ props }: { props: BridgeComboReturn }) => {
             )}
           </Container>
           <Spacer height="20px" />
+          <Container>
+            {Number(gravityBridgeBalance) / 1e6 > 0.1 &&
+              (token?.name === "USDC" || token?.name === "USDT") &&
+              Number(selectedGBridgeFee) !== 0 && (
+                <div className={styles["network-box"]}>
+                  <Icon
+                    icon={{
+                      url: "/warning.svg",
+                      size: 20,
+                    }}
+                    themed
+                  />
+                  <Text
+                    style={{
+                      fontSize: "12px",
+                      marginLeft: "10px",
+                    }}
+                  >
+                    <span style={{ color: "red" }}>
+                      Incomplete bridging detected:
+                    </span>{" "}
+                    Found {(Number(gravityBridgeBalance) / 1e6).toFixed(2)}{" "}
+                    {token?.name} stuck on Gravity Bridge
+                  </Text>
+                  <div>
+                    <Button
+                      onClick={() => {
+                        Amount.setAmount(
+                          (Number(gravityBridgeBalance) / 1e6).toString()
+                        );
+                        setRescueClicked(true);
+                      }}
+                      disabled={Number(selectedGBridgeFee) === 0}
+                    >
+                      RESCUE
+                    </Button>
+                  </div>
+                </div>
+              )}
+          </Container>
+          <Spacer height="20px" />
           {/* select token group */}
-
           <Container width="100%" gap={14}>
             <Text size="sm">Select Token and Enter Amount</Text>
             <Container
