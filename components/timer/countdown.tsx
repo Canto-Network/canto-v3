@@ -1,68 +1,50 @@
 "use client";
-import { useState, useEffect } from "react";
 
-type TimeFormat = "h m s";
+import { useEffect, useState } from "react";
 
-function getTimeLeft(endTimestamp: bigint): bigint {
-  const timeLeft = endTimestamp - BigInt(Date.now());
-  if (timeLeft < 0) {
-    return 0n;
-  }
-  return timeLeft;
+function getTimeLeft(endTimestamp: number): number {
+  const timeLeft = endTimestamp - Date.now();
+  return timeLeft > 0 ? timeLeft : 0;
 }
 
-const day = BigInt(1000 * 60 * 60 * 24);
-const hour = BigInt(1000 * 60 * 60);
-const minute = BigInt(1000 * 60);
-const second = BigInt(1000);
-
-const Countdown = ({
-  endTimestamp,
-  timeFormat,
-}: {
-  endTimestamp: bigint;
-  timeFormat?: TimeFormat;
-}) => {
-  const [timeLeft, setTimeLeft] = useState<bigint>(getTimeLeft(endTimestamp));
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setTimeLeft(getTimeLeft(endTimestamp));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [endTimestamp]);
-
-  const days = timeLeft / day;
-  const hours = (timeLeft % day) / hour;
-  const minutes = (timeLeft % hour) / minute;
-  const seconds = (timeLeft % minute) / second;
-
-  return (
-    <>
-      {formatTime(
-        days.toString(),
-        hours.toString(),
-        minutes.toString(),
-        seconds.toString(),
-        timeFormat
-      )}
-    </>
-  );
-};
+const day = 1000 * 60 * 60 * 24;
+const hour = 1000 * 60 * 60;
+const minute = 1000 * 60;
+const second = 1000;
 
 function formatTime(
-  days: string,
-  hours: string,
-  minutes: string,
-  seconds: string,
-  timeFormat?: TimeFormat
+  days: number,
+  hours: number,
+  minutes: number,
+  seconds: number
 ) {
-  switch (timeFormat) {
-    case "h m s":
-      return `${hours}h ${minutes}m ${seconds}s`;
-    default:
-      return `${days} Days : ${hours} Hours : ${minutes} Minutes : ${seconds} Seconds`;
-  }
+  const timeParts = [
+    days > 0 ? `${days}d` : "",
+    `${hours}h`,
+    `${minutes}m`,
+    `${seconds}s`,
+  ].filter(Boolean);
+
+  return timeParts.join(" ");
 }
+
+const Countdown = ({ endDateString }: { endDateString: string }) => {
+  const endTimestamp = new Date(endDateString).getTime();
+  const [timeLeft, setTimeLeft] = useState<number>(getTimeLeft(endTimestamp));
+
+  useEffect(() => {
+    const intervalId = setInterval(() => {
+      setTimeLeft(getTimeLeft(endTimestamp));
+    }, 1000);
+    return () => clearInterval(intervalId);
+  }, [endTimestamp]);
+
+  const days = Math.floor(timeLeft / day);
+  const hours = Math.floor((timeLeft % day) / hour);
+  const minutes = Math.floor((timeLeft % hour) / minute);
+  const seconds = Math.floor((timeLeft % minute) / second);
+
+  return formatTime(days, hours, minutes, seconds);
+};
 
 export default Countdown;

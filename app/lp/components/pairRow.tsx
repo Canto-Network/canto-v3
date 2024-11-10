@@ -447,7 +447,9 @@ export const UserAmbientPairRow = ({
           <Container>
             <Text size="sm" theme="secondary-dark">
               Rewards will be released in{" "}
-              <Countdown endTimestamp={rewardTime} />
+              <Countdown
+                endDateString={new Date(Number(rewardTime)).toUTCString()}
+              />
             </Text>
           </Container>
         </InfoPop>
