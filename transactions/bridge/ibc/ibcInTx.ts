@@ -64,6 +64,7 @@ import { getCantoSenderObj, getCosmosTokenBalance } from "@/utils/cosmos";
 import { generatePostBodyBroadcast } from "@/transactions/signTx/cosmosEIP/signCosmosEIP";
 import { TransactionFlowType } from "@/transactions/flows";
 import { _convertCoinTx } from "./txCreators";
+import { connectorsForWallets } from "@rainbow-me/rainbowkit";
 
 type IBCInParams = {
   senderCosmosAddress: string;
@@ -342,38 +343,47 @@ async function injectiveIBCIn(
     },
   });
 
-  /** Prepare the Transaction **/
-  const { signDoc } = createTransaction({
-    pubKey: accountDetails.pubKey.key,
-    chainId: injectiveNetwork.chainId,
-    fee: DEFAULT_STD_FEE,
-    message: [msg],
-    sequence: accountDetails.sequence,
-    timeoutHeight: timeoutHeight.toNumber(),
-    accountNumber: accountDetails.accountNumber,
-  });
-
   /** Signature and Broadcast Tx */
   async function signAndBroadcast(): PromiseWithError<unknown> {
     try {
-      /** Sign the Transaction **/
-      const offlineSigner = window.keplr?.getOfflineSigner(
+      /** Use the Correct Signer **/
+      const offlineSigner = await window.keplr?.getOfflineSignerAuto(
         injectiveNetwork.chainId
       );
 
+      if (!offlineSigner) {
+        return NEW_ERROR("injectiveIBCIn: Keplr is not available or chain is not added");
+      }
+  
+      /** Get the Account's PubKey from the Signer **/
+      const [{ pubkey }] = await offlineSigner?.getAccounts();
+      const pubKeyBase64 = window.btoa(String.fromCharCode(...pubkey));
+  
+      /** Prepare the Transaction without pubKey **/
+      const { signDoc } = createTransaction({
+        // Remove pubKey or use the one from the signer
+        pubKey: pubKeyBase64,
+        chainId: injectiveNetwork.chainId,
+        fee: DEFAULT_STD_FEE,
+        message: [msg],
+        sequence: accountDetails.sequence,
+        timeoutHeight: timeoutHeight.toNumber(),
+        accountNumber: accountDetails.accountNumber,
+      });
+  
+      /** Sign the Transaction **/
+      //@ts-ignore
       const directSignResponse = await offlineSigner?.signDirect(
         injectiveAddress,
-        //@ts-ignore
         signDoc
       );
-
+  
       if (!directSignResponse) {
         return NEW_ERROR("injectiveIBCIn: no direct sign response");
       }
-      const txRaw = getTxRawFromTxRawOrDirectSignResponse(
-        directSignResponse as any
-      );
-
+  
+      const txRaw = getTxRawFromTxRawOrDirectSignResponse(directSignResponse as any);
+  
       /** Broadcast the Transaction **/
       return NO_ERROR(
         await window.keplr?.sendTx(
@@ -387,7 +397,7 @@ async function injectiveIBCIn(
       return NEW_ERROR("injectiveIBCIn", err);
     }
   }
-
+  
   return NO_ERROR({
     transactions: [
       {
