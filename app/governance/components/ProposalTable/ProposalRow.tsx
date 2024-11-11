@@ -217,12 +217,7 @@ export const ProposalRow = ({
                   height="30px"
                 >
                   <Text font="rm_mono" className={styles.tableData} size="lg">
-                    <Countdown
-                      endTimestamp={BigInt(
-                        new Date(proposal.voting_end_time).getTime()
-                      )}
-                      timeFormat="h m s"
-                    />
+                    <Countdown endDateString={proposal.voting_end_time} />
                   </Text>
                 </Container>
               </Container>
@@ -374,12 +369,7 @@ export const ProposalRow = ({
                 height="30px"
               >
                 <Text font="rm_mono" className={styles.tableData} size="sm">
-                  <Countdown
-                    endTimestamp={BigInt(
-                      new Date(proposal.voting_end_time).getTime()
-                    )}
-                    timeFormat="h m s"
-                  />
+                  <Countdown endDateString={proposal.voting_end_time} />
                 </Text>
               </Container>
             </Container>
