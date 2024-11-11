@@ -12,6 +12,8 @@ const proposalTypes = {
   "/cosmos.gov.v1.MsgUpdateParams": "Governance Update Params",
   "/canto.govshuttle.v1.MsgLendingMarketProposal": "Lending Market",
   "/cosmos.slashing.v1beta1.MsgUpdateParams": "Slashing Update Params",
+  "/cosmos.distribution.v1beta1.MsgCommunityPoolSpend": "Community Pool Spend",
+  "/cosmos.gov.v1.MsgExecLegacyContent": "Exec Legacy Content",
 };
 
 export function formatProposalStatus(status: string): string | undefined {

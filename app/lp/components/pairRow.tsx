@@ -243,10 +243,12 @@ export const GeneralAmbientPairRow = ({
   pool,
   onAddLiquidity,
   isMobile,
+  isAprsLoading,
 }: {
   pool: AmbientPool;
   onAddLiquidity: (poolAddress: string) => void;
   isMobile: boolean;
+  isAprsLoading?: boolean;
 }) => [
   <Container
     key={pool.address}
@@ -269,7 +271,11 @@ export const GeneralAmbientPairRow = ({
     </InfoPop>
   </Container>,
   // <AprBlock key={"apr"} pool={pool} />,
-  <Text key={pool.address}>0</Text>,
+  isAprsLoading ? (
+    <Text key={pool.address + "-apr-loading"}>Loading...</Text>
+  ) : (
+    <Text key={pool.address}>0</Text>
+  ),
   <Text key={pool.address + "tvl"}>
     {displayAmount(pool.totals.noteTvl, 18, {
       precision: 2,
@@ -308,8 +314,12 @@ export const GeneralAmbientPairRow = ({
   ),
   !isMobile && (
     <Container key={"action"} direction="row" center={{ horizontal: true }}>
-      <Button key={"action item"} onClick={() => onAddLiquidity(pool.address)}>
-        Add LP
+      <Button
+        key={"action item"}
+        onClick={() => onAddLiquidity(pool.address)}
+        disabled={isAprsLoading}
+      >
+        {isAprsLoading ? "Loading..." : "Add LP"}
       </Button>
     </Container>
   ),
@@ -320,11 +330,13 @@ export const UserAmbientPairRow = ({
   onManage,
   rewardTime,
   isMobile,
+  isAprsLoading,
 }: {
   pool: AmbientPool;
   onManage: (poolAddress: string) => void;
   rewardTime: bigint;
   isMobile?: boolean;
+  isAprsLoading?: boolean;
 }) => {
   let totalValue = "0";
   const allPositionValues = pool.userPositions.map((position) => {
@@ -397,7 +409,7 @@ export const UserAmbientPairRow = ({
         {pool.symbol}
       </Text>
     </Container>,
-    <AprBlock key={"apr"} pool={pool} />,
+    <AprBlock key={"apr"} pool={pool} isLoading={isAprsLoading} />,
     !isMobile && (
       <Text key={pool.symbol + "pool share"}>
         {formatPercent(divideBalances(totalValue, pool.totals.noteTvl))}
@@ -447,7 +459,9 @@ export const UserAmbientPairRow = ({
           <Container>
             <Text size="sm" theme="secondary-dark">
               Rewards will be released in{" "}
-              <Countdown endTimestamp={rewardTime} />
+              <Countdown
+                endDateString={new Date(Number(rewardTime)).toUTCString()}
+              />
             </Text>
           </Container>
         </InfoPop>
@@ -467,7 +481,29 @@ export const UserAmbientPairRow = ({
   ];
 };
 
-const AprBlock = ({ pool }: { pool: AmbientPool }) => {
+const AprBlock = ({
+  pool,
+  isLoading,
+}: {
+  pool: AmbientPool;
+  isLoading?: boolean;
+}) => {
+  if (isLoading) {
+    return (
+      <Container
+        key={"popkey1"}
+        direction="row"
+        gap={4}
+        center={{
+          horizontal: true,
+          vertical: true,
+        }}
+      >
+        <Text>Loading...</Text>
+      </Container>
+    );
+  }
+
   const baseApr = pool.totals.apr.base;
   const quoteApr = pool.totals.apr.quote;
   const totalApr =

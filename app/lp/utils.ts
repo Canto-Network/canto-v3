@@ -14,6 +14,9 @@ export default function usePool() {
     chainId,
     userEthAddress: connectedEthAccount,
   });
+
+  const { cantoDex: isCantoDexLoading, ambient: isAmbientLoading } = isLoading;
+
   /** general selection */
   const { pair: selectedPair, setPair } = selection;
 
@@ -124,7 +127,10 @@ export default function usePool() {
   };
 
   return {
-    isLoading,
+    isLoading: {
+      cantoDex: isCantoDexLoading,
+      ambient: isAmbientLoading,
+    },
     pairs,
     rewards,
     rewardTime,
