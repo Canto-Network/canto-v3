@@ -35,12 +35,15 @@ export async function getIBCData(
 export async function getBlockTimestamp(
   restEndpoint: string,
   extraEndpoints?: string[],
-  latestBlockEndpoint?: string
+  latestBlockEndpoint?: string,
+  receivingChain?: string
 ): PromiseWithError<string> {
   const urlEnding = latestBlockEndpoint ?? "";
   const allEndpoints = [restEndpoint, ...(extraEndpoints ?? [])].map(
     (endpoint) =>
-      endpoint + urlEnding + "/cosmos/base/tendermint/v1beta1/blocks/latest"
+      endpoint + urlEnding + receivingChain === "injective-1"
+        ? "/blocks/latest"
+        : "/cosmos/base/tendermint/v1beta1/blocks/latest"
   );
   const { data, error } = await tryFetchMultipleEndpoints<{
     block: { header: { time: string } };
