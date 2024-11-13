@@ -38,26 +38,33 @@ export async function getBlockTimestamp(
   latestBlockEndpoint?: string,
   receivingChain?: string
 ): PromiseWithError<string> {
+  // Determine the URL ending based on receivingChain
+  const defaultUrlEnding =
+    receivingChain === "injective-1"
+      ? "/blocks/latest"
+      : "/cosmos/base/tendermint/v1beta1/blocks/latest";
+
   const urlEnding = latestBlockEndpoint ?? "";
+
   const allEndpoints = [restEndpoint, ...(extraEndpoints ?? [])].map(
-    (endpoint) =>
-      endpoint + urlEnding + receivingChain === "injective-1"
-        ? "/blocks/latest"
-        : "/cosmos/base/tendermint/v1beta1/blocks/latest"
+    (endpoint) => endpoint + urlEnding + defaultUrlEnding
   );
+
   const { data, error } = await tryFetchMultipleEndpoints<{
     block: { header: { time: string } };
   }>(allEndpoints);
+
   if (error) {
     return NEW_ERROR("getBlockTimestamp" + error);
   }
+
   try {
-    // get iso formatted time stamp from latest block
+    // Get ISO formatted timestamp from the latest block
     const ts = data["block"]["header"]["time"];
-    // parse string into microseconds UTC
+    // Parse string into milliseconds UTC
     const ms = Date.parse(ts);
-    // return as nano-seconds
-    return NO_ERROR(Number(ms * 1e7 + 600 * 1e9).toString());
+    // Return as nanoseconds
+    return NO_ERROR(Number(ms * 1e6 + 600 * 1e9).toString());
   } catch (err) {
     return NEW_ERROR("getBlockTimestamp", err);
   }
