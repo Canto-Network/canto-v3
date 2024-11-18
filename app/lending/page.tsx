@@ -44,6 +44,7 @@ import { GET_TOKEN_PRICES } from "@/graphql/dex/token-prices-query.graphql";
 import { apolloClient } from "@/config/apollo.config";
 import { CLM_TOKENS } from "@/config/consts/addresses";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import LiquidateModal from "../staking/components/liquidateModal/LiquidateModal";
 
 enum CLMModalTypes {
   SUPPLY = "supply",
@@ -126,8 +127,9 @@ const calculateHealthFactor = async (tokens: any[]) => {
 
 export default function LendingPage() {
   const toast = useToast();
+  const [loading, setLoading] = useState(false);
 
-  const handleLiquidate = async (position: any) => {
+  const handleLiquidate = async (position: any, repayAmount: bigint) => {
     if (!address) {
       toast.add({
         primary: "Please connect your wallet to liquidate positions",
@@ -138,15 +140,11 @@ export default function LendingPage() {
     }
 
     try {
+      setLoading(true);
       const tokenDecimals =
         CLM_TOKENS.find(
           (token) => token.id.toLowerCase() === position.market.id.toLowerCase()
         )?.decimals ?? 18;
-
-      const repayAmount =
-        (BigInt(parseUnits(position.totalUnderlyingBorrowed, tokenDecimals)) *
-          BigInt(90)) /
-        BigInt(100);
 
       const cTokenCollateral = position.account.tokens
         .find(
@@ -177,6 +175,7 @@ export default function LendingPage() {
         });
 
         if (!approvalStatus) {
+          setLoading(false);
           throw new Error("Approval failed");
         }
       }
@@ -195,12 +194,14 @@ export default function LendingPage() {
       const { status } = await waitForTransaction({ hash });
 
       if (status) {
+        setLoading(false);
         toast.add({
           primary: "Position liquidated successfully",
           state: "success",
           duration: 4000,
         });
       } else {
+        setLoading(false);
         toast.add({
           primary: "Liquidation transaction reverted",
           state: "failure",
@@ -208,6 +209,7 @@ export default function LendingPage() {
         });
       }
     } catch (error: any) {
+      setLoading(false);
       console.error("Liquidation failed:", error);
       toast.add({
         primary: "Failed to liquidate position",
@@ -221,6 +223,8 @@ export default function LendingPage() {
   const [currentModal, setCurrentModal] = useState<CLMModalTypes>(
     CLMModalTypes.NONE
   );
+
+  const [postion, setPosition] = useState();
 
   const [currentToggle, setCurrentToggle] = useState<"Supply" | "Borrow">(
     "Supply"
@@ -251,6 +255,7 @@ export default function LendingPage() {
 
   const [positionsToggle, setPositionsToggle] = useState<"All" | "My">("All");
   const { address } = useAccount();
+  const [openLiquidateModal, setOpenLiquidateModal] = useState(false);
 
   const [sortDirection, setSortDirection] = useState<OrderDirection>(
     OrderDirection.DESC
@@ -844,7 +849,11 @@ export default function LendingPage() {
                           HEALTH_THRESHOLDS.DANGER && (
                           <button
                             className={styles.liquidateButton}
-                            onClick={() => handleLiquidate(position)}
+                            onClick={() => {
+                              setOpenLiquidateModal(true);
+                              //@ts-ignore
+                              setPosition(position);
+                            }}
                             disabled={!address}
                             style={{
                               opacity: address ? 1 : 0.5,
@@ -884,6 +893,13 @@ export default function LendingPage() {
                   </Container>,
                 ]
           }
+        />
+        <LiquidateModal
+          open={openLiquidateModal}
+          onClose={() => setOpenLiquidateModal(false)}
+          position={postion ?? ""}
+          onClick={handleLiquidate}
+          loading={loading}
         />
       </div>
     </div>
