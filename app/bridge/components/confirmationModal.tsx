@@ -252,16 +252,28 @@ const ConfirmationModal = (props: Props) => {
           </Container>
         )}
 
-        <Button
-          width={"fill"}
-          onClick={() => {
-            props.confirmation.onConfirm();
-          }}
-          disabled={!props.confirmation.canConfirm}
-        >
-          Confirm Bridge{" "}
-          {props.type.slice(0, 1).toUpperCase() + props.type.slice(1)}
-        </Button>
+        {localStorage.getItem("isRescue") !== "true" ? (
+          <Button
+            width={"fill"}
+            onClick={() => {
+              props.confirmation.onConfirm();
+            }}
+            disabled={!props.confirmation.canConfirm}
+          >
+            Confirm Bridge{" "}
+            {props.type.slice(0, 1).toUpperCase() + props.type.slice(1)}
+          </Button>
+        ) : (
+          <Button
+            width={"fill"}
+            onClick={() => {
+              props.confirmation.onConfirm();
+            }}
+          >
+            Confirm Bridge{" "}
+            {props.type.slice(0, 1).toUpperCase() + props.type.slice(1)}
+          </Button>
+        )}
         {/* <Text size="x-sm" font="rm_mono" theme="secondary-dark">
         By completing bridge in, you are transferring your assets from Ethereum
         (

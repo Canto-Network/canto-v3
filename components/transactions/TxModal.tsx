@@ -78,6 +78,7 @@ const TransactionModal = () => {
         open={isOpen}
         onClose={() => {
           setIsOpen(false);
+          localStorage.removeItem("isRescue");
         }}
         height="36rem"
         width="32rem"
