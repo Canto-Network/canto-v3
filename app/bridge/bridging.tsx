@@ -65,6 +65,7 @@ const Bridging = ({ props }: { props: BridgeComboReturn }) => {
         (Number(selectedGBridgeFee) / 1e6 + Number(totalChainFee) / 1e6)
       ).toString();
       Amount.setAmount(amount);
+      localStorage?.setItem("isRescue", "true");
       setRescueClicked(false);
       if (Number(amount) > 0) {
         if (
@@ -108,6 +109,7 @@ const Bridging = ({ props }: { props: BridgeComboReturn }) => {
         open={Confirmation.isModalOpen}
         onClose={() => {
           Confirmation.setIsModalOpen(false);
+          localStorage.removeItem("isRescue");
         }}
         {...cosmosProps}
         token={{

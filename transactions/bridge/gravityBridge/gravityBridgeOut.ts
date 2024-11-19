@@ -43,8 +43,11 @@ export async function gravityBridgeOutTx(
 ): PromiseWithError<TxCreatorFunctionReturn> {
   try {
     /** validate params */
-    const validation = validateGravityBridgeOutTxParams(txParams);
-    if (validation.error) throw new Error(validation.reason);
+    const isRescue = localStorage.getItem("isRescue") === "true";
+    if (!isRescue) {
+      const validation = validateGravityBridgeOutTxParams(txParams);
+      if (validation.error) throw new Error(validation.reason);
+    }
 
     /** convert eth address to gravity */
     const gravityAddress = ethToGravity(txParams.ethSender);
