@@ -50,6 +50,13 @@ const Bridging = ({ props }: { props: BridgeComboReturn }) => {
     token?.name ?? ""
   );
 
+  useEffect(() => {
+    if (!Number(selectedGBridgeFee)) {
+      //@ts-expect-error : type exists
+      setSelectedGBridgeFee(fees?.bridgeFeeOptions?.slow?.fee);
+    }
+  }, [fees, selectedGBridgeFee, setSelectedGBridgeFee]);
+
   // State to track if RESCUE has been clicked
   const [rescueClicked, setRescueClicked] = useState(false);
   const { isMobile } = useScreenSize();
