@@ -50,11 +50,25 @@ const Bridging = ({ props }: { props: BridgeComboReturn }) => {
     token?.name ?? ""
   );
 
-  // State to track if RESCUE has been clicked
+  useEffect(() => {
+    if (
+      !Number(selectedGBridgeFee) &&
+      (token?.name === "USDC" ||
+        token?.name === "USDT" ||
+        token?.name === "ETH" ||
+        token?.name === "Wrapped Staked ETH") &&
+      //@ts-expect-error : bridgeFeeOptions type exists
+      fees?.bridgeFeeOptions?.slow?.fee
+    ) {
+      //@ts-expect-error : bridgeFeeOptions type exists
+      setSelectedGBridgeFee(fees?.bridgeFeeOptions?.slow?.fee);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fees, token?.name]);
+
   const [rescueClicked, setRescueClicked] = useState(false);
   const { isMobile } = useScreenSize();
 
-  // special modal for gravity bridge out (check for wallet provider custom chains)
   const [gravityModalOpen, setGravityModalOpen] = useState(false);
 
   useEffect(() => {
