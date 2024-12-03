@@ -94,8 +94,6 @@ const calculateHealthFactor = async (tokens: any[]) => {
     })
   );
 
-  console.log("token prices", pricePromises);
-
   const prices = await Promise.all(pricePromises);
 
   tokens.forEach((token, index) => {
