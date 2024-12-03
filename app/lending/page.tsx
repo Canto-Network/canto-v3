@@ -422,8 +422,6 @@ export default function LendingPage() {
     }
   }, [paginatedPositions]);
 
-  console.log("account liquidities", accountLiquidities);
-
   if (isLoading || cNote === undefined || stableCoins === undefined) {
     return (
       <div className={styles.loading}>
