@@ -78,7 +78,9 @@ function sortCTokens(
   return a.underlying.symbol.localeCompare(b.underlying.symbol);
 }
 
-async function getAccountLiquidity(accountAddress: `0x${string}`): Promise<AccountLiquidityData> {
+async function getAccountLiquidity(
+  accountAddress: `0x${string}`
+): Promise<AccountLiquidityData> {
   try {
     const [errorCode, liquidity, shortfall] = await readContract({
       address: "0x5E23dC409Fc2F832f83CEc191E245A191a4bCc5C",
@@ -376,8 +378,9 @@ export default function LendingPage() {
     {}
   );
 
-  const [accountLiquidities, setAccountLiquidities] = useState<Record<string, AccountLiquidityData>>({});
-
+  const [accountLiquidities, setAccountLiquidities] = useState<
+    Record<string, AccountLiquidityData>
+  >({});
 
   useEffect(() => {
     const calculateHealthFactors = async () => {
@@ -408,7 +411,9 @@ export default function LendingPage() {
       await Promise.all(
         paginatedPositions.map(async (position) => {
           const accountId = position.account.id.toLowerCase();
-          const liquidityData = await getAccountLiquidity(accountId as `0x${string}`);
+          const liquidityData = await getAccountLiquidity(
+            accountId as `0x${string}`
+          );
 
           newAccountLiquidities[position.id] = liquidityData;
         })
