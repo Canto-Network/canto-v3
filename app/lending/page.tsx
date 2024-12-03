@@ -714,7 +714,7 @@ export default function LendingPage() {
               ratio: isMobile ? 1 : 3,
             },
             {
-              value: "Market Address",
+              value: "Market",
               ratio: isMobile ? 1 : 3,
             },
             {
@@ -808,18 +808,9 @@ export default function LendingPage() {
                         center={{ horizontal: true }}
                       >
                         <Text font="proto_mono" size={isMobile ? "sm" : "md"}>
-                          {/* {displayAmount(
-                            position.storedBorrowBalance,
-                            CLM_TOKENS.find(
-                              (token) =>
-                                token.id.toLowerCase() ===
-                                position.market.id.toLowerCase()
-                            )?.decimals ?? 18,
-                            {
-                              precision: 2,
-                            }
-                          )} */}
-                          {Number(position.storedBorrowBalance).toFixed(2)}
+                          {displayAmount(position.storedBorrowBalance, 0, {
+                            precision: 2,
+                          })}
                         </Text>
                       </Container>
                     ),
@@ -832,14 +823,11 @@ export default function LendingPage() {
                     >
                       <Text font="proto_mono" size={isMobile ? "sm" : "md"}>
                         {borrowBalances[position.id]
-                          ? // ? displayAmount(
-                            //     borrowBalances[position.id].borrowBalance,
-                            //     Number(borrowBalances[position.id].decimals),
-                            //     { precision: 2 }
-                            //   )
-                            Number(
-                              borrowBalances[position.id].borrowBalance
-                            ).toFixed(2)
+                          ? displayAmount(
+                              borrowBalances[position.id].borrowBalance,
+                              0,
+                              { precision: 2 }
+                            )
                           : "Loading..."}
                       </Text>
                     </Container>,
