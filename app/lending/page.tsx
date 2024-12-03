@@ -94,21 +94,25 @@ const calculateHealthFactor = async (tokens: any[]) => {
     })
   );
 
+  console.log("token prices", pricePromises);
+
   const prices = await Promise.all(pricePromises);
 
   tokens.forEach((token, index) => {
     const priceData = prices[index]?.data?.tokenDayDatas?.[0];
-    if (!priceData) {
+
+    let price;
+    if (priceData) {
+      price = Number(priceData.token.derivedETH) * Number(priceData.priceUSD);
+    } else {
+      price = 1;
       missingPriceTokens.push({
         address: token.market.underlyingAddress,
         marketName: token.market.name,
         marketId: token.market.id,
       });
-      return;
     }
 
-    const price =
-      Number(priceData.token.derivedETH) * Number(priceData.priceUSD);
     const collateralFactor = Number(token.market.collateralFactor) || 0;
     const supplied = Number(token.totalUnderlyingSupplied) || 0;
     const borrowed = Number(token.totalUnderlyingBorrowed) || 0;
@@ -126,6 +130,9 @@ const calculateHealthFactor = async (tokens: any[]) => {
 
 export default function LendingPage() {
   const toast = useToast();
+  const [loadingPositions, setLoadingPositions] = useState<
+    Record<string, boolean>
+  >({});
 
   const handleLiquidate = async (position: any) => {
     if (!address) {
@@ -138,14 +145,15 @@ export default function LendingPage() {
     }
 
     try {
+      setLoadingPositions((prev) => ({ ...prev, [position.id]: true }));
       const tokenDecimals =
         CLM_TOKENS.find(
           (token) => token.id.toLowerCase() === position.market.id.toLowerCase()
         )?.decimals ?? 18;
 
       const repayAmount =
-        (BigInt(parseUnits(position.totalUnderlyingBorrowed, tokenDecimals)) *
-          BigInt(90)) /
+        (BigInt(parseUnits(position.storedBorrowBalance, tokenDecimals)) *
+          BigInt(50)) /
         BigInt(100);
 
       const cTokenCollateral = position.account.tokens
@@ -153,23 +161,36 @@ export default function LendingPage() {
           (token: any) =>
             token.market.id.toLowerCase() !==
               position.market.id.toLowerCase() &&
-            token.totalUnderlyingSupplied !== "0"
+            token.totalUnderlyingSupplied > repayAmount.toString()
         )
         ?.market.id.toLowerCase();
 
+      const borrowedToken = position.account.tokens.find(
+        (token: any) =>
+          parseFloat(token.totalUnderlyingBorrowed) > 0 &&
+          token.market.id.toLowerCase() === position.market.id.toLowerCase()
+      );
+
       const allowance = await readContract({
-        address: position.market.id.toLowerCase() as `0x${string}`,
+        address: borrowedToken.market.underlyingAddress,
         abi: CERC20_ABI,
         functionName: "allowance",
-        args: [address as `0x${string}`, cTokenCollateral as `0x${string}`],
+        args: [address as `0x${string}`, position.market.id.toLowerCase()],
+      });
+
+      const balance = await readContract({
+        address: borrowedToken.market.underlyingAddress,
+        abi: CERC20_ABI,
+        functionName: "balanceOf",
+        args: [address as `0x${string}`],
       });
 
       if (allowance < repayAmount) {
         const { hash: approvalHash } = await writeContract({
-          address: position.market.id.toLowerCase() as `0x${string}`,
+          address: borrowedToken.market.underlyingAddress,
           abi: CERC20_ABI,
           functionName: "approve",
-          args: [cTokenCollateral as `0x${string}`, repayAmount],
+          args: [position.market.id.toLowerCase(), repayAmount],
         });
 
         const { status: approvalStatus } = await waitForTransaction({
@@ -181,26 +202,36 @@ export default function LendingPage() {
         }
       }
 
+      if (!cTokenCollateral) {
+        throw new Error("Insufficient Collateral to Seize");
+      }
+
+      if (balance < repayAmount) {
+        throw new Error("Balance is less than repay amount");
+      }
+
       const { hash } = await writeContract({
         address: position.market.id.toLowerCase() as `0x${string}`,
         abi: CERC20_ABI,
         functionName: "liquidateBorrow",
         args: [
-          position.account.id.toLowerCase() as `0x${string}`,
+          position.account.id.toLowerCase(),
           repayAmount,
-          cTokenCollateral as `0x${string}`,
+          cTokenCollateral,
         ],
       });
 
       const { status } = await waitForTransaction({ hash });
 
       if (status) {
+        setLoadingPositions((prev) => ({ ...prev, [position.id]: false }));
         toast.add({
           primary: "Position liquidated successfully",
           state: "success",
           duration: 4000,
         });
       } else {
+        setLoadingPositions((prev) => ({ ...prev, [position.id]: false }));
         toast.add({
           primary: "Liquidation transaction reverted",
           state: "failure",
@@ -208,9 +239,10 @@ export default function LendingPage() {
         });
       }
     } catch (error: any) {
-      console.error("Liquidation failed:", error);
+      setLoadingPositions((prev) => ({ ...prev, [position.id]: false }));
+      console.error("Liquidation failed:", error.message);
       toast.add({
-        primary: "Failed to liquidate position",
+        primary: error.message,
         state: "failure",
         duration: 4000,
       });
@@ -778,7 +810,7 @@ export default function LendingPage() {
                         center={{ horizontal: true }}
                       >
                         <Text font="proto_mono" size={isMobile ? "sm" : "md"}>
-                          {displayAmount(
+                          {/* {displayAmount(
                             position.storedBorrowBalance,
                             CLM_TOKENS.find(
                               (token) =>
@@ -788,7 +820,8 @@ export default function LendingPage() {
                             {
                               precision: 2,
                             }
-                          )}
+                          )} */}
+                          {Number(position.storedBorrowBalance).toFixed(2)}
                         </Text>
                       </Container>
                     ),
@@ -801,11 +834,14 @@ export default function LendingPage() {
                     >
                       <Text font="proto_mono" size={isMobile ? "sm" : "md"}>
                         {borrowBalances[position.id]
-                          ? displayAmount(
-                              borrowBalances[position.id].borrowBalance,
-                              Number(borrowBalances[position.id].decimals),
-                              { precision: 2 }
-                            )
+                          ? // ? displayAmount(
+                            //     borrowBalances[position.id].borrowBalance,
+                            //     Number(borrowBalances[position.id].decimals),
+                            //     { precision: 2 }
+                            //   )
+                            Number(
+                              borrowBalances[position.id].borrowBalance
+                            ).toFixed(2)
                           : "Loading..."}
                       </Text>
                     </Container>,
@@ -823,7 +859,9 @@ export default function LendingPage() {
                             ? "Loading..."
                             : healthFactors[position.id] === Infinity
                               ? "N/A"
-                              : healthFactors[position.id].toFixed(2)
+                              : healthFactors[position.id] > 2
+                                ? "2.00"
+                                : healthFactors[position.id].toFixed(2)
                           : "Loading..."}
                       </Text>
                       {position.account.tokens &&
@@ -851,7 +889,9 @@ export default function LendingPage() {
                               cursor: address ? "pointer" : "not-allowed",
                             }}
                           >
-                            Liquidate
+                            {loadingPositions[position.id]
+                              ? "Loading..."
+                              : "Liquidate"}
                           </button>
                         )}
                     </Container>,
