@@ -44,11 +44,18 @@ import { GET_TOKEN_PRICES } from "@/graphql/dex/token-prices-query.graphql";
 import { apolloClient } from "@/config/apollo.config";
 import { CLM_TOKENS } from "@/config/consts/addresses";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { COMPTROLLER_ABI } from "@/config/abis";
 
 enum CLMModalTypes {
   SUPPLY = "supply",
   BORROW = "borrow",
   NONE = "none",
+}
+
+interface AccountLiquidityData {
+  errorCode: string;
+  liquidity: string;
+  shortfall: string;
 }
 
 function sortCTokens(
@@ -69,6 +76,33 @@ function sortCTokens(
   }
   // if no balance, sort by symbol
   return a.underlying.symbol.localeCompare(b.underlying.symbol);
+}
+
+async function getAccountLiquidity(accountAddress: `0x${string}`): Promise<AccountLiquidityData> {
+  try {
+    const [errorCode, liquidity, shortfall] = await readContract({
+      address: "0x5E23dC409Fc2F832f83CEc191E245A191a4bCc5C",
+      abi: COMPTROLLER_ABI,
+      functionName: "getAccountLiquidity",
+      args: [accountAddress],
+    });
+
+    return {
+      errorCode: errorCode.toString(),
+      liquidity: liquidity.toString(),
+      shortfall: shortfall.toString(),
+    };
+  } catch (error) {
+    console.error(
+      `Error fetching liquidity for account ${accountAddress}:`,
+      error
+    );
+    return {
+      errorCode: "1",
+      liquidity: "0",
+      shortfall: "0",
+    };
+  }
 }
 
 const POSITIONS_PER_PAGE = 10;
@@ -342,6 +376,9 @@ export default function LendingPage() {
     {}
   );
 
+  const [accountLiquidities, setAccountLiquidities] = useState<Record<string, AccountLiquidityData>>({});
+
+
   useEffect(() => {
     const calculateHealthFactors = async () => {
       const newHealthFactors: Record<string, number> = {};
@@ -363,6 +400,29 @@ export default function LendingPage() {
 
     calculateHealthFactors();
   }, [paginatedPositions]);
+
+  useEffect(() => {
+    const fetchAccountLiquidities = async () => {
+      const newAccountLiquidities: any = {};
+
+      await Promise.all(
+        paginatedPositions.map(async (position) => {
+          const accountId = position.account.id.toLowerCase();
+          const liquidityData = await getAccountLiquidity(accountId as `0x${string}`);
+
+          newAccountLiquidities[position.id] = liquidityData;
+        })
+      );
+
+      setAccountLiquidities(newAccountLiquidities);
+    };
+
+    if (paginatedPositions.length > 0) {
+      fetchAccountLiquidities();
+    }
+  }, [paginatedPositions]);
+
+  console.log("account liquidities", accountLiquidities);
 
   if (isLoading || cNote === undefined || stableCoins === undefined) {
     return (
@@ -863,13 +923,13 @@ export default function LendingPage() {
                       gap={10}
                       center={{ horizontal: true }}
                     >
-                      {healthFactors[position.id] !== undefined &&
-                        healthFactors[position.id] <
-                          HEALTH_THRESHOLDS.DANGER && (
+                      {accountLiquidities[position.id] &&
+                        BigInt(accountLiquidities[position.id].shortfall) >
+                          0n && (
                           <button
                             className={styles.liquidateButton}
                             onClick={() => handleLiquidate(position)}
-                            disabled={!address}
+                            disabled={!address || loadingPositions[position.id]}
                             style={{
                               opacity: address ? 1 : 0.5,
                               cursor: address ? "pointer" : "not-allowed",
