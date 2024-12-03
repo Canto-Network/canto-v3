@@ -13,10 +13,10 @@ export interface Proposal {
     amount: string;
   }[];
   final_vote: {
-    yes: string;
-    abstain: string;
-    no: string;
-    no_with_veto: string;
+    abstain_count: string;
+    no_count: string;
+    no_with_veto_count: string;
+    yes_count: string;
   };
 }
 

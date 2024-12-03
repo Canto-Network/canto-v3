@@ -23,12 +23,16 @@ interface UseLPProps {
 }
 
 interface UseLPReturn {
-  isLoading: boolean;
+  isLoading: {
+    cantoDex: boolean;
+    ambient: boolean;
+  };
   pairs: {
     allCantoDex: CantoDexPairWithUserCTokenData[];
     userCantoDex: CantoDexPairWithUserCTokenData[];
     allAmbient: AmbientPool[];
     userAmbient: AmbientPool[];
+    isAprsLoading: boolean;
   };
   rewards: {
     cantoDex: string;
@@ -59,8 +63,8 @@ interface UseLPReturn {
 // combination of canto dex and ambient pools
 export default function useLP(props: UseLPProps): UseLPReturn {
   // grab data from canto dex and ambient
-  const cantoDex = useCantoDex(props);
   const ambient = useAmbientPools(props);
+  const cantoDex = useCantoDex(props);
 
   // get user pairs
   const userCantoDexPairs = cantoDex.pairs.filter(
@@ -70,7 +74,7 @@ export default function useLP(props: UseLPProps): UseLPReturn {
       pair.clmData?.userDetails?.balanceOfCToken !== undefined
   );
   const userAmbientPairs = ambient.ambientPools.filter(
-    (pool) => (pool.userPositions.length > 0 || pool.userRewards !== "0")
+    (pool) => pool.userPositions.length > 0 || pool.userRewards !== "0"
   );
 
   // create list with all pairs
@@ -141,12 +145,16 @@ export default function useLP(props: UseLPProps): UseLPReturn {
   }
 
   return {
-    isLoading: cantoDex.isLoading && ambient.isLoading,
+    isLoading: {
+      cantoDex: cantoDex.isLoading,
+      ambient: ambient.isLoading,
+    },
     pairs: {
       allCantoDex: cantoDex.pairs,
       userCantoDex: userCantoDexPairs,
       allAmbient: ambient.ambientPools,
       userAmbient: userAmbientPairs,
+      isAprsLoading: ambient.isAprsLoading,
     },
     rewards: {
       cantoDex: cantoDex.position.totalRewards,

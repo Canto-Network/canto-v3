@@ -21,6 +21,9 @@ import GravityConfirmationModal from "./components/gravityConfirmationModal";
 import { GRAVITY_BRIDGE } from "@/config/networks";
 import { TX_ERROR_TYPES } from "@/config/consts/errors";
 import useScreenSize from "@/hooks/helpers/useScreenSize";
+import { useGravityBridgeBalance } from "@/hooks/bridge/useGravityBridgeBalance";
+import { useAccount } from "wagmi";
+import Icon from "@/components/icon/icon";
 
 const Bridging = ({ props }: { props: BridgeComboReturn }) => {
   const {
@@ -41,10 +44,69 @@ const Bridging = ({ props }: { props: BridgeComboReturn }) => {
     totalChainFee,
     selected: selectedGBridgeFee,
   });
+  const { address } = useAccount();
+  const { data: gravityBridgeBalance } = useGravityBridgeBalance(
+    address ?? "0x",
+    token?.name ?? ""
+  );
 
-  // special modal for gravity bridge out (check for wallet provider custom chains)
-  const [gravityModalOpen, setGravityModalOpen] = useState(false);
+  useEffect(() => {
+    if (
+      !Number(selectedGBridgeFee) &&
+      (token?.name === "USDC" ||
+        token?.name === "USDT" ||
+        token?.name === "ETH" ||
+        token?.name === "Wrapped Staked ETH") &&
+      //@ts-expect-error : bridgeFeeOptions type exists
+      fees?.bridgeFeeOptions?.slow?.fee
+    ) {
+      //@ts-expect-error : bridgeFeeOptions type exists
+      setSelectedGBridgeFee(fees?.bridgeFeeOptions?.slow?.fee);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fees, token?.name]);
+
+  const [rescueClicked, setRescueClicked] = useState(false);
   const { isMobile } = useScreenSize();
+
+  const [gravityModalOpen, setGravityModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (rescueClicked && totalChainFee !== null && token?.decimals != null) {
+      const divisor = 10 ** token.decimals;
+
+      const amount = (
+        Number(gravityBridgeBalance) / divisor -
+        (Number(selectedGBridgeFee) / divisor + Number(totalChainFee) / divisor)
+      ).toString();
+
+      Amount.setAmount(amount);
+      localStorage?.setItem("isRescue", "true");
+      setRescueClicked(false);
+
+      if (Number(amount) > 0) {
+        if (
+          Direction.direction === "out" &&
+          method === BridgingMethod.GRAVITY_BRIDGE
+        ) {
+          setGravityModalOpen(true);
+        } else {
+          Confirmation.setIsModalOpen(true);
+        }
+      }
+    }
+  }, [
+    totalChainFee,
+    gravityBridgeBalance,
+    selectedGBridgeFee,
+    rescueClicked,
+    Amount,
+    setGravityModalOpen,
+    Direction.direction,
+    method,
+    Confirmation,
+    token,
+  ]);
 
   return (
     <>
@@ -65,6 +127,7 @@ const Bridging = ({ props }: { props: BridgeComboReturn }) => {
         open={Confirmation.isModalOpen}
         onClose={() => {
           Confirmation.setIsModalOpen(false);
+          localStorage.removeItem("isRescue");
         }}
         {...cosmosProps}
         token={{
@@ -100,6 +163,7 @@ const Bridging = ({ props }: { props: BridgeComboReturn }) => {
         }}
         showGravityPortalMsg={toNetwork?.id === GRAVITY_BRIDGE.id}
       />
+
       <section className={styles.container}>
         <div
           className={styles["network-selection"]}
@@ -233,8 +297,59 @@ const Bridging = ({ props }: { props: BridgeComboReturn }) => {
             )}
           </Container>
           <Spacer height="20px" />
+          <Container>
+            {token?.decimals != null &&
+              Number(gravityBridgeBalance) / 10 ** token?.decimals > 0.1 &&
+              bridge.direction === "out" &&
+              (token?.name === "USDC" ||
+                token?.name === "USDT" ||
+                token?.name === "ETH" ||
+                token?.name === "Wrapped Staked ETH") && (
+                <div className={styles["network-box"]}>
+                  <Icon
+                    icon={{
+                      url: "/warning.svg",
+                      size: 20,
+                    }}
+                    themed
+                  />
+                  <Text
+                    style={{
+                      fontSize: "12px",
+                      marginLeft: "10px",
+                    }}
+                  >
+                    <span style={{ color: "red" }}>
+                      Incomplete bridging detected:
+                    </span>{" "}
+                    Found{" "}
+                    {(
+                      Number(gravityBridgeBalance) /
+                      10 ** token?.decimals
+                    ).toFixed(2)}{" "}
+                    {token?.name} stuck on Gravity Bridge
+                  </Text>
+                  <div>
+                    <Button
+                      onClick={() => {
+                        Amount.setAmount(
+                          (
+                            Number(gravityBridgeBalance) /
+                            10 ** token?.decimals
+                          ).toString()
+                        );
+                        setRescueClicked(true);
+                      }}
+                      disabled={Number(selectedGBridgeFee) === 0}
+                    >
+                      RESCUE
+                    </Button>
+                  </div>
+                </div>
+              )}
+          </Container>
+          <Spacer height="20px" />
           {/* select token group */}
-
           <Container width="100%" gap={14}>
             <Text size="sm">Select Token and Enter Amount</Text>
             <Container

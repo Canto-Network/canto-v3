@@ -25,6 +25,8 @@ export default function useAmbientPools(
   ///
 
   // use query for all ambient pool data
+  const [isAprsLoading, setIsAprsLoading] = useState(true);
+
   const { data: ambient, isLoading } = useQuery(
     ["ambient pools", params.chainId, params.userEthAddress],
     async (): Promise<{ pools: AmbientPool[]; totalRewards: string }> => {
@@ -61,8 +63,10 @@ export default function useAmbientPools(
   // only run this once whenever pool length changes
   useEffect(() => {
     async function getCTokenAprs() {
+      setIsAprsLoading(true);
       if (!ambient?.pools.length) {
         setAmbientTokenAprs({});
+        setIsAprsLoading(false);
         return;
       }
       const aprMap: AprMap = {};
@@ -94,6 +98,7 @@ export default function useAmbientPools(
         };
       }
       setAmbientTokenAprs(aprMap);
+      setIsAprsLoading(false);
     }
     getCTokenAprs();
   }, [ambient?.pools, params.chainId]);
@@ -147,6 +152,7 @@ export default function useAmbientPools(
 
   return {
     isLoading,
+    isAprsLoading,
     totalRewards: ambient?.totalRewards ?? "0",
     ambientPools: poolsWithBalances,
     transaction: {

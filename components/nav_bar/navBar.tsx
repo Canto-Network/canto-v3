@@ -137,34 +137,37 @@ const NavBar = () => {
         >
           <Text size="sm">Explore</Text>
         </Link> */}
-        {isMobile && (
-          <Link
-            href="/staking"
-            className={clsx(
-              styles["nav-link"],
-              currentPath == "/staking" && styles.active
-            )}
-            onClick={() => Analytics.actions.events.clickedNavLink("Staking")}
-          >
-            <Text size="sm">Staking</Text>
-          </Link>
-        )}
-        {isMobile && (
-          <Link
-            href="/governance"
-            className={clsx(
-              styles["nav-link"],
-              (currentPath == "/governance" ||
-                currentPath == "/governance/proposal") &&
-                styles.active
-            )}
-            onClick={() =>
-              Analytics.actions.events.clickedNavLink("Governance")
-            }
-          >
-            <Text size="sm">Governance</Text>
-          </Link>
-        )}
+        <Link
+          href="/staking"
+          className={clsx(
+            styles["nav-link"],
+            currentPath == "/staking" && styles.active
+          )}
+          onClick={() => Analytics.actions.events.clickedNavLink("Staking")}
+        >
+          <Text size="sm">Staking</Text>
+        </Link>
+        <Link
+          href="/governance"
+          className={clsx(
+            styles["nav-link"],
+            (currentPath == "/governance" ||
+              currentPath == "/governance/proposal") &&
+              styles.active
+          )}
+          onClick={() => Analytics.actions.events.clickedNavLink("Governance")}
+        >
+          <Text size="sm">Governance</Text>
+        </Link>
+        <Link
+          href="https://forum.canto.io/"
+          rel="noopener noreferrer"
+          target="_blank"
+          className={clsx(styles["nav-link"])}
+          onClick={() => Analytics.actions.events.clickedNavLink("Forum")}
+        >
+          <Text size="sm">Forum</Text>
+        </Link>
         {!isMobile && (
           <div
             className={styles.moreLink}
@@ -172,7 +175,7 @@ const NavBar = () => {
             onMouseLeave={() => setIsMoreModalOpen(false)}
           >
             <div className={styles.moreButtonContainer}>
-              <Text size="sm">More</Text>
+              <Text size="sm">Explorers</Text>
               <div className={styles.dropdown}>
                 <Icon
                   icon={{
@@ -187,30 +190,36 @@ const NavBar = () => {
               <div className={styles.popUp}>
                 {
                   <Link
-                    href="/staking"
+                    href="https://explorer.canto.io/"
                     className={clsx(styles["dropdownlink"])}
+                    rel="noopener noreferrer"
+                    target="_blank"
                     onClick={() => {
                       setIsMoreModalOpen(false);
-                      Analytics.actions.events.clickedNavLink("Staking");
+                      Analytics.actions.events.clickedNavLink("EVM Explorer");
                     }}
                   >
                     <div>
-                      <Text size="sm">Staking</Text>
+                      <Text size="sm">EVM Explorer</Text>
                     </div>
                   </Link>
                 }
                 {
                   <Link
-                    href="/governance"
+                    href="https://cosmos-explorer.canto.io/"
                     className={clsx(styles["dropdownlink"])}
+                    rel="noopener noreferrer"
+                    target="_blank"
                     onClick={() => {
                       setIsMoreModalOpen(false);
-                      Analytics.actions.events.clickedNavLink("Governance");
+                      Analytics.actions.events.clickedNavLink(
+                        "Cosmos Explorer"
+                      );
                     }}
                     style={{ borderBottom: "none" }}
                   >
                     <div>
-                      <Text size="sm">Governance</Text>
+                      <Text size="sm">Cosmos Explorer</Text>
                     </div>
                   </Link>
                 }

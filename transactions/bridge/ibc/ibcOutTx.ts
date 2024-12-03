@@ -90,7 +90,8 @@ export async function IBCOutTx(
       await getBlockTimestamp(
         receivingChain.restEndpoint,
         receivingChain.extraEndpoints,
-        receivingChain.latestBlockEndpoint
+        receivingChain.latestBlockEndpoint,
+        receivingChain?.id === "injective-1" ? receivingChain?.id : ""
       );
     if (timestampError) throw timestampError;
 

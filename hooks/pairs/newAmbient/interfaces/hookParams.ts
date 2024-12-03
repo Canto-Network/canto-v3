@@ -12,6 +12,7 @@ export interface AmbientHookInputParams {
 }
 export interface AmbientHookReturn {
   isLoading: boolean;
+  isAprsLoading: boolean;
   ambientPools: AmbientPool[];
   totalRewards: string;
   transaction: {
