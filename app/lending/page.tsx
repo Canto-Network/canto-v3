@@ -155,7 +155,7 @@ export default function LendingPage() {
     }
 
     try {
-      setLoadingPositions((prev) => ({ ...prev, [position.id]: true }));
+      setLoadingPositions((prev) => ({ ...prev, [selected.market.id]: true }));
       const tokenDecimals =
         CLM_TOKENS.find(
           (token) => token.id.toLowerCase() === position.market.id.toLowerCase()
@@ -204,11 +204,11 @@ export default function LendingPage() {
       }
 
       if (!selected.market.id) {
-        throw new Error("Insufficient Collateral to Seize");
+        throw new Error("Insufficient Collateral To Seize");
       }
 
       if (balance < repayAmount) {
-        throw new Error("Balance is less than repay amount");
+        throw new Error("Insufficient Balance To Repay The Amount");
       }
 
       const { hash } = await writeContract({
@@ -225,14 +225,23 @@ export default function LendingPage() {
       const { status } = await waitForTransaction({ hash });
 
       if (status) {
-        setLoadingPositions((prev) => ({ ...prev, [position.id]: false }));
+        setLoadingPositions((prev) => ({
+          ...prev,
+          [selected.market.id]: false,
+        }));
+
         toast.add({
           primary: "Position liquidated successfully",
           state: "success",
           duration: 4000,
         });
+        refetchAllPositions();
+        refetchMyPositions();
       } else {
-        setLoadingPositions((prev) => ({ ...prev, [position.id]: false }));
+        setLoadingPositions((prev) => ({
+          ...prev,
+          [selected.market.id]: false,
+        }));
         toast.add({
           primary: "Liquidation transaction reverted",
           state: "failure",
@@ -240,7 +249,7 @@ export default function LendingPage() {
         });
       }
     } catch (error: any) {
-      setLoadingPositions((prev) => ({ ...prev, [position.id]: false }));
+      setLoadingPositions((prev) => ({ ...prev, [selected.market.id]: false }));
       console.error("Liquidation failed:", error.message);
       toast.add({
         primary: error.message,
@@ -293,30 +302,36 @@ export default function LendingPage() {
     OrderDirection.DESC
   );
 
-  const { data: allPositionsData, loading: allPositionsLoading } =
-    usePositionsQuery({
-      variables: {
-        skip: (currentPositionsPage - 1) * POSITIONS_PER_PAGE,
-        first: POSITIONS_PER_PAGE,
-        orderDirection: sortDirection,
-      },
-      context: {
-        endpoint: ApolloContext.MAIN,
-      },
-    });
-  const { data: myPositionsData, loading: myPositionsLoading } =
-    useMyPositionsQuery({
-      variables: {
-        account: address ?? "",
-        skip: (currentPositionsPage - 1) * POSITIONS_PER_PAGE,
-        first: POSITIONS_PER_PAGE,
-        orderDirection: sortDirection,
-      },
-      skip: !address || positionsToggle === "All",
-      context: {
-        endpoint: ApolloContext.MAIN,
-      },
-    });
+  const {
+    data: allPositionsData,
+    loading: allPositionsLoading,
+    refetch: refetchAllPositions,
+  } = usePositionsQuery({
+    variables: {
+      skip: (currentPositionsPage - 1) * POSITIONS_PER_PAGE,
+      first: POSITIONS_PER_PAGE,
+      orderDirection: sortDirection,
+    },
+    context: {
+      endpoint: ApolloContext.MAIN,
+    },
+  });
+  const {
+    data: myPositionsData,
+    loading: myPositionsLoading,
+    refetch: refetchMyPositions,
+  } = useMyPositionsQuery({
+    variables: {
+      account: address ?? "",
+      skip: (currentPositionsPage - 1) * POSITIONS_PER_PAGE,
+      first: POSITIONS_PER_PAGE,
+      orderDirection: sortDirection,
+    },
+    skip: !address || positionsToggle === "All",
+    context: {
+      endpoint: ApolloContext.MAIN,
+    },
+  });
 
   const { data: allPositionsCount } = usePositionsCountQuery({
     context: {
@@ -927,9 +942,7 @@ export default function LendingPage() {
                                 setSelectedBorrowerPosition(position);
                                 setOpenLiquidateModal(true);
                               }}
-                              disabled={
-                                !address || loadingPositions[position.id]
-                              }
+                              disabled={!address}
                               style={{
                                 opacity: address ? 1 : 0.5,
                                 cursor: address ? "pointer" : "not-allowed",
@@ -1094,14 +1107,17 @@ export default function LendingPage() {
                               )
                             }
                             disabled={
-                              !address || loadingPositions[mergedPosition.id]
+                              !address ||
+                              loadingPositions[mergedPosition.market.id]
                             }
                             style={{
                               opacity: address ? 1 : 0.5,
                               cursor: address ? "pointer" : "not-allowed",
                             }}
                           >
-                            Liquidate
+                            {loadingPositions[mergedPosition.market.id]
+                              ? "Loading..."
+                              : "Liquidate"}
                           </button>
                         </Container>,
                       ];
