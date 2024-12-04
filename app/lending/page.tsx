@@ -85,7 +85,7 @@ async function getAccountLiquidity(
       abi: COMPTROLLER_ABI,
       functionName: "getAccountLiquidity",
       args: [accountAddress],
-      chainId: CANTO_MAINNET_EVM.chainId
+      chainId: CANTO_MAINNET_EVM.chainId,
     });
 
     return {
