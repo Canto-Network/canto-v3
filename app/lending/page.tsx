@@ -126,7 +126,7 @@ function deriveHealthFactor(
   const liquidity = BigInt(liquidityData.liquidity);
 
   if (shortfall > 0n) {
-    const hf = generateString(positionId, 0.5, 0.9);
+    const hf = generateString(positionId, 0.7, 0.9);
     return hf.toFixed(2);
   } else if (shortfall === 0n && liquidity === 0n) {
     return "1.00";
@@ -344,6 +344,59 @@ export default function LendingPage() {
   }, [allPositionsData, myPositionsData, positionsToggle]);
 
   const borrowBalances = useBorrowBalances(paginatedPositions);
+
+  const [extraBalances, setExtraBalances] = useState<Record<string, string>>(
+    {}
+  );
+
+  useEffect(() => {
+    if (!selectedBorrowerPosition) return;
+
+    const userAddress =
+      selectedBorrowerPosition.account.id.toLowerCase() as `0x${string}`;
+    const tokensToCheck = [
+      {
+        name: "CUSYC",
+        id: "0x0355e393cf0cf5486d9caefb64407b7b1033c2f1",
+        decimals: 6,
+      },
+      {
+        name: "CFBILL",
+        id: "0xf1f89df149bc5f2b6b29783915d1f9fe2d24459c",
+        decimals: 18,
+      },
+      {
+        name: "CIFBILL",
+        id: "0x897709fc83ba7a4271d22ed4c01278cc1da8d6f8",
+        decimals: 18,
+      },
+    ];
+
+    const fetchExtraBalances = async () => {
+      const updates: Record<string, string> = {};
+
+      await Promise.all(
+        tokensToCheck.map(async (token) => {
+          const balance = (await readContract({
+            address: token.id as `0x${string}`,
+            abi: CERC20_ABI,
+            functionName: "balanceOf",
+            args: [userAddress],
+          })) as bigint;
+
+          if (balance > 0n) {
+            updates[token.id] = String(
+              parseFloat(balance.toString()) / 10 ** token.decimals
+            );
+          }
+        })
+      );
+
+      setExtraBalances(updates);
+    };
+
+    fetchExtraBalances();
+  }, [selectedBorrowerPosition]);
 
   const [accountLiquidities, setAccountLiquidities] = useState<
     Record<string, AccountLiquidityData>
@@ -925,16 +978,60 @@ export default function LendingPage() {
           title="Liquidate"
           onClose={() => setOpenLiquidateModal(false)}
         >
-          {/* Only render the table if we have a selectedBorrowerPosition */}
           {selectedBorrowerPosition &&
             (() => {
-              // Define borrowedMarkets here, after confirming selectedBorrowerPosition is available
+              // Original borrowedMarkets logic
               const borrowedMarkets =
                 selectedBorrowerPosition?.account.tokens.filter((t: any) => {
                   const supplied = parseFloat(t.totalUnderlyingSupplied);
                   const cf = parseFloat(t.market.collateralFactor);
-                  return supplied > 0 && cf > 0.5; // Only show if totalUnderlyingBorrowed > totalUnderlyingRepaid
+                  return (
+                    supplied > 0 &&
+                    cf > 0.5 &&
+                    selectedBorrowerPosition.market.id.toLowerCase() !==
+                      t.market.id.toLowerCase()
+                  );
                 }) || [];
+
+              const extraCTokens = [
+                {
+                  name: "CUSYC",
+                  id: "0x0355e393cf0cf5486d9caefb64407b7b1033c2f1",
+                  decimals: 6,
+                  collateralFactor: 1.0,
+                },
+                {
+                  name: "CFBILL",
+                  id: "0xf1f89df149bc5f2b6b29783915d1f9fe2d24459c",
+                  decimals: 18,
+                  collateralFactor: 1.0,
+                },
+                {
+                  name: "CIFBILL",
+                  id: "0x897709fc83ba7a4271d22ed4c01278cc1da8d6f8",
+                  decimals: 18,
+                  collateralFactor: 1.0,
+                },
+              ];
+
+              Object.entries(extraBalances).forEach(([tokenId, balance]) => {
+                if (Number(balance) > 0) {
+                  const tokenInfo = extraCTokens.find((t) => t.id === tokenId);
+                  if (tokenInfo) {
+                    const suppliedStr = balance.toString();
+
+                    borrowedMarkets.push({
+                      id: tokenId,
+                      market: {
+                        name: tokenInfo.name,
+                        id: tokenId,
+                        collateralFactor: tokenInfo.collateralFactor.toString(),
+                      },
+                      totalUnderlyingSupplied: suppliedStr,
+                    });
+                  }
+                }
+              });
 
               return (
                 <Table
@@ -942,12 +1039,11 @@ export default function LendingPage() {
                   headerFont="proto_mono"
                   headers={[
                     { value: "Market", ratio: 1.2 },
-                    { value: "Supplied", ratio: 3 },
+                    { value: "Total Supplied", ratio: 3 },
                     { value: "", ratio: 2 },
                   ]}
                   content={[
                     ...borrowedMarkets.map((marketToken: any, idx: number) => {
-                      // Construct a mergedPosition if needed
                       const mergedPosition = {
                         ...marketToken,
                       };
