@@ -790,7 +790,7 @@ export default function LendingPage() {
               ratio: isMobile ? 1 : 3,
             },
             {
-              value: "Market",
+              value: "Borrowed Market",
               ratio: isMobile ? 1 : 3,
             },
             {
