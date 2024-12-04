@@ -42,6 +42,7 @@ import { ApolloContext } from "@/enums/apollo-context.enum";
 import { CLM_TOKENS } from "@/config/consts/addresses";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { COMPTROLLER_ABI } from "@/config/abis";
+import { CANTO_MAINNET_EVM } from "@/config/networks";
 
 enum CLMModalTypes {
   SUPPLY = "supply",
@@ -84,6 +85,7 @@ async function getAccountLiquidity(
       abi: COMPTROLLER_ABI,
       functionName: "getAccountLiquidity",
       args: [accountAddress],
+      chainId: CANTO_MAINNET_EVM.chainId
     });
 
     return {
