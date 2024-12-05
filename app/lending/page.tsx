@@ -261,19 +261,15 @@ export default function LendingPage() {
         throw new Error("Insufficient Collateral To Seize");
       }
 
-      if (balance < repayAmount) {
-        throw new Error("Insufficient Balance To Repay The Amount");
-      }
+      // if (balance < repayAmount) {
+      //   throw new Error("Insufficient Balance To Repay The Amount");
+      // }
 
       const { hash } = await writeContract({
         address: position.market.id.toLowerCase() as `0x${string}`,
         abi: CERC20_ABI,
         functionName: "liquidateBorrow",
-        args: [
-          position.account.id.toLowerCase(),
-          repayAmount,
-          selected.market.id,
-        ],
+        args: [position.account.id.toLowerCase(), 10000n, selected.market.id],
       });
 
       const { status } = await waitForTransaction({ hash });
@@ -975,7 +971,7 @@ export default function LendingPage() {
           headerFont="proto_mono"
           headers={[
             {
-              value: "Account Address",
+              value: "Account",
               ratio: isMobile ? 1 : 3,
             },
             {
@@ -1085,6 +1081,17 @@ export default function LendingPage() {
                         gap={10}
                         center={{ horizontal: true }}
                       >
+                        {positionsTotalSupplied[position.id] != null && (
+                          <Icon
+                            icon={{
+                              url: "/tokens/note.svg",
+                              size: 14,
+                            }}
+                            color="dark"
+                            style={{ marginTop: "6px" }}
+                            themed={true}
+                          />
+                        )}
                         <Text font="proto_mono" size={isMobile ? "sm" : "md"}>
                           {positionsTotalSupplied[position.id] == null
                             ? "Loading..."
@@ -1104,6 +1111,15 @@ export default function LendingPage() {
                           gap={10}
                           center={{ horizontal: true }}
                         >
+                          <Icon
+                            icon={{
+                              url: "/tokens/note.svg",
+                              size: 14,
+                            }}
+                            color="dark"
+                            style={{ marginTop: "6px" }}
+                            themed={true}
+                          />
                           <Text font="proto_mono" size={isMobile ? "sm" : "md"}>
                             {displayAmount(position.storedBorrowBalance, 0, {
                               precision: 2,
@@ -1118,6 +1134,15 @@ export default function LendingPage() {
                         gap={10}
                         center={{ horizontal: true }}
                       >
+                        <Icon
+                          icon={{
+                            url: "/tokens/note.svg",
+                            size: 14,
+                          }}
+                          color="dark"
+                          style={{ marginTop: "6px" }}
+                          themed={true}
+                        />
                         <Text font="proto_mono" size={isMobile ? "sm" : "md"}>
                           {borrowBalances[position.id]
                             ? displayAmount(
