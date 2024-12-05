@@ -456,7 +456,7 @@ export default function LendingPage() {
               parseFloat(balance.toString()) / 10 ** token.decimals;
 
             if (token.name === "CUSYC") {
-              converted = converted * 1.06;
+              converted = converted * 1.05;
             }
 
             totalSupplied += converted;
