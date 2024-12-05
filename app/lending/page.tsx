@@ -430,7 +430,6 @@ export default function LendingPage() {
         const borrowedMarketId = position.market.id.toLowerCase();
 
         for (const t of position.account.tokens) {
-
           const cf = t.market.collateralFactor;
           if (
             Number(cf) > 0.5 &&
