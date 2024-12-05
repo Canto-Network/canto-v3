@@ -1007,8 +1007,19 @@ export default function LendingPage() {
             },
             {
               value: (
-                <Container direction="row">
-                  <Text id="borrow-balance">BORROW BALANCE</Text>
+                <Container direction="column">
+                  <Text>
+                    BORROW BALANCE
+                    <Icon
+                      id="borrow-balance"
+                      icon={{
+                        url: "/icons/info.svg",
+                        size: 14,
+                      }}
+                      style={{ marginLeft: "6px", marginTop: "2px" }}
+                      themed
+                    />
+                  </Text>
                   <Tooltip anchorSelect="#borrow-balance" place="top">
                     <Text size="x-sm">
                       Borrow Balance = Borrowed Amount + Interest Accrued
@@ -1022,7 +1033,18 @@ export default function LendingPage() {
             {
               value: (
                 <Container direction="row">
-                  <Text id="health-factor">HEALTH FACTOR</Text>
+                  <Text>
+                    HEALTH FACTOR
+                    <Icon
+                      id="health-factor"
+                      icon={{
+                        url: "/icons/info.svg",
+                        size: 14,
+                      }}
+                      style={{ marginLeft: "6px", marginTop: "2px" }}
+                      themed
+                    />
+                  </Text>
                   <Tooltip anchorSelect="#health-factor" place="top">
                     <Text size="x-sm">
                       Health Factor = Total Collateral Supplied / Total Borrowed
