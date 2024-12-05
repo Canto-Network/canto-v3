@@ -262,15 +262,15 @@ export default function LendingPage() {
         throw new Error("Insufficient Collateral To Seize");
       }
 
-      // if (balance < repayAmount) {
-      //   throw new Error("Insufficient Balance To Repay The Amount");
-      // }
+      if (balance < repayAmount) {
+        throw new Error("Insufficient Balance To Repay The Amount");
+      }
 
       const { hash } = await writeContract({
         address: position.market.id.toLowerCase() as `0x${string}`,
         abi: CERC20_ABI,
         functionName: "liquidateBorrow",
-        args: [position.account.id.toLowerCase(), 10000n, selected.market.id],
+        args: [position.account.id.toLowerCase(), repayAmount, selected.market.id],
       });
 
       const { status } = await waitForTransaction({ hash });
