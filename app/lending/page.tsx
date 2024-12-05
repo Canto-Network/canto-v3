@@ -2,6 +2,7 @@
 
 import styles from "./lending.module.scss";
 import Modal from "@/components/modal/modal";
+import LiquidateModal from "@/components/liquidate_modal/modal";
 import Table from "@/components/table/table";
 import { displayAmount, formatPercent } from "@/utils/formatting";
 import { useLendingCombo } from "./utils";
@@ -46,6 +47,7 @@ import { COMPTROLLER_ABI } from "@/config/abis";
 import { CANTO_MAINNET_EVM } from "@/config/networks";
 import { apolloClient } from "@/config/apollo.config";
 import { GET_TOKEN_PRICES } from "@/graphql";
+import Input from "@/components/input/input";
 
 enum CLMModalTypes {
   SUPPLY = "supply",
@@ -918,8 +920,7 @@ export default function LendingPage() {
             />
           </Container>
         </div>
-
-        <div>
+        {/* <div>
           <div className={styles.statsContainer}>
             <div className={styles.statsBox}>
               <div>
@@ -967,7 +968,7 @@ export default function LendingPage() {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
         <Spacer height="5px" />
         <Table
           title="Positions"
@@ -979,6 +980,10 @@ export default function LendingPage() {
             },
             {
               value: "Borrowed Market",
+              ratio: isMobile ? 1 : 3,
+            },
+            {
+              value: "Total Supplied",
               ratio: isMobile ? 1 : 3,
             },
             {
@@ -994,7 +999,7 @@ export default function LendingPage() {
                     )
                   }
                 >
-                  <Text>Borrowed Amount</Text>
+                  <Text>BORROWED AMOUNT</Text>
                   <span
                     className={clsx(styles.sortIcon, styles[sortDirection])}
                   />
@@ -1007,10 +1012,7 @@ export default function LendingPage() {
               value: "Borrow Balance",
               ratio: isMobile ? 1 : 3,
             },
-            {
-              value: "Total Supplied",
-              ratio: isMobile ? 1 : 3,
-            },
+
             {
               value: "Health Factor",
               ratio: isMobile ? 1 : 3,
@@ -1076,6 +1078,24 @@ export default function LendingPage() {
                           {position.market.name}
                         </Text>
                       </Container>,
+                      <Container
+                        key={`total-supplied-${index}`}
+                        width="100%"
+                        direction="row"
+                        gap={10}
+                        center={{ horizontal: true }}
+                      >
+                        <Text font="proto_mono" size={isMobile ? "sm" : "md"}>
+                          {positionsTotalSupplied[position.id] == null
+                            ? "Loading..."
+                            : displayAmount(
+                                //@ts-ignore
+                                positionsTotalSupplied[position.id],
+                                0,
+                                { precision: 2 }
+                              )}
+                        </Text>
+                      </Container>,
                       isMobile ? null : (
                         <Container
                           key={`borrowed-${index}`}
@@ -1106,24 +1126,6 @@ export default function LendingPage() {
                                 { precision: 2 }
                               )
                             : "Loading..."}
-                        </Text>
-                      </Container>,
-                      <Container
-                        key={`total-supplied-${index}`}
-                        width="100%"
-                        direction="row"
-                        gap={10}
-                        center={{ horizontal: true }}
-                      >
-                        <Text font="proto_mono" size={isMobile ? "sm" : "md"}>
-                          {positionsTotalSupplied[position.id] == null
-                            ? "Loading..."
-                            : displayAmount(
-                                //@ts-ignore
-                                positionsTotalSupplied[position.id],
-                                0,
-                                { precision: 2 }
-                              )}
                         </Text>
                       </Container>,
                       <Container
@@ -1199,11 +1201,11 @@ export default function LendingPage() {
           }
         />
 
-        <Modal
+        <LiquidateModal
           open={openLiquidateModal}
           width="40rem"
           height="min-content"
-          title="Liquidate"
+          title=""
           onClose={() => setOpenLiquidateModal(false)}
         >
           {selectedBorrowerPosition &&
@@ -1242,7 +1244,7 @@ export default function LendingPage() {
 
               return (
                 <Table
-                  title="Collateral Markets"
+                  title="Choose Collateral To Seize"
                   headerFont="proto_mono"
                   headers={[
                     { value: "Market", ratio: 1.2 },
@@ -1320,7 +1322,7 @@ export default function LendingPage() {
                 />
               );
             })()}
-        </Modal>
+        </LiquidateModal>
       </div>
     </div>
   );
