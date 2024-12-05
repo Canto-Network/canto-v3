@@ -37,12 +37,15 @@ import {
   usePositionsCountQuery,
   usePositionsQuery,
   OrderDirection,
+  useMarketsQuery,
 } from "@/hooks/generated/clm-graphql.hook";
 import { ApolloContext } from "@/enums/apollo-context.enum";
 import { CLM_TOKENS } from "@/config/consts/addresses";
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { COMPTROLLER_ABI } from "@/config/abis";
 import { CANTO_MAINNET_EVM } from "@/config/networks";
+import { apolloClient } from "@/config/apollo.config";
+import { GET_TOKEN_PRICES } from "@/graphql";
 
 enum CLMModalTypes {
   SUPPLY = "supply",
@@ -442,6 +445,56 @@ export default function LendingPage() {
     }
   }, [paginatedPositions]);
 
+  const { data: marketsData } = useMarketsQuery({
+    context: {
+      endpoint: ApolloContext.MAIN,
+    },
+  });
+
+  const [totalStats, setTotalStats] = useState({
+    totalBorrowed: 0,
+    totalSupplied: 0,
+  });
+
+  useEffect(() => {
+    const calculateTotals = async () => {
+      if (!marketsData?.markets) return;
+
+      let totalBorrowed = 0;
+      let totalSupplied = 0;
+
+      const pricePromises = marketsData.markets.map((market) =>
+        apolloClient.query({
+          query: GET_TOKEN_PRICES,
+          variables: {
+            tokenId: market.underlyingAddress.toLowerCase(),
+          },
+          context: {
+            endpoint: ApolloContext.DEX,
+          },
+        })
+      );
+
+      const prices = await Promise.all(pricePromises);
+
+      marketsData.markets.forEach((market, index) => {
+        const priceData = prices[index]?.data?.tokenDayDatas?.[0];
+        if (priceData) {
+          const price = Number(priceData.priceUSD);
+          totalBorrowed += Number(market.totalBorrows) * price;
+          totalSupplied += Number(market.totalSupply) * price;
+        }
+      });
+
+      setTotalStats({
+        totalBorrowed,
+        totalSupplied,
+      });
+    };
+
+    calculateTotals();
+  }, [marketsData]);
+
   if (isLoading || cNote === undefined || stableCoins === undefined) {
     return (
       <div className={styles.loading}>
@@ -782,7 +835,56 @@ export default function LendingPage() {
           </Container>
         </div>
 
-        <Spacer height="20px" />
+        <div>
+          <div className={styles.statsContainer}>
+            <div className={styles.statsBox}>
+              <div>
+                <div style={{ marginBottom: "8px" }}>
+                  <Text
+                    font="rm_mono"
+                    color="#767676"
+                    size={isMobile ? "md" : "x-sm"}
+                  >
+                    Total Borrowed
+                  </Text>
+                </div>
+                <Container direction="row" center={{ vertical: true }}>
+                  <Text
+                    font="proto_mono"
+                    size={isMobile ? "x-lg" : "lg"}
+                    color="#000000"
+                  >
+                    ${totalStats.totalBorrowed.toLocaleString()}
+                  </Text>
+                </Container>
+              </div>
+            </div>
+
+            <div className={styles.statsBox}>
+              <div>
+                <div style={{ marginBottom: "8px" }}>
+                  <Text
+                    font="rm_mono"
+                    color="#767676"
+                    size={isMobile ? "md" : "x-sm"}
+                  >
+                    Total Supplied
+                  </Text>
+                </div>
+                <Container direction="row" center={{ vertical: true }}>
+                  <Text
+                    font="proto_mono"
+                    size={isMobile ? "x-lg" : "lg"}
+                    color="#000000"
+                  >
+                    ${totalStats.totalSupplied.toLocaleString()}
+                  </Text>
+                </Container>
+              </div>
+            </div>
+          </div>
+        </div>
+        <Spacer height="5px" />
         <Table
           title="Positions"
           headerFont="proto_mono"

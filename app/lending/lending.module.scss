@@ -223,3 +223,35 @@
     top: -1px;
   }
 }
+
+.statsBox {
+  display: flex;
+  height: 100px;
+  width: 50%;
+  padding: 1rem;
+  background-color: #ececec;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: var(--box-shadow, 3px 3px 0px 0px rgba(17, 17, 17, 0.15));
+}
+
+.statsContainer {
+  display: flex;
+  gap: 20px;
+}
+
+@media screen and (max-width: 768px) {
+  .statsBox {
+    width: 100%;
+    height: calc(100% - 2rem);
+    align-items: flex-start;
+    gap: 1.25rem;
+    padding: 1.5rem 1rem;
+  }
+  
+  .statsContainer {
+    flex-direction: column;
+    gap: 12px;
+  }
+}
+
