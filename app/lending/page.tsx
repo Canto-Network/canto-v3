@@ -1000,7 +1000,7 @@ export default function LendingPage() {
                     )
                   }
                 >
-                  <Text>BORROWED AMOUNT</Text>
+                  <Text font="proto_mono">BORROWED AMOUNT</Text>
                   <span
                     className={clsx(styles.sortIcon, styles[sortDirection])}
                   />
@@ -1012,7 +1012,7 @@ export default function LendingPage() {
             {
               value: (
                 <Container direction="column">
-                  <Text>
+                  <Text font="proto_mono">
                     BORROW BALANCE
                     <Icon
                       id="borrow-balance"
@@ -1037,7 +1037,7 @@ export default function LendingPage() {
             {
               value: (
                 <Container direction="row">
-                  <Text>
+                  <Text font="proto_mono">
                     HEALTH FACTOR
                     <Icon
                       id="health-factor"
