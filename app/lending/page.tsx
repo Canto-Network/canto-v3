@@ -854,7 +854,7 @@ export default function LendingPage() {
                     size={isMobile ? "x-lg" : "lg"}
                     color="#000000"
                   >
-                    ${totalStats.totalBorrowed.toLocaleString()}
+                    {totalStats.totalBorrowed.toLocaleString()}
                   </Text>
                 </Container>
               </div>
@@ -877,7 +877,7 @@ export default function LendingPage() {
                     size={isMobile ? "x-lg" : "lg"}
                     color="#000000"
                   >
-                    ${totalStats.totalSupplied.toLocaleString()}
+                    {totalStats.totalSupplied.toLocaleString()}
                   </Text>
                 </Container>
               </div>
