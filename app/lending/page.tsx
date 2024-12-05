@@ -1119,7 +1119,7 @@ export default function LendingPage() {
                           >
                             {loadingPositions[mergedPosition.market.id]
                               ? "Loading..."
-                              : "Liquidate"}
+                              : "Seize"}
                           </button>
                         </Container>,
                       ];
