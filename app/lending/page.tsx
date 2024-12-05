@@ -270,7 +270,11 @@ export default function LendingPage() {
         address: position.market.id.toLowerCase() as `0x${string}`,
         abi: CERC20_ABI,
         functionName: "liquidateBorrow",
-        args: [position.account.id.toLowerCase(), repayAmount, selected.market.id],
+        args: [
+          position.account.id.toLowerCase(),
+          repayAmount,
+          selected.market.id,
+        ],
       });
 
       const { status } = await waitForTransaction({ hash });
