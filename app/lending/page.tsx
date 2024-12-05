@@ -234,6 +234,7 @@ export default function LendingPage() {
         address: borrowedToken.market.underlyingAddress,
         abi: CERC20_ABI,
         functionName: "balanceOf",
+        chainId: CANTO_MAINNET_EVM.chainId,
         args: [address as `0x${string}`],
       });
 
@@ -443,6 +444,7 @@ export default function LendingPage() {
             address: token.id as `0x${string}`,
             abi: CERC20_ABI,
             functionName: "balanceOf",
+            chainId: CANTO_MAINNET_EVM.chainId,
             args: [userAddress],
           })) as bigint;
 
@@ -482,6 +484,7 @@ export default function LendingPage() {
             address: token.id as `0x${string}`,
             abi: CERC20_ABI,
             functionName: "balanceOf",
+            chainId: CANTO_MAINNET_EVM.chainId,
             args: [userAddress],
           })) as bigint;
 
