@@ -427,8 +427,6 @@ export default function LendingPage() {
 
       for (const position of paginatedPositions) {
         let totalSupplied = 0;
-        const borrowedMarketId = position.market.id.toLowerCase();
-
         for (const t of position.account.tokens) {
           const cf = t.market.collateralFactor;
           if (
@@ -441,8 +439,6 @@ export default function LendingPage() {
 
         const userAddress = position.account.id.toLowerCase() as `0x${string}`;
         for (const token of extraCTokensSupply) {
-          // if (token.id.toLowerCase() === borrowedMarketId) continue;
-
           const balance = (await readContract({
             address: token.id as `0x${string}`,
             abi: CERC20_ABI,
@@ -451,8 +447,13 @@ export default function LendingPage() {
           })) as bigint;
 
           if (balance > 0n) {
-            const converted =
+            let converted =
               parseFloat(balance.toString()) / 10 ** token.decimals;
+
+            if (token.name === "CUSYC") {
+              converted = converted * 1.06;
+            }
+
             totalSupplied += converted;
           }
         }
