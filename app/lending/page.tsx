@@ -59,6 +59,60 @@ interface AccountLiquidityData {
   shortfall: string;
 }
 
+const extraCTokens = [
+  {
+    name: "CUSYC",
+    id: "0x0355e393cf0cf5486d9caefb64407b7b1033c2f1",
+    decimals: 6,
+    collateralFactor: 1.0,
+  },
+  {
+    name: "CFBILL",
+    id: "0xf1f89df149bc5f2b6b29783915d1f9fe2d24459c",
+    decimals: 18,
+    collateralFactor: 1.0,
+  },
+  {
+    name: "CIFBILL",
+    id: "0x897709fc83ba7a4271d22ed4c01278cc1da8d6f8",
+    decimals: 18,
+    collateralFactor: 1.0,
+  },
+];
+
+const extraCTokensSupply = [
+  {
+    name: "CUSYC",
+    id: "0x0355e393cf0cf5486d9caefb64407b7b1033c2f1",
+    decimals: 6,
+    collateralFactor: 1.0,
+  },
+  {
+    name: "CFBILL",
+    id: "0xf1f89df149bc5f2b6b29783915d1f9fe2d24459c",
+    decimals: 18,
+    collateralFactor: 1.0,
+  },
+  {
+    name: "CIFBILL",
+    id: "0x897709fc83ba7a4271d22ed4c01278cc1da8d6f8",
+    decimals: 18,
+    collateralFactor: 1.0,
+  },
+  {
+    name: "CUSDC",
+    id: "0xde59f060d7ee2b612e7360e6c1b97c4d8289ca2e",
+    decimals: 6,
+    collateralFactor: 1.0,
+  },
+  {
+    name: "CUSDT",
+    id: "0x6b46ba92d7e94ffa658698764f5b8dfd537315a9",
+    decimals: 6,
+    collateralFactor: 1.0,
+  },
+];
+
 function sortCTokens(
   a: CTokenWithUserData,
   b: CTokenWithUserData,
@@ -111,36 +165,28 @@ async function getAccountLiquidity(
 
 const POSITIONS_PER_PAGE = 10;
 
-function generateString(str: string, min: number, max: number): number {
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = (hash << 5) - hash + str.charCodeAt(i);
-    hash |= 0;
-  }
-  const val = (hash >>> 0) / 0xffffffff;
-  return min + val * (max - min);
-}
-
 function deriveHealthFactor(
-  liquidityData: AccountLiquidityData | undefined,
-  positionId: string
+  totalSuppliedValue: number | undefined,
+  borrowBalanceValue: number | undefined
 ) {
-  if (!liquidityData) return "Loading...";
-
-  const shortfall = BigInt(liquidityData.shortfall);
-  const liquidity = BigInt(liquidityData.liquidity);
-
-  if (shortfall > 0n) {
-    const hf = generateString(positionId, 0.7, 0.9);
-    return hf.toFixed(2);
-  } else if (shortfall === 0n && liquidity === 0n) {
-    return "1.00";
-  } else if (shortfall === 0n && liquidity > 0n) {
-    const hf = generateString(positionId, 1.01, 1.3);
-    return hf.toFixed(2);
+  if (totalSuppliedValue === undefined || borrowBalanceValue === undefined) {
+    return "Loading...";
   }
 
-  return "Loading...";
+  // If no borrow, health factor can be considered infinite
+  if (borrowBalanceValue === 0) {
+    return "N/A";
+  }
+
+  const hf = totalSuppliedValue / borrowBalanceValue;
+
+  // If hf is greater than 2, just display 2.00
+  if (hf > 2) {
+    return "2.00";
+  }
+
+  // Format to two decimals
+  return hf.toFixed(2);
 }
 
 export default function LendingPage() {
@@ -365,38 +411,73 @@ export default function LendingPage() {
 
   const borrowBalances = useBorrowBalances(paginatedPositions);
 
+  const [positionsTotalSupplied, setPositionsTotalSupplied] = useState<
+    Record<string, number>
+  >({});
+
   const [extraBalances, setExtraBalances] = useState<Record<string, string>>(
     {}
   );
+
+  useEffect(() => {
+    if (paginatedPositions.length === 0) return;
+
+    const fetchAllPositionsSupplies = async () => {
+      const results: Record<string, number> = {};
+
+      for (const position of paginatedPositions) {
+        let totalSupplied = 0;
+        const borrowedMarketId = position.market.id.toLowerCase();
+
+        for (const t of position.account.tokens) {
+
+          const cf = t.market.collateralFactor;
+          if (
+            Number(cf) > 0.5 &&
+            t.totalUnderlyingSupplied > t.totalUnderlyingBorrowed
+          ) {
+            totalSupplied += parseFloat(t.totalUnderlyingSupplied);
+          }
+        }
+
+        const userAddress = position.account.id.toLowerCase() as `0x${string}`;
+        for (const token of extraCTokensSupply) {
+          // if (token.id.toLowerCase() === borrowedMarketId) continue;
+
+          const balance = (await readContract({
+            address: token.id as `0x${string}`,
+            abi: CERC20_ABI,
+            functionName: "balanceOf",
+            args: [userAddress],
+          })) as bigint;
+
+          if (balance > 0n) {
+            const converted =
+              parseFloat(balance.toString()) / 10 ** token.decimals;
+            totalSupplied += converted;
+          }
+        }
+
+        results[position.id] = totalSupplied;
+      }
+
+      setPositionsTotalSupplied(results);
+    };
+
+    fetchAllPositionsSupplies();
+  }, [paginatedPositions]);
 
   useEffect(() => {
     if (!selectedBorrowerPosition) return;
 
     const userAddress =
       selectedBorrowerPosition.account.id.toLowerCase() as `0x${string}`;
-    const tokensToCheck = [
-      {
-        name: "CUSYC",
-        id: "0x0355e393cf0cf5486d9caefb64407b7b1033c2f1",
-        decimals: 6,
-      },
-      {
-        name: "CFBILL",
-        id: "0xf1f89df149bc5f2b6b29783915d1f9fe2d24459c",
-        decimals: 18,
-      },
-      {
-        name: "CIFBILL",
-        id: "0x897709fc83ba7a4271d22ed4c01278cc1da8d6f8",
-        decimals: 18,
-      },
-    ];
 
     const fetchExtraBalances = async () => {
       const updates: Record<string, string> = {};
 
       await Promise.all(
-        tokensToCheck.map(async (token) => {
+        extraCTokens.map(async (token) => {
           const balance = (await readContract({
             address: token.id as `0x${string}`,
             abi: CERC20_ABI,
@@ -924,6 +1005,10 @@ export default function LendingPage() {
               ratio: isMobile ? 1 : 3,
             },
             {
+              value: "Total Supplied",
+              ratio: isMobile ? 1 : 3,
+            },
+            {
               value: "Health Factor",
               ratio: isMobile ? 1 : 3,
             },
@@ -937,8 +1022,13 @@ export default function LendingPage() {
             paginatedPositions.length > 0
               ? [
                   ...paginatedPositions.map((position, index) => {
-                    const liquidityData = accountLiquidities[position.id];
-                    const hf = deriveHealthFactor(liquidityData, position.id);
+                    const borrowedVal = borrowBalances[position.id]
+                      ? borrowBalances[position.id].borrowBalance
+                      : 0;
+                    const suppliedVal =
+                      positionsTotalSupplied[position.id] ?? undefined;
+                    //@ts-ignore
+                    const hf = deriveHealthFactor(suppliedVal, borrowedVal);
 
                     return [
                       <Container
@@ -1013,6 +1103,24 @@ export default function LendingPage() {
                                 { precision: 2 }
                               )
                             : "Loading..."}
+                        </Text>
+                      </Container>,
+                      <Container
+                        key={`total-supplied-${index}`}
+                        width="100%"
+                        direction="row"
+                        gap={10}
+                        center={{ horizontal: true }}
+                      >
+                        <Text font="proto_mono" size={isMobile ? "sm" : "md"}>
+                          {positionsTotalSupplied[position.id] == null
+                            ? "Loading..."
+                            : displayAmount(
+                                //@ts-ignore
+                                positionsTotalSupplied[position.id],
+                                0,
+                                { precision: 2 }
+                              )}
                         </Text>
                       </Container>,
                       <Container
@@ -1109,27 +1217,6 @@ export default function LendingPage() {
                       t.market.id.toLowerCase()
                   );
                 }) || [];
-
-              const extraCTokens = [
-                {
-                  name: "CUSYC",
-                  id: "0x0355e393cf0cf5486d9caefb64407b7b1033c2f1",
-                  decimals: 6,
-                  collateralFactor: 1.0,
-                },
-                {
-                  name: "CFBILL",
-                  id: "0xf1f89df149bc5f2b6b29783915d1f9fe2d24459c",
-                  decimals: 18,
-                  collateralFactor: 1.0,
-                },
-                {
-                  name: "CIFBILL",
-                  id: "0x897709fc83ba7a4271d22ed4c01278cc1da8d6f8",
-                  decimals: 18,
-                  collateralFactor: 1.0,
-                },
-              ];
 
               Object.entries(extraBalances).forEach(([tokenId, balance]) => {
                 if (Number(balance) > 0) {
