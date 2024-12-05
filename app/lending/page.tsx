@@ -47,7 +47,8 @@ import { COMPTROLLER_ABI } from "@/config/abis";
 import { CANTO_MAINNET_EVM } from "@/config/networks";
 import { apolloClient } from "@/config/apollo.config";
 import { GET_TOKEN_PRICES } from "@/graphql";
-import Input from "@/components/input/input";
+import { Tooltip } from "react-tooltip";
+import "react-tooltip/dist/react-tooltip.css";
 
 enum CLMModalTypes {
   SUPPLY = "supply",
@@ -1005,12 +1006,30 @@ export default function LendingPage() {
               hideOnMobile: isMobile,
             },
             {
-              value: "Borrow Balance",
+              value: (
+                <Container direction="row">
+                  <Text id="borrow-balance">BORROW BALANCE</Text>
+                  <Tooltip anchorSelect="#borrow-balance" place="top">
+                    <Text size="x-sm">
+                      Borrow Balance = Borrowed Amount + Interest Accrued
+                    </Text>
+                  </Tooltip>
+                </Container>
+              ),
               ratio: isMobile ? 1 : 3,
             },
 
             {
-              value: "Health Factor",
+              value: (
+                <Container direction="row">
+                  <Text id="health-factor">HEALTH FACTOR</Text>
+                  <Tooltip anchorSelect="#health-factor" place="top">
+                    <Text size="x-sm">
+                      Health Factor = Total Collateral Supplied / Total Borrowed
+                    </Text>
+                  </Tooltip>
+                </Container>
+              ),
               ratio: isMobile ? 1 : 3,
             },
             {
