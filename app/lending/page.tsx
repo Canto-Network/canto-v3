@@ -219,11 +219,8 @@ export default function LendingPage() {
         )?.decimals ?? 18;
 
       const borrowedAmount = parseFloat(position.storedBorrowBalance);
-
       const maxRepay = borrowedAmount * 0.8;
-
       const repayStr = repayAmounts[selected.market.id] || "0";
-
       const repayAmountBigInt = parseUnits(repayStr, tokenDecimals);
 
       const borrowedToken = position.account.tokens.find(
@@ -272,6 +269,64 @@ export default function LendingPage() {
         throw new Error("Insufficient Balance To Repay The Amount");
       }
 
+      // Pre-check using liquidateCalculateSeizeTokens
+      const comptrollerAddress = "0x5E23dC409Fc2F832f83CEc191E245A191a4bCc5C"; // Replace with your Comptroller's address
+      const [errorCode, seizeTokens] = await readContract({
+        address: comptrollerAddress,
+        abi: COMPTROLLER_ABI,
+        functionName: "liquidateCalculateSeizeTokens",
+        args: [
+          position.market.id.toLowerCase(), // cTokenBorrowed
+          selected.market.id.toLowerCase(), // cTokenCollateral
+          repayAmountBigInt,
+        ],
+      });
+
+      // If errorCode != 0, something is off with calculation
+      if (errorCode !== BigInt(0)) {
+        setLoadingPositions((prev) => ({
+          ...prev,
+          [selected.market.id]: false,
+        }));
+        throw new Error(
+          "Liquidation seize calculation failed. Please try a smaller amount."
+        );
+      }
+
+      const cTokenAddress = selected.market.id.toLowerCase() as `0x${string}`;
+      const borrowerAddress =
+        position.account.id.toLowerCase() as `0x${string}`;
+
+      // 1. Read the borrower's cToken balance
+      const cTokenBalance = await readContract({
+        address: cTokenAddress,
+        abi: CERC20_ABI, // This should be the cToken ABI (like cErc20)
+        functionName: "balanceOf",
+        args: [borrowerAddress],
+      });
+
+      // 2. Get the exchange rate to convert cToken to underlying
+      const exchangeRate = await readContract({
+        address: cTokenAddress,
+        abi: CERC20_ABI,
+        functionName: "exchangeRateStored",
+      });
+
+      // 3. Convert the cToken balance to underlying (both cTokenBalance and exchangeRate are BigInts)
+      const underlyingBalance = (cTokenBalance * exchangeRate) / BigInt(1e18);
+
+      // Now compare seizeTokens to the borrower's underlyingBalance
+      if (seizeTokens > underlyingBalance) {
+        setLoadingPositions((prev) => ({
+          ...prev,
+          [selected.market.id]: false,
+        }));
+        throw new Error(
+          "Seizing collateral exceeds borrower's holdings. Try repaying less."
+        );
+      }
+
+      // If we reach here, safe to proceed with liquidation
       const { hash } = await writeContract({
         address: position.market.id.toLowerCase() as `0x${string}`,
         abi: CERC20_ABI,
@@ -547,49 +602,49 @@ export default function LendingPage() {
     },
   });
 
-  const [totalStats, setTotalStats] = useState({
-    totalBorrowed: 0,
-    totalSupplied: 0,
-  });
+  // const [totalStats, setTotalStats] = useState({
+  //   totalBorrowed: 0,
+  //   totalSupplied: 0,
+  // });
 
-  useEffect(() => {
-    const calculateTotals = async () => {
-      if (!marketsData?.markets) return;
+  // useEffect(() => {
+  //   const calculateTotals = async () => {
+  //     if (!marketsData?.markets) return;
 
-      let totalBorrowed = 0;
-      let totalSupplied = 0;
+  //     let totalBorrowed = 0;
+  //     let totalSupplied = 0;
 
-      const pricePromises = marketsData.markets.map((market) =>
-        apolloClient.query({
-          query: GET_TOKEN_PRICES,
-          variables: {
-            tokenId: market.underlyingAddress.toLowerCase(),
-          },
-          context: {
-            endpoint: ApolloContext.DEX,
-          },
-        })
-      );
+  //     const pricePromises = marketsData.markets.map((market) =>
+  //       apolloClient.query({
+  //         query: GET_TOKEN_PRICES,
+  //         variables: {
+  //           tokenId: market.underlyingAddress.toLowerCase(),
+  //         },
+  //         context: {
+  //           endpoint: ApolloContext.DEX,
+  //         },
+  //       })
+  //     );
 
-      const prices = await Promise.all(pricePromises);
+  //     const prices = await Promise.all(pricePromises);
 
-      marketsData.markets.forEach((market, index) => {
-        const priceData = prices[index]?.data?.tokenDayDatas?.[0];
-        if (priceData) {
-          const price = Number(priceData.priceUSD);
-          totalBorrowed += Number(market.totalBorrows) * price;
-          totalSupplied += Number(market.totalSupply) * price;
-        }
-      });
+  //     marketsData.markets.forEach((market, index) => {
+  //       const priceData = prices[index]?.data?.tokenDayDatas?.[0];
+  //       if (priceData) {
+  //         const price = Number(priceData.priceUSD);
+  //         totalBorrowed += Number(market.totalBorrows) * price;
+  //         totalSupplied += Number(market.totalSupply) * price;
+  //       }
+  //     });
 
-      setTotalStats({
-        totalBorrowed,
-        totalSupplied,
-      });
-    };
+  //     setTotalStats({
+  //       totalBorrowed,
+  //       totalSupplied,
+  //     });
+  //   };
 
-    calculateTotals();
-  }, [marketsData]);
+  //   calculateTotals();
+  // }, [marketsData]);
 
   if (isLoading || cNote === undefined || stableCoins === undefined) {
     return (
