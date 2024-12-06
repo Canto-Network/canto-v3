@@ -49,6 +49,7 @@ import { apolloClient } from "@/config/apollo.config";
 import { GET_TOKEN_PRICES } from "@/graphql";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
+import { useConnectModal } from "@rainbow-me/rainbowkit";
 
 enum CLMModalTypes {
   SUPPLY = "supply",
@@ -194,6 +195,7 @@ function deriveHealthFactor(
 
 export default function LendingPage() {
   const toast = useToast();
+  const { openConnectModal } = useConnectModal();
   const [loadingPositions, setLoadingPositions] = useState<
     Record<string, boolean>
   >({});
@@ -532,55 +534,55 @@ export default function LendingPage() {
     }
   }, [paginatedPositions]);
 
-  const { data: marketsData } = useMarketsQuery({
-    context: {
-      endpoint: ApolloContext.MAIN,
-    },
-  });
+  // const { data: marketsData } = useMarketsQuery({
+  //   context: {
+  //     endpoint: ApolloContext.MAIN,
+  //   },
+  // });
 
-  const [totalStats, setTotalStats] = useState({
-    totalBorrowed: 0,
-    totalSupplied: 0,
-  });
+  // const [totalStats, setTotalStats] = useState({
+  //   totalBorrowed: 0,
+  //   totalSupplied: 0,
+  // });
 
-  useEffect(() => {
-    const calculateTotals = async () => {
-      if (!marketsData?.markets) return;
+  // useEffect(() => {
+  //   const calculateTotals = async () => {
+  //     if (!marketsData?.markets) return;
 
-      let totalBorrowed = 0;
-      let totalSupplied = 0;
+  //     let totalBorrowed = 0;
+  //     let totalSupplied = 0;
 
-      const pricePromises = marketsData.markets.map((market) =>
-        apolloClient.query({
-          query: GET_TOKEN_PRICES,
-          variables: {
-            tokenId: market.underlyingAddress.toLowerCase(),
-          },
-          context: {
-            endpoint: ApolloContext.DEX,
-          },
-        })
-      );
+  //     const pricePromises = marketsData.markets.map((market) =>
+  //       apolloClient.query({
+  //         query: GET_TOKEN_PRICES,
+  //         variables: {
+  //           tokenId: market.underlyingAddress.toLowerCase(),
+  //         },
+  //         context: {
+  //           endpoint: ApolloContext.DEX,
+  //         },
+  //       })
+  //     );
 
-      const prices = await Promise.all(pricePromises);
+  //     const prices = await Promise.all(pricePromises);
 
-      marketsData.markets.forEach((market, index) => {
-        const priceData = prices[index]?.data?.tokenDayDatas?.[0];
-        if (priceData) {
-          const price = Number(priceData.priceUSD);
-          totalBorrowed += Number(market.totalBorrows) * price;
-          totalSupplied += Number(market.totalSupply) * price;
-        }
-      });
+  //     marketsData.markets.forEach((market, index) => {
+  //       const priceData = prices[index]?.data?.tokenDayDatas?.[0];
+  //       if (priceData) {
+  //         const price = Number(priceData.priceUSD);
+  //         totalBorrowed += Number(market.totalBorrows) * price;
+  //         totalSupplied += Number(market.totalSupply) * price;
+  //       }
+  //     });
 
-      setTotalStats({
-        totalBorrowed,
-        totalSupplied,
-      });
-    };
+  //     setTotalStats({
+  //       totalBorrowed,
+  //       totalSupplied,
+  //     });
+  //   };
 
-    calculateTotals();
-  }, [marketsData]);
+  //   calculateTotals();
+  // }, [marketsData]);
 
   if (isLoading || cNote === undefined || stableCoins === undefined) {
     return (
@@ -1226,13 +1228,16 @@ export default function LendingPage() {
                             <button
                               className={styles.liquidateButton}
                               onClick={() => {
+                                if (!address) {
+                                  openConnectModal?.();
+                                  return;
+                                }
+
                                 setSelectedBorrowerPosition(position);
                                 setOpenLiquidateModal(true);
                               }}
-                              disabled={!address}
                               style={{
-                                opacity: address ? 1 : 0.5,
-                                cursor: address ? "pointer" : "not-allowed",
+                                cursor: "pointer",
                               }}
                             >
                               Liquidate
