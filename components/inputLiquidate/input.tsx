@@ -11,6 +11,7 @@ import Icon from "../icon/icon";
 type InputProps = {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleMax: any;
   backgroundColor?: string;
   height?: "sm" | "md" | "lg" | number;
   placeholder?: string;
@@ -136,13 +137,7 @@ const InputLiquidate = (props: InputProps) => {
         />
         {props.type === "amount" && (
           <Button
-            onClick={() => {
-              props.onChange({
-                target: {
-                  value: props.tokenMax,
-                },
-              } as any);
-            }}
+            onClick={() => props.handleMax()}
             height={Number(getHeight(props.height).slice(0, -2))}
           >
             MAX

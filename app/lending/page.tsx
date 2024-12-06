@@ -218,8 +218,6 @@ export default function LendingPage() {
           (token) => token.id.toLowerCase() === position.market.id.toLowerCase()
         )?.decimals ?? 18;
 
-      const borrowedAmount = parseFloat(position.storedBorrowBalance);
-      const maxRepay = borrowedAmount * 0.8;
       const repayStr = repayAmounts[selected.market.id] || "0";
       const repayAmountBigInt = parseUnits(repayStr, tokenDecimals);
 
@@ -306,14 +304,14 @@ export default function LendingPage() {
       });
 
       // 2. Get the exchange rate to convert cToken to underlying
-      const exchangeRate = await readContract({
-        address: cTokenAddress,
-        abi: CERC20_ABI,
-        functionName: "exchangeRateStored",
-      });
+      // const exchangeRate = await readContract({
+      //   address: cTokenAddress,
+      //   abi: CERC20_ABI,
+      //   functionName: "exchangeRateStored",
+      // });
 
       // 3. Convert the cToken balance to underlying (both cTokenBalance and exchangeRate are BigInts)
-      const underlyingBalance = (cTokenBalance * exchangeRate) / BigInt(1e18);
+      const underlyingBalance = cTokenBalance;
 
       // Now compare seizeTokens to the borrower's underlyingBalance
       if (seizeTokens > underlyingBalance) {
@@ -596,11 +594,11 @@ export default function LendingPage() {
     }
   }, [paginatedPositions]);
 
-  const { data: marketsData } = useMarketsQuery({
-    context: {
-      endpoint: ApolloContext.MAIN,
-    },
-  });
+  // const { data: marketsData } = useMarketsQuery({
+  //   context: {
+  //     endpoint: ApolloContext.MAIN,
+  //   },
+  // });
 
   // const [totalStats, setTotalStats] = useState({
   //   totalBorrowed: 0,
@@ -1400,6 +1398,76 @@ export default function LendingPage() {
                         ...marketToken,
                       };
 
+                      async function handleMaxButtonClick() {
+                        const borrowedMarketId =
+                          selectedBorrowerPosition.market.id.toLowerCase();
+                        const cTokenCollateral =
+                          mergedPosition.market.id.toLowerCase() as `0x${string}`;
+
+                        // Initial guess: 80% of borrowed amount
+                        let maxRepay = borrowedAmountInDecimal * 0.8;
+
+                        // Convert guess to BigInt
+                        const repayAmountBigInt = parseUnits(
+                          maxRepay.toString(),
+                          underlyingDecimals
+                        );
+
+                        // Call liquidateCalculateSeizeTokens
+                        const comptrollerAddress =
+                          "0x5E23dC409Fc2F832f83CEc191E245A191a4bCc5C"; // Comptroller
+                        const [errorCode, seizeTokens] = await readContract({
+                          address: comptrollerAddress,
+                          abi: COMPTROLLER_ABI,
+                          functionName: "liquidateCalculateSeizeTokens",
+                          args: [
+                            borrowedMarketId,
+                            cTokenCollateral,
+                            repayAmountBigInt,
+                          ],
+                        });
+
+                        if (errorCode !== BigInt(0)) {
+                          // If there's an error, just fallback to our original guess
+                          setRepayAmounts((prev) => ({
+                            ...prev,
+                            [mergedPosition.market.id]: maxRepay.toString(),
+                          }));
+                          return;
+                        }
+
+                        // Now get the borrower's collateral cToken balance and underlyingBalance
+                        const borrowerAddress =
+                          selectedBorrowerPosition.account.id.toLowerCase() as `0x${string}`;
+
+                        const cTokenBalance = await readContract({
+                          address: cTokenCollateral,
+                          abi: CERC20_ABI,
+                          functionName: "balanceOf",
+                          args: [borrowerAddress],
+                        });
+
+                        const underlyingBalance = cTokenBalance;
+
+                        // If seizeTokens is more than underlyingBalance, we need to scale down
+                        if (seizeTokens > underlyingBalance) {
+                          // Scale maxRepay so that seizeTokens matches underlyingBalance
+                          // Since seizeTokens is proportional to repayAmount, we can do:
+                          // newRepay = maxRepay * (underlyingBalance / seizeTokens)
+                          // But we must be careful with BigInt division:
+                          const scale =
+                            Number(underlyingBalance) / Number(seizeTokens);
+
+                          maxRepay = maxRepay * scale;
+                        }
+
+                        // Set the input value to the final maxRepay
+                        setRepayAmounts((prev) => ({
+                          ...prev,
+                          [mergedPosition.market.id]: maxRepay.toString(),
+                        }));
+                      }
+
                       return [
                         <Container
                           center={{ vertical: true }}
@@ -1444,6 +1512,7 @@ export default function LendingPage() {
                             balance="0"
                             showBalanceLabel={false}
                             error={false}
+                            handleMax={handleMaxButtonClick}
                             tokenMax={String(borrowedAmountInDecimal * 0.8)} // used for MAX calculation
                             decimals={underlyingDecimals}
                             value={repayAmounts[mergedPosition.market.id] || ""}
