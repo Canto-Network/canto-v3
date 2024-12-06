@@ -42,14 +42,13 @@ import {
 } from "@/hooks/generated/clm-graphql.hook";
 import { ApolloContext } from "@/enums/apollo-context.enum";
 import { CLM_TOKENS } from "@/config/consts/addresses";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
+import { ConnectButton, useConnectModal } from "@rainbow-me/rainbowkit";
 import { COMPTROLLER_ABI } from "@/config/abis";
 import { CANTO_MAINNET_EVM } from "@/config/networks";
 import { apolloClient } from "@/config/apollo.config";
 import { GET_TOKEN_PRICES } from "@/graphql";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
-import { useConnectModal } from "@rainbow-me/rainbowkit";
 
 enum CLMModalTypes {
   SUPPLY = "supply",
