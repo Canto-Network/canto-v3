@@ -49,6 +49,8 @@ import { apolloClient } from "@/config/apollo.config";
 import { GET_TOKEN_PRICES } from "@/graphql";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
+import Input from "@/components/input/input";
+import InputLiquidate from "@/components/inputLiquidate/input";
 
 enum CLMModalTypes {
   SUPPLY = "supply",
@@ -210,15 +212,19 @@ export default function LendingPage() {
 
     try {
       setLoadingPositions((prev) => ({ ...prev, [selected.market.id]: true }));
+
       const tokenDecimals =
         CLM_TOKENS.find(
           (token) => token.id.toLowerCase() === position.market.id.toLowerCase()
         )?.decimals ?? 18;
 
-      const repayAmount =
-        (BigInt(parseUnits(position.storedBorrowBalance, tokenDecimals)) *
-          BigInt(80)) /
-        BigInt(100);
+      const borrowedAmount = parseFloat(position.storedBorrowBalance);
+
+      const maxRepay = borrowedAmount * 0.8;
+
+      const repayStr = repayAmounts[selected.market.id] || "0";
+
+      const repayAmountBigInt = parseUnits(repayStr, tokenDecimals);
 
       const borrowedToken = position.account.tokens.find(
         (token: any) =>
@@ -241,12 +247,12 @@ export default function LendingPage() {
         args: [address as `0x${string}`],
       });
 
-      if (allowance < repayAmount) {
+      if (allowance < repayAmountBigInt) {
         const { hash: approvalHash } = await writeContract({
           address: borrowedToken.market.underlyingAddress,
           abi: CERC20_ABI,
           functionName: "approve",
-          args: [position.market.id.toLowerCase(), repayAmount],
+          args: [position.market.id.toLowerCase(), repayAmountBigInt],
         });
 
         const { status: approvalStatus } = await waitForTransaction({
@@ -262,7 +268,7 @@ export default function LendingPage() {
         throw new Error("Insufficient Collateral To Seize");
       }
 
-      if (balance < repayAmount) {
+      if (balance < repayAmountBigInt) {
         throw new Error("Insufficient Balance To Repay The Amount");
       }
 
@@ -272,7 +278,7 @@ export default function LendingPage() {
         functionName: "liquidateBorrow",
         args: [
           position.account.id.toLowerCase(),
-          repayAmount,
+          repayAmountBigInt,
           selected.market.id,
         ],
       });
@@ -292,6 +298,7 @@ export default function LendingPage() {
         });
         refetchAllPositions();
         refetchMyPositions();
+        setOpenLiquidateModal(false);
       } else {
         setLoadingPositions((prev) => ({
           ...prev,
@@ -422,6 +429,8 @@ export default function LendingPage() {
   const [extraBalances, setExtraBalances] = useState<Record<string, string>>(
     {}
   );
+
+  const [repayAmounts, setRepayAmounts] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (paginatedPositions.length === 0) return;
@@ -1273,14 +1282,22 @@ export default function LendingPage() {
 
         <LiquidateModal
           open={openLiquidateModal}
-          width="40rem"
+          width="45rem"
           height="min-content"
           title=""
           onClose={() => setOpenLiquidateModal(false)}
         >
           {selectedBorrowerPosition &&
             (() => {
-              // Original borrowedMarkets logic
+              const borrowedMarketId =
+                selectedBorrowerPosition.market.id.toLowerCase();
+              const borrowedTokenInfo = CLM_TOKENS.find(
+                (t) => t.id.toLowerCase() === borrowedMarketId
+              );
+              const underlyingDecimals = borrowedTokenInfo?.decimals ?? 18;
+              const borrowedAmountInDecimal = parseFloat(
+                selectedBorrowerPosition.storedBorrowBalance
+              );
               const borrowedMarkets =
                 selectedBorrowerPosition?.account.tokens.filter((t: any) => {
                   const supplied = parseFloat(t.totalUnderlyingSupplied);
@@ -1317,9 +1334,10 @@ export default function LendingPage() {
                   title="Choose Collateral To Seize"
                   headerFont="proto_mono"
                   headers={[
-                    { value: "Market", ratio: 1.2 },
-                    { value: "Total Supplied", ratio: 3 },
-                    { value: "", ratio: 2 },
+                    { value: "Market", ratio: 2 },
+                    { value: "Supplied", ratio: 3 },
+                    { value: "", ratio: 4 },
+                    { value: "", ratio: 3 },
                   ]}
                   content={[
                     ...borrowedMarkets.map((marketToken: any, idx: number) => {
@@ -1358,6 +1376,34 @@ export default function LendingPage() {
                           </Text>
                         </Container>,
                         <Container
+                          key={`borrowed-amount-${idx}`}
+                          width="100%"
+                          direction="row"
+                          gap={10}
+                          center={{ horizontal: true }}
+                        >
+                          <InputLiquidate
+                            type="amount"
+                            height={44}
+                            tokenMin="0"
+                            balance="0"
+                            showBalanceLabel={false}
+                            error={false}
+                            tokenMax={String(borrowedAmountInDecimal * 0.8)} // used for MAX calculation
+                            decimals={underlyingDecimals}
+                            value={repayAmounts[mergedPosition.market.id] || ""}
+                            onChange={(e) => {
+                              setRepayAmounts((prev) => ({
+                                ...prev,
+                                [mergedPosition.market.id]: e.target.value,
+                              }));
+                            }}
+                            placeholder="0.0"
+                            className={styles["input"]}
+                            style={{ textAlign: "left" }} // adjust alignment
+                          />
+                        </Container>,
+                        <Container
                           key={`borrowed-action-${idx}`}
                           width="100%"
                           direction="row"
@@ -1382,7 +1428,7 @@ export default function LendingPage() {
                             }}
                           >
                             {loadingPositions[mergedPosition.market.id]
-                              ? "Loading..."
+                              ? "Loading"
                               : "Seize"}
                           </button>
                         </Container>,
