@@ -351,6 +351,7 @@ export default function LendingPage() {
         });
         refetchAllPositions();
         refetchMyPositions();
+        setRepayAmounts({});
         setOpenLiquidateModal(false);
       } else {
         setLoadingPositions((prev) => ({
@@ -544,7 +545,7 @@ export default function LendingPage() {
       const updates: Record<string, string> = {};
 
       await Promise.all(
-        extraCTokens.map(async (token) => {
+        extraCTokensSupply.map(async (token) => {
           const balance = (await readContract({
             address: token.id as `0x${string}`,
             abi: CERC20_ABI,
@@ -565,7 +566,7 @@ export default function LendingPage() {
     };
 
     fetchExtraBalances();
-  }, [selectedBorrowerPosition]);
+  }, [selectedBorrowerPosition, openLiquidateModal]);
 
   const [accountLiquidities, setAccountLiquidities] = useState<
     Record<string, AccountLiquidityData>
@@ -1357,7 +1358,7 @@ export default function LendingPage() {
                   const cf = parseFloat(t.market.collateralFactor);
                   return (
                     supplied > 0 &&
-                    cf > 0.5 &&
+                    cf > 1 &&
                     selectedBorrowerPosition.market.id.toLowerCase() !==
                       t.market.id.toLowerCase()
                   );
@@ -1365,7 +1366,9 @@ export default function LendingPage() {
 
               Object.entries(extraBalances).forEach(([tokenId, balance]) => {
                 if (Number(balance) > 0) {
-                  const tokenInfo = extraCTokens.find((t) => t.id === tokenId);
+                  const tokenInfo = extraCTokensSupply.find(
+                    (t) => t.id === tokenId
+                  );
                   if (tokenInfo) {
                     const suppliedStr = balance.toString();
 
@@ -1381,7 +1384,6 @@ export default function LendingPage() {
                   }
                 }
               });
-
               return (
                 <Table
                   title="Choose Collateral To Seize"
@@ -1491,11 +1493,15 @@ export default function LendingPage() {
                           center={{ horizontal: true }}
                         >
                           <Text font="proto_mono">
-                            {displayAmount(
-                              marketToken.totalUnderlyingSupplied,
-                              0,
-                              { precision: 2 }
-                            )}
+                            {Number(marketToken.totalUnderlyingSupplied) > 0.9
+                              ? displayAmount(
+                                  marketToken.totalUnderlyingSupplied,
+                                  0,
+                                  { precision: 2 }
+                                )
+                              : Number(marketToken.totalUnderlyingSupplied)
+                                  ?.toFixed(5)
+                                  .toString()}
                           </Text>
                         </Container>,
                         <Container
