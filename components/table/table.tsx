@@ -1,3 +1,4 @@
+import Splash from "../splash/splash";
 import Text from "../text";
 import styles from "./table.module.scss";
 import useScreenSize from "@/hooks/helpers/useScreenSize";
@@ -16,10 +17,17 @@ interface Props {
   onRowsClick?: (() => void)[];
   removeHeader?: boolean;
   rowHeight?: string;
+  isLoading?: boolean;
+  loadingComponent?: React.ReactNode;
 }
 
 const Table = (props: Props) => {
   const { isMobile } = useScreenSize();
+  const DefaultLoader = () => (
+    <div className={styles.loadingContainer}>
+      <Splash themed />
+    </div>
+  );
 
   return (
     <div className={styles.container} style={{ fontSize: props.textSize }}>
@@ -82,40 +90,39 @@ const Table = (props: Props) => {
           ></div>
         )}
         <div className={styles.content}>
-          {props.content.map((row, index) => {
-            //check if an array has been passed in
-            if (!Array.isArray(row)) {
-              return row;
-            }
-            return (
-              <div
-                key={index}
-                className={styles.row}
-                style={{
-                  gridTemplateColumns: props.headers
-                    .map((header) => {
-                      const ratio =
-                        isMobile && header.hideOnMobile ? 0 : header.ratio;
-                      return `${ratio}fr`;
-                    })
-                    .join(" "),
-                  cursor: props.onRowsClick ? "pointer" : undefined,
-                  height: props.rowHeight ? props.rowHeight : "80px",
-                }}
-                onClick={
-                  props.onRowsClick ? props.onRowsClick[index] : undefined
+          {props.isLoading
+            ? props.loadingComponent ?? <DefaultLoader />
+            : props.content.map((row, index) => {
+                if (!Array.isArray(row)) {
+                  return row;
                 }
-              >
-                {row.map((cell, index) => {
-                  return (
-                    <div key={index} className={styles.cell}>
-                      {cell}
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })}
+                return (
+                  <div
+                    key={index}
+                    className={styles.row}
+                    style={{
+                      gridTemplateColumns: props.headers
+                        .map((header) => {
+                          const ratio =
+                            isMobile && header.hideOnMobile ? 0 : header.ratio;
+                          return `${ratio}fr`;
+                        })
+                        .join(" "),
+                      cursor: props.onRowsClick ? "pointer" : undefined,
+                      height: props.rowHeight ? props.rowHeight : "80px",
+                    }}
+                    onClick={
+                      props.onRowsClick ? props.onRowsClick[index] : undefined
+                    }
+                  >
+                    {row.map((cell, index) => (
+                      <div key={index} className={styles.cell}>
+                        {cell}
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
         </div>
       </div>
     </div>

@@ -1,0 +1,31 @@
+.healthBarContainer {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  width: 100px;
+}
+
+.healthStep {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  background-color: #ffffff;
+  transition: background-color 0.3s ease;
+
+  &.active {
+    opacity: 1;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .healthBarContainer {
+    width: 40px;
+    gap: 2px;
+    margin: 0 auto;
+  }
+
+  .healthStep {
+    width: 8px;
+    height: 6px;
+  }
+}

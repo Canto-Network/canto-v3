@@ -16,6 +16,18 @@ const nextConfig = {
     config.externals.push("pino-pretty", "lokijs", "encoding");
     return config;
   },
+  rewrites: () => {
+    return [
+      {
+        source: "/graphql/:slug*",
+        destination: `${process.env.BACKEND_SUBGRAPH_URL}:slug*`,
+      },
+      {
+        source: "/graphql-dex/:slug*",
+        destination: `${process.env.BACKEND_DEX_SUBGRAPH_URL}:slug*`,
+      },
+    ];
+  },
   // Adding CORS Headers for safe to access the manifest.json
   headers: async () => {
     return [
