@@ -1048,7 +1048,7 @@ export default function LendingPage() {
                   >
                     {totalStats.totalBorrowed.toLocaleString() === "0"
                       ? "Loading..."
-                      : totalStats.totalBorrowed.toLocaleString()}
+                      : "$" + totalStats.totalBorrowed.toLocaleString()}
                   </Text>
                 </Container>
               </div>
@@ -1073,7 +1073,7 @@ export default function LendingPage() {
                   >
                     {totalStats.totalSupplied.toLocaleString() === "0"
                       ? "Loading..."
-                      : totalStats.totalSupplied.toLocaleString()}
+                      : "$" + totalStats.totalSupplied.toLocaleString()}
                   </Text>
                 </Container>
               </div>
