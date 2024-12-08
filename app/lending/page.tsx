@@ -645,16 +645,19 @@ export default function LendingPage() {
               address: cTokenAddress,
               abi: CERC20_ABI,
               functionName: "totalSupply",
+              chainId: CANTO_MAINNET_EVM.chainId,
             }),
             readContract({
               address: cTokenAddress,
               abi: CERC20_ABI,
               functionName: "exchangeRateStored",
+              chainId: CANTO_MAINNET_EVM.chainId,
             }),
             readContract({
               address: cTokenAddress,
               abi: CERC20_ABI,
               functionName: "totalBorrows",
+              chainId: CANTO_MAINNET_EVM.chainId,
             }),
           ]);
 
