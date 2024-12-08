@@ -596,55 +596,94 @@ export default function LendingPage() {
     }
   }, [paginatedPositions]);
 
-  // const { data: marketsData } = useMarketsQuery({
-  //   context: {
-  //     endpoint: ApolloContext.MAIN,
-  //   },
-  // });
+  const { data: marketsData } = useMarketsQuery({
+    context: {
+      endpoint: ApolloContext.MAIN,
+    },
+  });
 
-  // const [totalStats, setTotalStats] = useState({
-  //   totalBorrowed: 0,
-  //   totalSupplied: 0,
-  // });
+  const [totalStats, setTotalStats] = useState({
+    totalBorrowed: 0,
+    totalSupplied: 0,
+  });
 
-  // useEffect(() => {
-  //   const calculateTotals = async () => {
-  //     if (!marketsData?.markets) return;
+  useEffect(() => {
+    const calculateTotals = async () => {
+      if (!marketsData?.markets) return;
 
-  //     let totalBorrowed = 0;
-  //     let totalSupplied = 0;
+      let totalBorrowed = 0;
+      let totalSupplied = 0;
 
-  //     const pricePromises = marketsData.markets.map((market) =>
-  //       apolloClient.query({
-  //         query: GET_TOKEN_PRICES,
-  //         variables: {
-  //           tokenId: market.underlyingAddress.toLowerCase(),
-  //         },
-  //         context: {
-  //           endpoint: ApolloContext.DEX,
-  //         },
-  //       })
-  //     );
+      // Pre-fetch prices
+      const pricePromises = marketsData.markets.map((market) =>
+        apolloClient.query({
+          query: GET_TOKEN_PRICES,
+          variables: {
+            tokenId: market.underlyingAddress.toLowerCase(),
+          },
+          context: {
+            endpoint: ApolloContext.DEX,
+          },
+        })
+      );
 
-  //     const prices = await Promise.all(pricePromises);
+      const prices = await Promise.all(pricePromises);
 
-  //     marketsData.markets.forEach((market, index) => {
-  //       const priceData = prices[index]?.data?.tokenDayDatas?.[0];
-  //       if (priceData) {
-  //         const price = Number(priceData.priceUSD);
-  //         totalBorrowed += Number(market.totalBorrows) * price;
-  //         totalSupplied += Number(market.totalSupply) * price;
-  //       }
-  //     });
+      for (let i = 0; i < marketsData.markets.length; i++) {
+        const market = marketsData.markets[i];
+        const priceData = prices[i]?.data?.tokenDayDatas?.[0];
 
-  //     setTotalStats({
-  //       totalBorrowed,
-  //       totalSupplied,
-  //     });
-  //   };
+        // If no price from query, default to 1
+        const underlyingTokenPrice = priceData ? Number(priceData.priceUSD) : 1;
 
-  //   calculateTotals();
-  // }, [marketsData]);
+        const cTokenAddress = market.id.toLowerCase() as `0x${string}`;
+
+        // Get on-chain data:
+        const [cTotalSupply, exchangeRateStored, totalBorrows] =
+          await Promise.all([
+            readContract({
+              address: cTokenAddress,
+              abi: CERC20_ABI,
+              functionName: "totalSupply",
+            }),
+            readContract({
+              address: cTokenAddress,
+              abi: CERC20_ABI,
+              functionName: "exchangeRateStored",
+            }),
+            readContract({
+              address: cTokenAddress,
+              abi: CERC20_ABI,
+              functionName: "totalBorrows",
+            }),
+          ]);
+
+        // Define 1e18 as BigInt
+        const ONE_E18 = 1000000000000000000n;
+
+        // underlyingSupplied = (cTotalSupply * exchangeRateStored) / 1e18
+        const underlyingSupplied = Number(
+          (cTotalSupply * exchangeRateStored) / ONE_E18
+        );
+
+        // suppliedUSD = underlyingSupplied * underlyingTokenPrice
+        const suppliedUSD = (underlyingSupplied / 1e18) * underlyingTokenPrice;
+        totalSupplied += suppliedUSD;
+
+        // totalBorrows is typically already in underlying units scaled by 1e18
+        const borrowedUSD =
+          (Number(totalBorrows) / 1e18) * underlyingTokenPrice;
+        totalBorrowed += borrowedUSD;
+      }
+
+      setTotalStats({
+        totalBorrowed,
+        totalSupplied,
+      });
+    };
+
+    calculateTotals();
+  }, [marketsData, apolloClient]);
 
   if (isLoading || cNote === undefined || stableCoins === undefined) {
     return (
@@ -985,7 +1024,7 @@ export default function LendingPage() {
             />
           </Container>
         </div>
-        {/* <div>
+        <div>
           <div className={styles.statsContainer}>
             <div className={styles.statsBox}>
               <div>
@@ -1004,7 +1043,9 @@ export default function LendingPage() {
                     size={isMobile ? "x-lg" : "lg"}
                     color="#000000"
                   >
-                    {totalStats.totalBorrowed.toLocaleString()}
+                    {totalStats.totalBorrowed.toLocaleString() === "0"
+                      ? "Loading..."
+                      : totalStats.totalBorrowed.toLocaleString()}
                   </Text>
                 </Container>
               </div>
@@ -1027,13 +1068,15 @@ export default function LendingPage() {
                     size={isMobile ? "x-lg" : "lg"}
                     color="#000000"
                   >
-                    {totalStats.totalSupplied.toLocaleString()}
+                    {totalStats.totalSupplied.toLocaleString() === "0"
+                      ? "Loading..."
+                      : totalStats.totalSupplied.toLocaleString()}
                   </Text>
                 </Container>
               </div>
             </div>
           </div>
-        </div> */}
+        </div>
         <Spacer height="5px" />
         <Table
           title="Positions"
