@@ -816,6 +816,7 @@ export default function LendingPage() {
         />
       </div>
 
+
       <div className={clsx(styles.mainTable, "separator")}>
         {isMobile && (
           <div>
