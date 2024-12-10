@@ -64,27 +64,6 @@ interface AccountLiquidityData {
   shortfall: string;
 }
 
-const extraCTokens = [
-  {
-    name: "CUSYC",
-    id: "0x0355e393cf0cf5486d9caefb64407b7b1033c2f1",
-    decimals: 6,
-    collateralFactor: 1.0,
-  },
-  {
-    name: "CFBILL",
-    id: "0xf1f89df149bc5f2b6b29783915d1f9fe2d24459c",
-    decimals: 18,
-    collateralFactor: 1.0,
-  },
-  {
-    name: "CIFBILL",
-    id: "0x897709fc83ba7a4271d22ed4c01278cc1da8d6f8",
-    decimals: 18,
-    collateralFactor: 1.0,
-  },
-];
-
 const extraCTokensSupply = [
   {
     name: "CUSYC",
@@ -426,7 +405,7 @@ export default function LendingPage() {
       let finalSeizeAmount: string;
 
       if (decimalPart && decimalPart.length > 2) {
-        finalSeizeAmount = seizeTokensFormatted.toString();
+        finalSeizeAmount = seizeTokensFormatted.toFixed(5);
       } else {
         finalSeizeAmount = seizeTokensFormatted.toFixed(2);
       }
@@ -1460,7 +1439,7 @@ export default function LendingPage() {
 
         <LiquidateModal
           open={openLiquidateModal}
-          width="50rem"
+          width="55rem"
           height="min-content"
           title=""
           onClose={() => setOpenLiquidateModal(false)}
@@ -1599,6 +1578,14 @@ export default function LendingPage() {
 
                           maxRepay = maxRepay * scale;
                         }
+
+                        calculateSeizeTokens(
+                          cTokenBorrowed,
+                          cTokenCollateral,
+                          maxRepay.toString(),
+                          collateralDecimals,
+                          supplyDecimals
+                        );
 
                         // Set the input value to the final maxRepay
                         setRepayAmounts((prev) => ({
