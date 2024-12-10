@@ -1543,6 +1543,15 @@ export default function LendingPage() {
                           center={{ horizontal: true }}
                         >
                           <Text font="proto_mono">
+                            <Icon
+                              icon={{
+                                url: "/tokens/note.svg",
+                                size: 14,
+                              }}
+                              color="dark"
+                              style={{ marginTop: "6px", marginRight: "6px" }}
+                              themed={true}
+                            />
                             {Number(marketToken.totalUnderlyingSupplied) > 0.9
                               ? displayAmount(
                                   marketToken.totalUnderlyingSupplied,
