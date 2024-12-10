@@ -1,3 +1,4 @@
+import { CLMToken } from "../interfaces";
 import { CANTO_MAINNET_EVM, CANTO_TESTNET_EVM } from "../networks";
 
 export const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
@@ -52,6 +53,39 @@ const CANTO_CORE_ADDRESSES = {
     testnet: "0xCa03230E7FB13456326a234443aAd111AC96410A",
   },
 } as const;
+
+export const CLM_TOKENS: CLMToken[] = [
+  {
+    name: "CNOTE",
+    id: "0xee602429ef7ece0a13e4ffe8dbc16e101049504c",
+    decimals: 18,
+  },
+  {
+    name: "CUSDC",
+    id: "0xde59f060d7ee2b612e7360e6c1b97c4d8289ca2e",
+    decimals: 6,
+  },
+  {
+    name: "CUSDT",
+    id: "0x6b46ba92d7e94ffa658698764f5b8dfd537315a9",
+    decimals: 6,
+  },
+  {
+    name: "CUSYC",
+    id: "0x0355e393cf0cf5486d9caefb64407b7b1033c2f1",
+    decimals: 6,
+  },
+  {
+    name: "CFBILL",
+    id: "0xf1f89df149bc5f2b6b29783915d1f9fe2d24459c",
+    decimals: 18,
+  },
+  {
+    name: "CIFBILL",
+    id: "0x897709fc83ba7a4271d22ed4c01278cc1da8d6f8",
+    decimals: 18,
+  },
+];
 
 type ContractName = keyof typeof CANTO_CORE_ADDRESSES;
 // canto chain types
