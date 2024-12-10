@@ -1,6 +1,7 @@
 import Image from "next/image";
 import React from "react";
 interface Props {
+  id?: string;
   icon: {
     url: string;
     size?:
@@ -19,6 +20,7 @@ interface Props {
 const Icon = (props: Props) => {
   return (
     <Image
+      id={props.id}
       className={props.className}
       src={props.icon.url}
       style={{

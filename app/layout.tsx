@@ -3,11 +3,13 @@
 import Footer from "@/components/footer/footer";
 import NavBar from "@/components/nav_bar/navBar";
 import { ToastContainer } from "@/components/toast";
+import { ApolloProvider } from "@apollo/client";
 import CantoWalletProvider from "@/provider/rainbowProvider";
 import { ReactQueryClientProvider } from "@/provider/reactQueryProvider";
 import { Analytics } from "@vercel/analytics/react";
 import localFont from "next/font/local";
 import "./globals.scss";
+import { apolloClient } from "@/config/apollo.config";
 
 const rm_mono = localFont({
   src: "../fonts/rm-mono-regular.ttf",
@@ -78,9 +80,10 @@ export default function RootLayout({
         <div id="toast-root"></div>
         <CantoWalletProvider>
           <ReactQueryClientProvider>
-            <ToastContainer>
-              <div className="body">
-                {/* <InfoBar
+            <ApolloProvider client={apolloClient}>
+              <ToastContainer>
+                <div className="body">
+                  {/* <InfoBar
                 values={[
                   {
                     name: "contracts w/ CSR enabled:",
@@ -108,13 +111,14 @@ export default function RootLayout({
                   },
                 ]}
               /> */}
-                <NavBar />
+                  <NavBar />
 
-                {children}
-                <div id="modal-root"></div>
-                <Footer />
-              </div>
-            </ToastContainer>
+                  {children}
+                  <div id="modal-root"></div>
+                  <Footer />
+                </div>
+              </ToastContainer>
+            </ApolloProvider>
           </ReactQueryClientProvider>
         </CantoWalletProvider>
         <Analytics />

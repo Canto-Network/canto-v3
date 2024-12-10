@@ -30,3 +30,9 @@ export interface OFTToken extends ERC20Token {
 export interface UserTokenBalances {
   [key: string]: string; // token id => balance
 }
+
+export interface CLMToken {
+  name: string;
+  id: string;
+  decimals: number;
+}
