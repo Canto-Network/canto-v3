@@ -30,7 +30,7 @@ import { HealthBar } from "./components/healthBar/healthBar";
 import { useBorrowBalances } from "@/hooks/lending/useBorrowBalances";
 import { writeContract, waitForTransaction, readContract } from "@wagmi/core";
 import { CERC20_ABI } from "@/config/abis/clm/cErc20";
-import { parseUnits } from "viem";
+import { formatUnits, parseUnits } from "viem";
 import { useToast } from "@/components/toast/useToast";
 import {
   useMyPositionsCountQuery,
@@ -376,6 +376,79 @@ export default function LendingPage() {
     }
   };
 
+  const calculateSeizeTokens = async (
+    cTokenBorrowed: `0x${string}`,
+    cTokenCollateral: `0x${string}`,
+    repayAmountStr: string,
+    decimals: number,
+    supplyDecimals: number
+  ) => {
+    try {
+      if (!repayAmountStr || repayAmountStr === "0") {
+        setSeizeAmounts((prev) => ({
+          ...prev,
+          [cTokenCollateral]: "0",
+        }));
+        return;
+      }
+
+      const repayAmountBigInt = parseUnits(repayAmountStr, decimals);
+
+      const comptrollerAddress = "0x5E23dC409Fc2F832f83CEc191E245A191a4bCc5C";
+
+      const [errorCode, seizeTokens] = await readContract({
+        address: comptrollerAddress,
+        abi: COMPTROLLER_ABI,
+        functionName: "liquidateCalculateSeizeTokens",
+        args: [cTokenBorrowed, cTokenCollateral, repayAmountBigInt],
+      });
+
+      if (errorCode !== BigInt(0)) {
+        setSeizeAmounts((prev) => ({
+          ...prev,
+          [cTokenCollateral]: "0",
+        }));
+        // Optionally, display an error toast here
+        toast.add({
+          primary:
+            "Liquidation seize calculation failed. Please try a smaller amount.",
+          state: "failure",
+          duration: 4000,
+        });
+        return;
+      }
+
+      const seizeTokensFormatted = parseFloat(
+        formatUnits(seizeTokens, supplyDecimals)
+      );
+
+      const decimalPart = seizeTokensFormatted.toString().split(".")[1];
+      let finalSeizeAmount: string;
+
+      if (decimalPart && decimalPart.length > 2) {
+        finalSeizeAmount = seizeTokensFormatted.toString();
+      } else {
+        finalSeizeAmount = seizeTokensFormatted.toFixed(2);
+      }
+
+      setSeizeAmounts((prev) => ({
+        ...prev,
+        [cTokenCollateral]: finalSeizeAmount,
+      }));
+    } catch (error) {
+      console.error("Error calculating seize tokens:", error);
+      setSeizeAmounts((prev) => ({
+        ...prev,
+        [cTokenCollateral]: "0",
+      }));
+      toast.add({
+        primary: "Failed to calculate seize tokens.",
+        state: "failure",
+        duration: 4000,
+      });
+    }
+  };
+
   // track current modal type
   const [currentModal, setCurrentModal] = useState<CLMModalTypes>(
     CLMModalTypes.NONE
@@ -486,6 +559,8 @@ export default function LendingPage() {
   );
 
   const [repayAmounts, setRepayAmounts] = useState<Record<string, string>>({});
+
+  const [seizeAmounts, setSeizeAmounts] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (paginatedPositions.length === 0) return;
@@ -1385,7 +1460,7 @@ export default function LendingPage() {
 
         <LiquidateModal
           open={openLiquidateModal}
-          width="45rem"
+          width="50rem"
           height="min-content"
           title=""
           onClose={() => setOpenLiquidateModal(false)}
@@ -1440,6 +1515,7 @@ export default function LendingPage() {
                   headers={[
                     { value: "Market", ratio: 2 },
                     { value: "Supplied", ratio: 3 },
+                    { value: "Seize Amount", ratio: 3 },
                     { value: "", ratio: 4 },
                     { value: "", ratio: 3 },
                   ]}
@@ -1448,6 +1524,18 @@ export default function LendingPage() {
                       const mergedPosition = {
                         ...marketToken,
                       };
+
+                      const cTokenBorrowed = borrowedMarketId;
+                      const cTokenCollateral =
+                        mergedPosition.market.id.toLowerCase();
+                      const tokenInfo = CLM_TOKENS.find(
+                        (t) => t.id.toLowerCase() === cTokenBorrowed
+                      );
+                      const tokenInfoSupply = CLM_TOKENS.find(
+                        (t) => t.id.toLowerCase() === cTokenCollateral
+                      );
+                      const supplyDecimals = tokenInfoSupply?.decimals ?? 18;
+                      const collateralDecimals = tokenInfo?.decimals ?? 18;
 
                       async function handleMaxButtonClick() {
                         const borrowedMarketId =
@@ -1563,6 +1651,17 @@ export default function LendingPage() {
                           </Text>
                         </Container>,
                         <Container
+                          key={`seize-${idx}`}
+                          width="100%"
+                          direction="row"
+                          gap={10}
+                          center={{ horizontal: true }}
+                        >
+                          <Text font="proto_mono">
+                            {seizeAmounts[cTokenCollateral] || "0"}
+                          </Text>
+                        </Container>,
+                        <Container
                           key={`borrowed-amount-${idx}`}
                           width="100%"
                           direction="row"
@@ -1581,10 +1680,18 @@ export default function LendingPage() {
                             decimals={underlyingDecimals}
                             value={repayAmounts[mergedPosition.market.id] || ""}
                             onChange={(e) => {
+                              const value = e.target.value;
                               setRepayAmounts((prev) => ({
                                 ...prev,
-                                [mergedPosition.market.id]: e.target.value,
+                                [cTokenCollateral]: value,
                               }));
+                              calculateSeizeTokens(
+                                cTokenBorrowed,
+                                cTokenCollateral,
+                                value,
+                                collateralDecimals,
+                                supplyDecimals
+                              );
                             }}
                             placeholder="0.0"
                             className={styles["input"]}
