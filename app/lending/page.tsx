@@ -1037,31 +1037,6 @@ export default function LendingPage() {
                     color="#767676"
                     size={isMobile ? "md" : "x-sm"}
                   >
-                    Total Borrowed
-                  </Text>
-                </div>
-                <Container direction="row" center={{ vertical: true }}>
-                  <Text
-                    font="proto_mono"
-                    size={isMobile ? "x-lg" : "lg"}
-                    color="#000000"
-                  >
-                    {totalStats.totalBorrowed.toLocaleString() === "0"
-                      ? "Loading..."
-                      : "$" + totalStats.totalBorrowed.toLocaleString()}
-                  </Text>
-                </Container>
-              </div>
-            </div>
-
-            <div className={styles.statsBox}>
-              <div>
-                <div style={{ marginBottom: "8px" }}>
-                  <Text
-                    font="rm_mono"
-                    color="#767676"
-                    size={isMobile ? "md" : "x-sm"}
-                  >
                     Total Supplied
                   </Text>
                 </div>
@@ -1074,6 +1049,30 @@ export default function LendingPage() {
                     {totalStats.totalSupplied.toLocaleString() === "0"
                       ? "Loading..."
                       : "$" + totalStats.totalSupplied.toLocaleString()}
+                  </Text>
+                </Container>
+              </div>
+            </div>
+            <div className={styles.statsBox}>
+              <div>
+                <div style={{ marginBottom: "8px" }}>
+                  <Text
+                    font="rm_mono"
+                    color="#767676"
+                    size={isMobile ? "md" : "x-sm"}
+                  >
+                    Total Borrowed
+                  </Text>
+                </div>
+                <Container direction="row" center={{ vertical: true }}>
+                  <Text
+                    font="proto_mono"
+                    size={isMobile ? "x-lg" : "lg"}
+                    color="#000000"
+                  >
+                    {totalStats.totalBorrowed.toLocaleString() === "0"
+                      ? "Loading..."
+                      : "$" + totalStats.totalBorrowed.toLocaleString()}
                   </Text>
                 </Container>
               </div>
