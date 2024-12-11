@@ -28,7 +28,12 @@ import { Pagination } from "@/components/pagination/Pagination";
 import { useAccount } from "wagmi";
 import { HealthBar } from "./components/healthBar/healthBar";
 import { useBorrowBalances } from "@/hooks/lending/useBorrowBalances";
-import { writeContract, waitForTransaction, readContract } from "@wagmi/core";
+import {
+  writeContract,
+  waitForTransaction,
+  readContract,
+  readContracts,
+} from "@wagmi/core";
 import { CERC20_ABI } from "@/config/abis/clm/cErc20";
 import { parseUnits } from "viem";
 import { useToast } from "@/components/toast/useToast";
@@ -49,7 +54,6 @@ import { apolloClient } from "@/config/apollo.config";
 import { GET_TOKEN_PRICES } from "@/graphql";
 import { Tooltip } from "react-tooltip";
 import "react-tooltip/dist/react-tooltip.css";
-import Input from "@/components/input/input";
 import InputLiquidate from "@/components/inputLiquidate/input";
 
 enum CLMModalTypes {
@@ -62,6 +66,12 @@ interface AccountLiquidityData {
   errorCode: string;
   liquidity: string;
   shortfall: string;
+}
+
+interface CallMapping {
+  positionId: string;
+  tokenName: string;
+  decimals: number;
 }
 
 const extraCTokens = [
@@ -491,46 +501,87 @@ export default function LendingPage() {
     if (paginatedPositions.length === 0) return;
 
     const fetchAllPositionsSupplies = async () => {
-      const results: Record<string, number> = {};
+      try {
+        const results: Record<string, number> = {};
 
-      for (const position of paginatedPositions) {
-        let totalSupplied = 0;
-        for (const t of position.account.tokens) {
-          const cf = t.market.collateralFactor;
-          if (
-            Number(cf) > 0.5 &&
-            t.totalUnderlyingSupplied > t.totalUnderlyingBorrowed
-          ) {
-            totalSupplied += parseFloat(t.totalUnderlyingSupplied);
-          }
-        }
+        // Arrays to hold contract read configurations and their mappings
+        const contractReads: any = [];
+        const callMappings: CallMapping[] = [];
 
-        const userAddress = position.account.id.toLowerCase() as `0x${string}`;
-        for (const token of extraCTokensSupply) {
-          const balance = (await readContract({
-            address: token.id as `0x${string}`,
-            abi: CERC20_ABI,
-            functionName: "balanceOf",
-            chainId: CANTO_MAINNET_EVM.chainId,
-            args: [userAddress],
-          })) as bigint;
+        // Iterate through each position to prepare balanceOf calls
+        paginatedPositions.forEach((position) => {
+          const positionId = position.id;
+          const userAddress =
+            position.account.id.toLowerCase() as `0x${string}`;
 
-          if (balance > 0n) {
-            let converted =
-              parseFloat(balance.toString()) / 10 ** token.decimals;
-
-            if (token.name === "CUSYC") {
-              converted = converted * 1.05;
+          // Initialize totalSupplied based on existing tokens
+          let totalSupplied = 0;
+          position.account.tokens.forEach((t: any) => {
+            const cf = t.market.collateralFactor;
+            if (
+              Number(cf) > 0.5 &&
+              parseFloat(t.totalUnderlyingSupplied) >
+                parseFloat(t.totalUnderlyingBorrowed)
+            ) {
+              totalSupplied += parseFloat(t.totalUnderlyingSupplied);
             }
+          });
+          results[positionId] = totalSupplied;
 
-            totalSupplied += converted;
+          // Prepare balanceOf calls for extraCTokensSupply
+          extraCTokensSupply.forEach((token) => {
+            contractReads.push({
+              address: token.id as `0x${string}`,
+              abi: CERC20_ABI,
+              functionName: "balanceOf",
+              args: [userAddress],
+              chainId: CANTO_MAINNET_EVM.chainId,
+            });
+
+            callMappings.push({
+              positionId,
+              tokenName: token.name,
+              decimals: token.decimals,
+            });
+          });
+        });
+
+        const balances = await readContracts({
+          contracts: contractReads,
+          allowFailure: false,
+        });
+
+        balances.forEach((balance, index) => {
+          const mapping = callMappings[index];
+          if (balance === undefined || balance === null) {
+            console.warn(
+              `Failed to fetch balance for token ${mapping.tokenName} in position ${mapping.positionId}`
+            );
+            return;
           }
-        }
 
-        results[position.id] = totalSupplied;
+          const { positionId, tokenName, decimals } = mapping;
+
+          const balanceFloat = Number(balance) / 10 ** decimals;
+
+          let converted = balanceFloat;
+          if (tokenName === "CUSYC") {
+            converted = converted * 1.06;
+          }
+
+          results[positionId] += converted;
+        });
+
+        // Update the state with the calculated results
+        setPositionsTotalSupplied(results);
+      } catch (error: any) {
+        console.error("Error fetching and calculating supplies:", error);
+        toast.add({
+          primary: "Failed to fetch and calculate supplies.",
+          state: "failure",
+          duration: 4000,
+        });
       }
-
-      setPositionsTotalSupplied(results);
     };
 
     fetchAllPositionsSupplies();
