@@ -28,7 +28,12 @@ import { Pagination } from "@/components/pagination/Pagination";
 import { useAccount } from "wagmi";
 import { HealthBar } from "./components/healthBar/healthBar";
 import { useBorrowBalances } from "@/hooks/lending/useBorrowBalances";
-import { writeContract, waitForTransaction, readContract, readContracts } from "@wagmi/core";
+import {
+  writeContract,
+  waitForTransaction,
+  readContract,
+  readContracts,
+} from "@wagmi/core";
 import { CERC20_ABI } from "@/config/abis/clm/cErc20";
 import { parseUnits } from "viem";
 import { useToast } from "@/components/toast/useToast";
@@ -68,7 +73,6 @@ interface CallMapping {
   tokenName: string;
   decimals: number;
 }
-
 
 const extraCTokens = [
   {
@@ -501,7 +505,7 @@ export default function LendingPage() {
         const results: Record<string, number> = {};
 
         // Arrays to hold contract read configurations and their mappings
-        const contractReads : any = [];
+        const contractReads: any = [];
         const callMappings: CallMapping[] = [];
 
         // Iterate through each position to prepare balanceOf calls
@@ -544,7 +548,7 @@ export default function LendingPage() {
 
         const balances = await readContracts({
           contracts: contractReads,
-          allowFailure: false, 
+          allowFailure: false,
         });
 
         balances.forEach((balance, index) => {
