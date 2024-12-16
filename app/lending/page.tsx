@@ -123,6 +123,15 @@ const addressesToExclude = [
   {
     id: "0xf0cd6b5ce8a01d1b81f1d8b76643866c5816b49f",
   },
+  {
+    id: "0x897709fc83ba7a4271d22ed4c01278cc1da8d6f8",
+  },
+  {
+    id: "0xf1f89df149bc5f2b6b29783915d1f9fe2d24459c",
+  },
+  {
+    id: "0x0355e393cf0cf5486d9caefb64407b7b1033c2f1",
+  },
 ];
 
 function sortCTokens(
@@ -653,6 +662,9 @@ export default function LendingPage() {
   const [totalStats, setTotalStats] = useState({
     totalBorrowed: 0,
     totalSupplied: 0,
+    totalNoteBorrowed: 0,
+    totalNoteSupplied: 0,
+    totalLiquidNote: 0,
   });
 
   useEffect(() => {
@@ -661,6 +673,9 @@ export default function LendingPage() {
 
       let totalBorrowed = 0;
       let totalSupplied = 0;
+      let totalNoteBorrowed = 0;
+      let totalNoteSupplied = 0;
+      let totalLiquidNote = 0;
 
       // Pre-fetch prices
       const pricePromises = marketsData.markets.map((market) =>
@@ -733,6 +748,7 @@ export default function LendingPage() {
           cTotalSupply / BigInt(10 ** market.underlyingDecimals)
         );
 
+        //const exchangeRateSupply = Number(exchangeRateStored) / 1e18;
         const suppliedUSD = underlyingSupplied * underlyingTokenPrice;
         totalSupplied += suppliedUSD;
 
@@ -740,11 +756,21 @@ export default function LendingPage() {
           (Number(totalBorrows) / 10 ** market.underlyingDecimals) *
           underlyingTokenPrice;
         totalBorrowed += borrowedUSD;
+
+        // If this is the cNOTE market, also track these values separately
+        if (cTokenAddress === "0xee602429ef7ece0a13e4ffe8dbc16e101049504c") {
+          totalNoteSupplied += suppliedUSD;
+          totalNoteBorrowed += borrowedUSD;
+          totalLiquidNote = borrowedUSD - suppliedUSD;
+        }
       }
 
       setTotalStats({
         totalBorrowed,
         totalSupplied,
+        totalNoteBorrowed,
+        totalNoteSupplied,
+        totalLiquidNote,
       });
     };
 
@@ -1100,7 +1126,7 @@ export default function LendingPage() {
                     color="#767676"
                     size={isMobile ? "md" : "x-sm"}
                   >
-                    Total Supplied
+                    Total Stables Supplied
                   </Text>
                 </div>
                 <Container direction="row" center={{ vertical: true }}>
@@ -1124,7 +1150,7 @@ export default function LendingPage() {
                     color="#767676"
                     size={isMobile ? "md" : "x-sm"}
                   >
-                    Total Borrowed
+                    Total Note Borrowed
                   </Text>
                 </div>
                 <Container direction="row" center={{ vertical: true }}>
@@ -1133,9 +1159,57 @@ export default function LendingPage() {
                     size={isMobile ? "x-lg" : "lg"}
                     color="#000000"
                   >
-                    {totalStats.totalBorrowed.toLocaleString() === "0"
+                    {totalStats.totalNoteBorrowed.toLocaleString() === "0"
                       ? "Loading..."
-                      : "$" + totalStats.totalBorrowed.toLocaleString()}
+                      : "$" + totalStats.totalNoteBorrowed.toLocaleString()}
+                  </Text>
+                </Container>
+              </div>
+            </div>
+            <div className={styles.statsBox}>
+              <div>
+                <div style={{ marginBottom: "8px" }}>
+                  <Text
+                    font="rm_mono"
+                    color="#767676"
+                    size={isMobile ? "md" : "x-sm"}
+                  >
+                    Total Note Supplied
+                  </Text>
+                </div>
+                <Container direction="row" center={{ vertical: true }}>
+                  <Text
+                    font="proto_mono"
+                    size={isMobile ? "x-lg" : "lg"}
+                    color="#000000"
+                  >
+                    {totalStats.totalNoteSupplied.toLocaleString() === "0"
+                      ? "Loading..."
+                      : "$" + totalStats.totalNoteSupplied.toLocaleString()}
+                  </Text>
+                </Container>
+              </div>
+            </div>
+            <div className={styles.statsBox}>
+              <div>
+                <div style={{ marginBottom: "8px" }}>
+                  <Text
+                    font="rm_mono"
+                    color="#767676"
+                    size={isMobile ? "md" : "x-sm"}
+                  >
+                    Total Liquid Note
+                  </Text>
+                </div>
+                <Container direction="row" center={{ vertical: true }}>
+                  <Text
+                    font="proto_mono"
+                    size={isMobile ? "x-lg" : "lg"}
+                    color="#000000"
+                  >
+                    {totalStats.totalLiquidNote.toLocaleString() === "0"
+                      ? "Loading..."
+                      : "$" + totalStats.totalLiquidNote.toLocaleString()}
                   </Text>
                 </Container>
               </div>
