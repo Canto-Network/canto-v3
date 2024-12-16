@@ -74,27 +74,6 @@ interface CallMapping {
   decimals: number;
 }
 
-const extraCTokens = [
-  {
-    name: "CUSYC",
-    id: "0x0355e393cf0cf5486d9caefb64407b7b1033c2f1",
-    decimals: 6,
-    collateralFactor: 1.0,
-  },
-  {
-    name: "CFBILL",
-    id: "0xf1f89df149bc5f2b6b29783915d1f9fe2d24459c",
-    decimals: 18,
-    collateralFactor: 1.0,
-  },
-  {
-    name: "CIFBILL",
-    id: "0x897709fc83ba7a4271d22ed4c01278cc1da8d6f8",
-    decimals: 18,
-    collateralFactor: 1.0,
-  },
-];
-
 const extraCTokensSupply = [
   {
     name: "CUSYC",
@@ -125,6 +104,24 @@ const extraCTokensSupply = [
     id: "0x6b46ba92d7e94ffa658698764f5b8dfd537315a9",
     decimals: 6,
     collateralFactor: 1.0,
+  },
+];
+
+const addressesToExclude = [
+  {
+    id: "0x3c96dcfd875253a37acb3d2b102b6f328349b16b",
+  },
+  {
+    id: "0xb49a395b39a0b410675406bee7bd06330cb503e3",
+  },
+  {
+    id: "0xc0d6574b2fe71eed8cd305df0da2323237322557",
+  },
+  {
+    id: "0xd6a97e43fc885a83e97d599796458a331e580800",
+  },
+  {
+    id: "0xf0cd6b5ce8a01d1b81f1d8b76643866c5816b49f",
   },
 ];
 
@@ -653,6 +650,8 @@ export default function LendingPage() {
     },
   });
 
+  console.log("markets data", marketsData);
+
   const [totalStats, setTotalStats] = useState({
     totalBorrowed: 0,
     totalSupplied: 0,
@@ -682,10 +681,30 @@ export default function LendingPage() {
 
       for (let i = 0; i < marketsData.markets.length; i++) {
         const market = marketsData.markets[i];
-        const priceData = prices[i]?.data?.tokenDayDatas?.[0];
 
+        // Check if this market is in the exclusion list
+        const isExcluded = addressesToExclude.some(
+          (excluded) => excluded.id.toLowerCase() === market.id.toLowerCase()
+        );
+        if (isExcluded) {
+          continue;
+        }
+
+        const priceData = prices[i]?.data?.tokenDayDatas?.[0];
         // If no price from query, default to 1
-        const underlyingTokenPrice = priceData ? Number(priceData.priceUSD) : 1;
+        let underlyingTokenPrice = priceData ? Number(priceData.priceUSD) : 1;
+
+        const specialPrices: Record<string, number> = {
+          "0x0355e393cf0cf5486d9caefb64407b7b1033c2f1": 1.07,
+          "0x897709fc83ba7a4271d22ed4c01278cc1da8d6f8": 1.04,
+          "0xf1f89df149bc5f2b6b29783915d1f9fe2d24459c": 1.04,
+          "0xb65ec550ff356eca6150f733ba9b954b2e0ca488": 0.039,
+        };
+
+        const lowerCaseMarketId = market.id.toLowerCase();
+        if (specialPrices[lowerCaseMarketId]) {
+          underlyingTokenPrice = specialPrices[lowerCaseMarketId];
+        }
 
         const cTokenAddress = market.id.toLowerCase() as `0x${string}`;
 
@@ -712,21 +731,23 @@ export default function LendingPage() {
             }),
           ]);
 
-        // Define 1e18 as BigInt
-        const ONE_E18 = 1000000000000000000n;
-
-        // underlyingSupplied = (cTotalSupply * exchangeRateStored) / 1e18
         const underlyingSupplied = Number(
-          (cTotalSupply * exchangeRateStored) / ONE_E18
+          cTotalSupply / BigInt(10 ** market.underlyingDecimals)
         );
 
-        // suppliedUSD = underlyingSupplied * underlyingTokenPrice
-        const suppliedUSD = (underlyingSupplied / 1e18) * underlyingTokenPrice;
+        console.log(
+          "supply",
+          cTokenAddress,
+          cTotalSupply,
+          underlyingTokenPrice
+        );
+
+        const suppliedUSD = underlyingSupplied * underlyingTokenPrice;
         totalSupplied += suppliedUSD;
 
-        // totalBorrows is typically already in underlying units scaled by 1e18
         const borrowedUSD =
-          (Number(totalBorrows) / 1e18) * underlyingTokenPrice;
+          (Number(totalBorrows) / 10 ** market.underlyingDecimals) *
+          underlyingTokenPrice;
         totalBorrowed += borrowedUSD;
       }
 
