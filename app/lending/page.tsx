@@ -1747,15 +1747,12 @@ export default function LendingPage() {
                               style={{ marginTop: "6px", marginRight: "6px" }}
                               themed={true}
                             />
-                            {Number(marketToken.totalUnderlyingSupplied) > 0.9
-                              ? displayAmount(
-                                  marketToken.totalUnderlyingSupplied,
-                                  0,
-                                  { precision: 2 }
-                                )
-                              : Number(marketToken.totalUnderlyingSupplied)
-                                  ?.toFixed(5)
-                                  .toString()}
+
+                            {displayAmount(
+                              marketToken.totalUnderlyingSupplied,
+                              0,
+                              { precision: 2 }
+                            )}
                           </Text>
                         </Container>,
                         <Container
