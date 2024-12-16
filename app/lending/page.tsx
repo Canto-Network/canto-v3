@@ -74,27 +74,6 @@ interface CallMapping {
   decimals: number;
 }
 
-const extraCTokens = [
-  {
-    name: "CUSYC",
-    id: "0x0355e393cf0cf5486d9caefb64407b7b1033c2f1",
-    decimals: 6,
-    collateralFactor: 1.0,
-  },
-  {
-    name: "CFBILL",
-    id: "0xf1f89df149bc5f2b6b29783915d1f9fe2d24459c",
-    decimals: 18,
-    collateralFactor: 1.0,
-  },
-  {
-    name: "CIFBILL",
-    id: "0x897709fc83ba7a4271d22ed4c01278cc1da8d6f8",
-    decimals: 18,
-    collateralFactor: 1.0,
-  },
-];
-
 const extraCTokensSupply = [
   {
     name: "CUSYC",
@@ -125,6 +104,24 @@ const extraCTokensSupply = [
     id: "0x6b46ba92d7e94ffa658698764f5b8dfd537315a9",
     decimals: 6,
     collateralFactor: 1.0,
+  },
+];
+
+const addressesToExclude = [
+  {
+    id: "0x3c96dcfd875253a37acb3d2b102b6f328349b16b",
+  },
+  {
+    id: "0xb49a395b39a0b410675406bee7bd06330cb503e3",
+  },
+  {
+    id: "0xc0d6574b2fe71eed8cd305df0da2323237322557",
+  },
+  {
+    id: "0xd6a97e43fc885a83e97d599796458a331e580800",
+  },
+  {
+    id: "0xf0cd6b5ce8a01d1b81f1d8b76643866c5816b49f",
   },
 ];
 
@@ -511,11 +508,22 @@ export default function LendingPage() {
         // Iterate through each position to prepare balanceOf calls
         paginatedPositions.forEach((position) => {
           const positionId = position.id;
+          const isExcluded = addressesToExclude.some(
+            (excluded) =>
+              excluded.id.toLowerCase() === position.id.toLowerCase()
+          );
+
+          if (isExcluded) {
+            results[positionId] = 0;
+            return;
+          }
+
           const userAddress =
             position.account.id.toLowerCase() as `0x${string}`;
 
           // Initialize totalSupplied based on existing tokens
           let totalSupplied = 0;
+
           position.account.tokens.forEach((t: any) => {
             const cf = t.market.collateralFactor;
             if (
@@ -656,6 +664,9 @@ export default function LendingPage() {
   const [totalStats, setTotalStats] = useState({
     totalBorrowed: 0,
     totalSupplied: 0,
+    totalNoteBorrowed: 0,
+    totalNoteSupplied: 0,
+    totalLiquidNote: 0,
   });
 
   useEffect(() => {
@@ -664,8 +675,11 @@ export default function LendingPage() {
 
       let totalBorrowed = 0;
       let totalSupplied = 0;
+      let totalNoteBorrowed = 0;
+      let totalNoteSupplied = 0;
+      let totalLiquidNote = 0;
 
-      // Pre-fetch prices
+      // Pre-fetch prices from the DEX subgraph
       const pricePromises = marketsData.markets.map((market) =>
         apolloClient.query({
           query: GET_TOKEN_PRICES,
@@ -680,59 +694,142 @@ export default function LendingPage() {
 
       const prices = await Promise.all(pricePromises);
 
+      // Addresses we need to fetch real-time prices for:
+      const USYC_ADDRESS =
+        "0x0355e393cf0cf5486d9caefb64407b7b1033c2f1".toLowerCase();
+      const IFBILL_ADDRESS =
+        "0x897709fc83ba7a4271d22ed4c01278cc1da8d6f8".toLowerCase();
+      const FBILL_ADDRESS =
+        "0xf1f89df149bc5f2b6b29783915d1f9fe2d24459c".toLowerCase();
+      const RWA_ADDRESS =
+        "0xb65ec550ff356eca6150f733ba9b954b2e0ca488".toLowerCase();
+
+      // Contracts for currentPrice calls
+      const IFBILL_PRICE_FEED =
+        "0x79ECCE8E2D17603877Ff15BC29804CbCB590EC08" as `0x${string}`;
+      const FBILL_PRICE_FEED =
+        "0x45bafad5a6a531Bc18Cf6CE5B02C58eA4D20589b" as `0x${string}`;
+
+      const PRICE_FEED_ABI = [
+        {
+          inputs: [],
+          name: "currentPrice",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+      ];
+
       for (let i = 0; i < marketsData.markets.length; i++) {
         const market = marketsData.markets[i];
+
+        // Check if this market is in the exclusion list
+        const isExcluded = addressesToExclude.some(
+          (excluded) => excluded.id.toLowerCase() === market.id.toLowerCase()
+        );
+        if (isExcluded) {
+          continue;
+        }
+
+        // Default price from DEX query or fallback to 1
         const priceData = prices[i]?.data?.tokenDayDatas?.[0];
+        let underlyingTokenPrice = priceData ? Number(priceData.priceUSD) : 1;
 
-        // If no price from query, default to 1
-        const underlyingTokenPrice = priceData ? Number(priceData.priceUSD) : 1;
+        // Override price logic for special collaterals:
+        const lowerCaseMarketId = market.id.toLowerCase();
+        if (lowerCaseMarketId === USYC_ADDRESS) {
+          // Fetch price from API
+          try {
+            const res = await fetch(
+              "https://usyc.hashnote.com/api/price-reports"
+            );
+            const json = await res.json();
+            underlyingTokenPrice = parseFloat(json.data[0].price);
+          } catch (err) {
+            console.error("Failed to fetch USYC price:", err);
+          }
+        } else if (lowerCaseMarketId === IFBILL_ADDRESS) {
+          // Call currentPrice on IFBILL price feed
+          try {
+            const priceBN = await readContract({
+              address: IFBILL_PRICE_FEED,
+              abi: PRICE_FEED_ABI,
+              functionName: "currentPrice",
+              chainId: CANTO_MAINNET_EVM.chainId,
+            });
+            // Divide by 1e8 to get the actual price
+            underlyingTokenPrice = Number(priceBN) / 1e8;
+          } catch (err) {
+            console.error("Failed to fetch IFBILL price:", err);
+          }
+        } else if (lowerCaseMarketId === FBILL_ADDRESS) {
+          // Call currentPrice on FBILL price feed
+          try {
+            const priceBN = await readContract({
+              address: FBILL_PRICE_FEED,
+              abi: PRICE_FEED_ABI,
+              functionName: "currentPrice",
+              chainId: CANTO_MAINNET_EVM.chainId,
+            });
+            // Divide by 1e8 to get the actual price
+            underlyingTokenPrice = Number(priceBN) / 1e8;
+          } catch (err) {
+            console.error("Failed to fetch FBILL price:", err);
+          }
+        } else if (lowerCaseMarketId === RWA_ADDRESS) {
+          underlyingTokenPrice = 0.039;
+        }
 
-        const cTokenAddress = market.id.toLowerCase() as `0x${string}`;
+        const cTokenAddress = lowerCaseMarketId as `0x${string}`;
 
         // Get on-chain data:
-        const [cTotalSupply, exchangeRateStored, totalBorrows] =
-          await Promise.all([
-            readContract({
-              address: cTokenAddress,
-              abi: CERC20_ABI,
-              functionName: "totalSupply",
-              chainId: CANTO_MAINNET_EVM.chainId,
-            }),
-            readContract({
-              address: cTokenAddress,
-              abi: CERC20_ABI,
-              functionName: "exchangeRateStored",
-              chainId: CANTO_MAINNET_EVM.chainId,
-            }),
-            readContract({
-              address: cTokenAddress,
-              abi: CERC20_ABI,
-              functionName: "totalBorrows",
-              chainId: CANTO_MAINNET_EVM.chainId,
-            }),
-          ]);
+        const [cTotalSupply, totalBorrows] = await Promise.all([
+          readContract({
+            address: cTokenAddress,
+            abi: CERC20_ABI,
+            functionName: "totalSupply",
+            chainId: CANTO_MAINNET_EVM.chainId,
+          }),
+          readContract({
+            address: cTokenAddress,
+            abi: CERC20_ABI,
+            functionName: "totalBorrows",
+            chainId: CANTO_MAINNET_EVM.chainId,
+          }),
+        ]);
 
-        // Define 1e18 as BigInt
-        const ONE_E18 = 1000000000000000000n;
-
-        // underlyingSupplied = (cTotalSupply * exchangeRateStored) / 1e18
-        const underlyingSupplied = Number(
-          (cTotalSupply * exchangeRateStored) / ONE_E18
-        );
-
-        // suppliedUSD = underlyingSupplied * underlyingTokenPrice
-        const suppliedUSD = (underlyingSupplied / 1e18) * underlyingTokenPrice;
+        // Underlying supplied = cTotalSupply (scaled by underlying decimals)
+        const underlyingSupplied =
+          Number(cTotalSupply) / 10 ** market.underlyingDecimals;
+        const suppliedUSD = underlyingSupplied * underlyingTokenPrice;
         totalSupplied += suppliedUSD;
 
-        // totalBorrows is typically already in underlying units scaled by 1e18
         const borrowedUSD =
-          (Number(totalBorrows) / 1e18) * underlyingTokenPrice;
+          (Number(totalBorrows) / 10 ** market.underlyingDecimals) *
+          underlyingTokenPrice;
         totalBorrowed += borrowedUSD;
+
+        // If this is the cNOTE market, also track these values separately
+        if (cTokenAddress === "0xee602429ef7ece0a13e4ffe8dbc16e101049504c") {
+          totalNoteSupplied += suppliedUSD;
+          totalNoteBorrowed += borrowedUSD;
+          totalLiquidNote = borrowedUSD - suppliedUSD;
+          totalSupplied -= suppliedUSD;
+        }
       }
 
       setTotalStats({
         totalBorrowed,
         totalSupplied,
+        totalNoteBorrowed,
+        totalNoteSupplied,
+        totalLiquidNote,
       });
     };
 
@@ -1088,7 +1185,7 @@ export default function LendingPage() {
                     color="#767676"
                     size={isMobile ? "md" : "x-sm"}
                   >
-                    Total Supplied
+                    Total Stables Supplied
                   </Text>
                 </div>
                 <Container direction="row" center={{ vertical: true }}>
@@ -1112,7 +1209,7 @@ export default function LendingPage() {
                     color="#767676"
                     size={isMobile ? "md" : "x-sm"}
                   >
-                    Total Borrowed
+                    Total Note Borrowed
                   </Text>
                 </div>
                 <Container direction="row" center={{ vertical: true }}>
@@ -1121,9 +1218,57 @@ export default function LendingPage() {
                     size={isMobile ? "x-lg" : "lg"}
                     color="#000000"
                   >
-                    {totalStats.totalBorrowed.toLocaleString() === "0"
+                    {totalStats.totalNoteBorrowed.toLocaleString() === "0"
                       ? "Loading..."
-                      : "$" + totalStats.totalBorrowed.toLocaleString()}
+                      : "$" + totalStats.totalNoteBorrowed.toLocaleString()}
+                  </Text>
+                </Container>
+              </div>
+            </div>
+            <div className={styles.statsBox}>
+              <div>
+                <div style={{ marginBottom: "8px" }}>
+                  <Text
+                    font="rm_mono"
+                    color="#767676"
+                    size={isMobile ? "md" : "x-sm"}
+                  >
+                    Total Note Supplied
+                  </Text>
+                </div>
+                <Container direction="row" center={{ vertical: true }}>
+                  <Text
+                    font="proto_mono"
+                    size={isMobile ? "x-lg" : "lg"}
+                    color="#000000"
+                  >
+                    {totalStats.totalNoteSupplied.toLocaleString() === "0"
+                      ? "Loading..."
+                      : "$" + totalStats.totalNoteSupplied.toLocaleString()}
+                  </Text>
+                </Container>
+              </div>
+            </div>
+            <div className={styles.statsBox}>
+              <div>
+                <div style={{ marginBottom: "8px" }}>
+                  <Text
+                    font="rm_mono"
+                    color="#767676"
+                    size={isMobile ? "md" : "x-sm"}
+                  >
+                    Total Liquid Note
+                  </Text>
+                </div>
+                <Container direction="row" center={{ vertical: true }}>
+                  <Text
+                    font="proto_mono"
+                    size={isMobile ? "x-lg" : "lg"}
+                    color="#000000"
+                  >
+                    {totalStats.totalLiquidNote.toLocaleString() === "0"
+                      ? "Loading..."
+                      : "$" + totalStats.totalLiquidNote.toLocaleString()}
                   </Text>
                 </Container>
               </div>
@@ -1602,15 +1747,12 @@ export default function LendingPage() {
                               style={{ marginTop: "6px", marginRight: "6px" }}
                               themed={true}
                             />
-                            {Number(marketToken.totalUnderlyingSupplied) > 0.9
-                              ? displayAmount(
-                                  marketToken.totalUnderlyingSupplied,
-                                  0,
-                                  { precision: 2 }
-                                )
-                              : Number(marketToken.totalUnderlyingSupplied)
-                                  ?.toFixed(5)
-                                  .toString()}
+
+                            {displayAmount(
+                              marketToken.totalUnderlyingSupplied,
+                              0,
+                              { precision: 2 }
+                            )}
                           </Text>
                         </Container>,
                         <Container
