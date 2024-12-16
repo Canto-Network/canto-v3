@@ -508,11 +508,22 @@ export default function LendingPage() {
         // Iterate through each position to prepare balanceOf calls
         paginatedPositions.forEach((position) => {
           const positionId = position.id;
+          const isExcluded = addressesToExclude.some(
+            (excluded) =>
+              excluded.id.toLowerCase() === position.id.toLowerCase()
+          );
+
+          if (isExcluded) {
+            results[positionId] = 0;
+            return;
+          }
+
           const userAddress =
             position.account.id.toLowerCase() as `0x${string}`;
 
           // Initialize totalSupplied based on existing tokens
           let totalSupplied = 0;
+
           position.account.tokens.forEach((t: any) => {
             const cf = t.market.collateralFactor;
             if (
@@ -668,7 +679,7 @@ export default function LendingPage() {
       let totalNoteSupplied = 0;
       let totalLiquidNote = 0;
 
-      // Pre-fetch prices
+      // Pre-fetch prices from the DEX subgraph
       const pricePromises = marketsData.markets.map((market) =>
         apolloClient.query({
           query: GET_TOKEN_PRICES,
@@ -683,6 +694,38 @@ export default function LendingPage() {
 
       const prices = await Promise.all(pricePromises);
 
+      // Addresses we need to fetch real-time prices for:
+      const USYC_ADDRESS =
+        "0x0355e393cf0cf5486d9caefb64407b7b1033c2f1".toLowerCase();
+      const IFBILL_ADDRESS =
+        "0x897709fc83ba7a4271d22ed4c01278cc1da8d6f8".toLowerCase();
+      const FBILL_ADDRESS =
+        "0xf1f89df149bc5f2b6b29783915d1f9fe2d24459c".toLowerCase();
+      const RWA_ADDRESS =
+        "0xb65ec550ff356eca6150f733ba9b954b2e0ca488".toLowerCase();
+
+      // Contracts for currentPrice calls
+      const IFBILL_PRICE_FEED =
+        "0x79ECCE8E2D17603877Ff15BC29804CbCB590EC08" as `0x${string}`;
+      const FBILL_PRICE_FEED =
+        "0x45bafad5a6a531Bc18Cf6CE5B02C58eA4D20589b" as `0x${string}`;
+
+      const PRICE_FEED_ABI = [
+        {
+          inputs: [],
+          name: "currentPrice",
+          outputs: [
+            {
+              internalType: "uint256",
+              name: "",
+              type: "uint256",
+            },
+          ],
+          stateMutability: "view",
+          type: "function",
+        },
+      ];
+
       for (let i = 0; i < marketsData.markets.length; i++) {
         const market = marketsData.markets[i];
 
@@ -694,52 +737,76 @@ export default function LendingPage() {
           continue;
         }
 
+        // Default price from DEX query or fallback to 1
         const priceData = prices[i]?.data?.tokenDayDatas?.[0];
-        // If no price from query, default to 1
         let underlyingTokenPrice = priceData ? Number(priceData.priceUSD) : 1;
 
-        const specialPrices: Record<string, number> = {
-          "0x0355e393cf0cf5486d9caefb64407b7b1033c2f1": 1.07,
-          "0x897709fc83ba7a4271d22ed4c01278cc1da8d6f8": 1.04,
-          "0xf1f89df149bc5f2b6b29783915d1f9fe2d24459c": 1.04,
-          "0xb65ec550ff356eca6150f733ba9b954b2e0ca488": 0.039,
-        };
-
+        // Override price logic for special collaterals:
         const lowerCaseMarketId = market.id.toLowerCase();
-        if (specialPrices[lowerCaseMarketId]) {
-          underlyingTokenPrice = specialPrices[lowerCaseMarketId];
+        if (lowerCaseMarketId === USYC_ADDRESS) {
+          // Fetch price from API
+          try {
+            const res = await fetch(
+              "https://usyc.hashnote.com/api/price-reports"
+            );
+            const json = await res.json();
+            underlyingTokenPrice = parseFloat(json.data[0].price);
+          } catch (err) {
+            console.error("Failed to fetch USYC price:", err);
+          }
+        } else if (lowerCaseMarketId === IFBILL_ADDRESS) {
+          // Call currentPrice on IFBILL price feed
+          try {
+            const priceBN = await readContract({
+              address: IFBILL_PRICE_FEED,
+              abi: PRICE_FEED_ABI,
+              functionName: "currentPrice",
+              chainId: CANTO_MAINNET_EVM.chainId,
+            });
+            // Divide by 1e8 to get the actual price
+            underlyingTokenPrice = Number(priceBN) / 1e8;
+          } catch (err) {
+            console.error("Failed to fetch IFBILL price:", err);
+          }
+        } else if (lowerCaseMarketId === FBILL_ADDRESS) {
+          // Call currentPrice on FBILL price feed
+          try {
+            const priceBN = await readContract({
+              address: FBILL_PRICE_FEED,
+              abi: PRICE_FEED_ABI,
+              functionName: "currentPrice",
+              chainId: CANTO_MAINNET_EVM.chainId,
+            });
+            // Divide by 1e8 to get the actual price
+            underlyingTokenPrice = Number(priceBN) / 1e8;
+          } catch (err) {
+            console.error("Failed to fetch FBILL price:", err);
+          }
+        } else if (lowerCaseMarketId === RWA_ADDRESS) {
+          underlyingTokenPrice = 0.039;
         }
 
-        const cTokenAddress = market.id.toLowerCase() as `0x${string}`;
+        const cTokenAddress = lowerCaseMarketId as `0x${string}`;
 
         // Get on-chain data:
-        const [cTotalSupply, exchangeRateStored, totalBorrows] =
-          await Promise.all([
-            readContract({
-              address: cTokenAddress,
-              abi: CERC20_ABI,
-              functionName: "totalSupply",
-              chainId: CANTO_MAINNET_EVM.chainId,
-            }),
-            readContract({
-              address: cTokenAddress,
-              abi: CERC20_ABI,
-              functionName: "exchangeRateStored",
-              chainId: CANTO_MAINNET_EVM.chainId,
-            }),
-            readContract({
-              address: cTokenAddress,
-              abi: CERC20_ABI,
-              functionName: "totalBorrows",
-              chainId: CANTO_MAINNET_EVM.chainId,
-            }),
-          ]);
+        const [cTotalSupply, totalBorrows] = await Promise.all([
+          readContract({
+            address: cTokenAddress,
+            abi: CERC20_ABI,
+            functionName: "totalSupply",
+            chainId: CANTO_MAINNET_EVM.chainId,
+          }),
+          readContract({
+            address: cTokenAddress,
+            abi: CERC20_ABI,
+            functionName: "totalBorrows",
+            chainId: CANTO_MAINNET_EVM.chainId,
+          }),
+        ]);
 
-        const underlyingSupplied = Number(
-          cTotalSupply / BigInt(10 ** market.underlyingDecimals)
-        );
-
-        //const exchangeRateSupply = Number(exchangeRateStored) / 1e18;
+        // Underlying supplied = cTotalSupply (scaled by underlying decimals)
+        const underlyingSupplied =
+          Number(cTotalSupply) / 10 ** market.underlyingDecimals;
         const suppliedUSD = underlyingSupplied * underlyingTokenPrice;
         totalSupplied += suppliedUSD;
 
