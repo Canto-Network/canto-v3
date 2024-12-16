@@ -123,15 +123,6 @@ const addressesToExclude = [
   {
     id: "0xf0cd6b5ce8a01d1b81f1d8b76643866c5816b49f",
   },
-  {
-    id: "0x897709fc83ba7a4271d22ed4c01278cc1da8d6f8",
-  },
-  {
-    id: "0xf1f89df149bc5f2b6b29783915d1f9fe2d24459c",
-  },
-  {
-    id: "0x0355e393cf0cf5486d9caefb64407b7b1033c2f1",
-  },
 ];
 
 function sortCTokens(
@@ -762,6 +753,7 @@ export default function LendingPage() {
           totalNoteSupplied += suppliedUSD;
           totalNoteBorrowed += borrowedUSD;
           totalLiquidNote = borrowedUSD - suppliedUSD;
+          totalSupplied -= suppliedUSD;
         }
       }
 
