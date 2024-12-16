@@ -650,8 +650,6 @@ export default function LendingPage() {
     },
   });
 
-  console.log("markets data", marketsData);
-
   const [totalStats, setTotalStats] = useState({
     totalBorrowed: 0,
     totalSupplied: 0,
@@ -733,13 +731,6 @@ export default function LendingPage() {
 
         const underlyingSupplied = Number(
           cTotalSupply / BigInt(10 ** market.underlyingDecimals)
-        );
-
-        console.log(
-          "supply",
-          cTokenAddress,
-          cTotalSupply,
-          underlyingTokenPrice
         );
 
         const suppliedUSD = underlyingSupplied * underlyingTokenPrice;
