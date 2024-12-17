@@ -1225,7 +1225,7 @@ export default function LendingPage() {
                 </Container>
               </div>
             </div>
-            <div className={styles.statsBox}>
+            {/* <div className={styles.statsBox}>
               <div>
                 <div style={{ marginBottom: "8px" }}>
                   <Text
@@ -1248,8 +1248,8 @@ export default function LendingPage() {
                   </Text>
                 </Container>
               </div>
-            </div>
-            <div className={styles.statsBox}>
+            </div> */}
+            {/* <div className={styles.statsBox}>
               <div>
                 <div style={{ marginBottom: "8px" }}>
                   <Text
@@ -1272,7 +1272,7 @@ export default function LendingPage() {
                   </Text>
                 </Container>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
         <Spacer height="5px" />
