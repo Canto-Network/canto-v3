@@ -39,7 +39,7 @@ export async function getBlockTimestamp(
   receivingChain?: string
 ): PromiseWithError<string> {
   // Determine the URL ending based on receivingChain
-  const defaultUrlEnding = "/blocks/latest"
+  const defaultUrlEnding = "/blocks/latest";
 
   const urlEnding = latestBlockEndpoint ?? "";
 
