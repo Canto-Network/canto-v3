@@ -39,7 +39,15 @@ export async function getBlockTimestamp(
   receivingChain?: string
 ): PromiseWithError<string> {
   // Determine the URL ending based on receivingChain
-  const defaultUrlEnding = "/blocks/latest";
+  const defaultUrlEnding =
+    receivingChain === "injective-1" ||
+    receivingChain === "cosmoshub-4" ||
+    receivingChain === "osmosis-1" ||
+    receivingChain === "quicksilver-2" ||
+    receivingChain === "sommelier-3" ||
+    receivingChain === "stride-1"
+      ? "/blocks/latest"
+      : "/cosmos/base/tendermint/v1beta1/blocks/latest";
 
   const urlEnding = latestBlockEndpoint ?? "";
 
