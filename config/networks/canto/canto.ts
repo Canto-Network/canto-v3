@@ -42,7 +42,7 @@ export const CANTO_MAINNET_COSMOS: CosmosNetwork = {
   ...cantoMainnetBaseInfo,
   id: "canto_7700-1",
   chainId: "canto_7700-1",
-  restEndpoint: "https://archive-f12dacd6-1-canto.ansybl.io/api",
+  restEndpoint: "https://mainnode.plexnode.org:1317",
   addressPrefix: "canto",
   checkAddress: function (address) {
     return checkCosmosAddress(this.addressPrefix)(address);
