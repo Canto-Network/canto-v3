@@ -499,7 +499,7 @@ export default function LendingPage() {
         positionsTotalSupplied[b.id],
         Number(borrowBalances[b.id]?.borrowBalance)
       );
-      return hfB - hfA;
+      return hfA - hfB;
     });
   }, [positions, positionsTotalSupplied, borrowBalances]);
 
