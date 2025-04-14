@@ -1267,7 +1267,7 @@ export default function LendingPage() {
             },
             {
               value: (
-                <Container direction="row" className={styles.headerWithSort}>
+                <Container direction="row">
                   <Text font="proto_mono">BORROWED AMOUNT</Text>
                 </Container>
               ),
