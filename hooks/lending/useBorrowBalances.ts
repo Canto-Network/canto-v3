@@ -5,46 +5,48 @@ interface BorrowBalance {
   decimals: string;
   liquidity: string;
 }
+type BorrowBalances = Record<string, BorrowBalance>;
 
-interface BorrowBalances {
-  [key: string]: BorrowBalance;
-}
+const CHUNK_SIZE = 40;
 
 export function useBorrowBalances(positions: Array<{ id: string }>) {
-  const [borrowBalances, setBorrowBalances] = useState<BorrowBalances>({});
+  const [balances, setBalances] = useState<BorrowBalances>({});
 
   useEffect(() => {
-    const fetchBorrowBalances = async () => {
-      if (positions.length === 0) return;
+    if (!positions.length) return;
 
-      const addresses = positions.map((position) => position.id).join(",");
+    const chunks: string[][] = [];
+    for (let i = 0; i < positions.length; i += CHUNK_SIZE) {
+      chunks.push(positions.slice(i, i + CHUNK_SIZE).map((p) => p.id));
+    }
 
+    (async () => {
       try {
-        const response = await fetch(
-          `${process.env.NEXT_PUBLIC_CLM_API_URL}/borrowBalance/${addresses}`
-        );
-        const data = await response.json();
+        const results: BorrowBalances = {};
 
-        const balanceMap = data.accountsBorrowInterest.reduce(
-          (acc: BorrowBalances, item: any) => {
-            acc[item.cTokenAccountAddress] = {
+        const fetches = chunks.map(async (ids) => {
+          const url = `${
+            process.env.NEXT_PUBLIC_CLM_API_URL
+          }/borrowBalance/${ids.join(",")}`;
+          const res = await fetch(url);
+          if (!res.ok) throw new Error(`bad response ${res.status}`);
+          const data = await res.json();
+          data.accountsBorrowInterest.forEach((item: any) => {
+            results[item.cTokenAccountAddress] = {
               borrowBalance: item.borrowBalance,
               decimals: item.decimals,
               liquidity: item.liquidity,
             };
-            return acc;
-          },
-          {}
-        );
+          });
+        });
 
-        setBorrowBalances(balanceMap);
-      } catch (error) {
-        console.error("Error fetching borrow balances:", error);
+        await Promise.all(fetches);
+        setBalances(results);
+      } catch (err) {
+        console.error("borrow‑balance fetch failed:", err);
       }
-    };
-
-    fetchBorrowBalances();
+    })();
   }, [positions]);
 
-  return borrowBalances;
+  return balances;
 }

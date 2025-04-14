@@ -190,7 +190,7 @@ const NavBar = () => {
               <div className={styles.popUp}>
                 {
                   <Link
-                    href="https://explorer.canto.io/"
+                    href="https://www.oklink.com/canto"
                     className={clsx(styles["dropdownlink"])}
                     rel="noopener noreferrer"
                     target="_blank"
