@@ -175,6 +175,13 @@ async function getAccountLiquidity(
   }
 }
 
+function numericHF(supplied?: number, borrowed?: number): number {
+  if (supplied === undefined || borrowed === undefined) return -Infinity;
+  if (borrowed === 0) return Infinity;
+  const hf = supplied / borrowed;
+  return hf > 2 ? 2 : hf;
+}
+
 const POSITIONS_PER_PAGE = 10;
 
 function deriveHealthFactor(
@@ -185,19 +192,16 @@ function deriveHealthFactor(
     return "Loading...";
   }
 
-  // If no borrow, health factor can be considered infinite
   if (borrowBalanceValue === 0) {
     return "N/A";
   }
 
   const hf = totalSuppliedValue / borrowBalanceValue;
 
-  // If hf is greater than 2, just display 2.00
   if (hf > 2) {
     return "2.00";
   }
 
-  // Format to two decimals
   return hf.toFixed(2);
 }
 
@@ -426,20 +430,25 @@ export default function LendingPage() {
     OrderDirection.DESC
   );
 
+  const [positionsTotalSupplied, setPositionsTotalSupplied] = useState<
+    Record<string, number>
+  >({});
+
   const {
     data: allPositionsData,
     loading: allPositionsLoading,
     refetch: refetchAllPositions,
   } = usePositionsQuery({
     variables: {
-      skip: (currentPositionsPage - 1) * POSITIONS_PER_PAGE,
-      first: POSITIONS_PER_PAGE,
-      orderDirection: sortDirection,
+      skip: 0,
+      first: 100,
+      orderDirection: OrderDirection.DESC,
     },
     context: {
       endpoint: ApolloContext.MAIN,
     },
   });
+
   const {
     data: myPositionsData,
     loading: myPositionsLoading,
@@ -470,23 +479,36 @@ export default function LendingPage() {
     },
   });
 
-  const totalPages = Math.ceil(
-    ((positionsToggle === "All"
-      ? allPositionsCount?.accountCTokens?.length
-      : myPositionsCount?.accountCTokens?.length) ?? 0) / POSITIONS_PER_PAGE
+  const positions = useMemo(
+    () =>
+      positionsToggle === "All"
+        ? allPositionsData?.accountCTokens ?? []
+        : myPositionsData?.accountCTokens ?? [],
+    [positionsToggle, allPositionsData, myPositionsData]
   );
 
+  const borrowBalances = useBorrowBalances(positions);
+
+  const sortedPositionsByHF = useMemo(() => {
+    return [...positions].sort((a, b) => {
+      const hfA = numericHF(
+        positionsTotalSupplied[a.id],
+        Number(borrowBalances[a.id]?.borrowBalance)
+      );
+      const hfB = numericHF(
+        positionsTotalSupplied[b.id],
+        Number(borrowBalances[b.id]?.borrowBalance)
+      );
+      return hfB - hfA;
+    });
+  }, [positions, positionsTotalSupplied, borrowBalances]);
+
   const paginatedPositions = useMemo(() => {
-    const positionsData =
-      positionsToggle === "All" ? allPositionsData : myPositionsData;
-    return positionsData?.accountCTokens ?? [];
-  }, [allPositionsData, myPositionsData, positionsToggle]);
+    const start = (currentPositionsPage - 1) * POSITIONS_PER_PAGE;
+    return sortedPositionsByHF.slice(start, start + POSITIONS_PER_PAGE);
+  }, [sortedPositionsByHF, currentPositionsPage]);
 
-  const borrowBalances = useBorrowBalances(paginatedPositions);
-
-  const [positionsTotalSupplied, setPositionsTotalSupplied] = useState<
-    Record<string, number>
-  >({});
+  const totalPages = Math.ceil(sortedPositionsByHF.length / POSITIONS_PER_PAGE);
 
   const [extraBalances, setExtraBalances] = useState<Record<string, string>>(
     {}
@@ -495,105 +517,56 @@ export default function LendingPage() {
   const [repayAmounts, setRepayAmounts] = useState<Record<string, string>>({});
 
   useEffect(() => {
-    if (paginatedPositions.length === 0) return;
+    if (!positions.length) return;
 
-    const fetchAllPositionsSupplies = async () => {
-      try {
-        const results: Record<string, number> = {};
+    (async () => {
+      const results: Record<string, number> = {};
+      const contractReads: any[] = [];
+      const mappings: CallMapping[] = [];
 
-        // Arrays to hold contract read configurations and their mappings
-        const contractReads: any = [];
-        const callMappings: CallMapping[] = [];
-
-        // Iterate through each position to prepare balanceOf calls
-        paginatedPositions.forEach((position) => {
-          const positionId = position.id;
-          const isExcluded = addressesToExclude.some(
-            (excluded) =>
-              excluded.id.toLowerCase() === position.id.toLowerCase()
-          );
-
-          if (isExcluded) {
-            results[positionId] = 0;
-            return;
+      positions.forEach((pos) => {
+        // skip excluded …
+        let supplied = 0;
+        pos.account.tokens.forEach((t) => {
+          if (
+            +t.market.collateralFactor > 0.5 &&
+            +t.totalUnderlyingSupplied > +t.totalUnderlyingBorrowed
+          ) {
+            supplied += +t.totalUnderlyingSupplied;
           }
+        });
+        results[pos.id] = supplied;
 
-          const userAddress =
-            position.account.id.toLowerCase() as `0x${string}`;
-
-          // Initialize totalSupplied based on existing tokens
-          let totalSupplied = 0;
-
-          position.account.tokens.forEach((t: any) => {
-            const cf = t.market.collateralFactor;
-            if (
-              Number(cf) > 0.5 &&
-              parseFloat(t.totalUnderlyingSupplied) >
-                parseFloat(t.totalUnderlyingBorrowed)
-            ) {
-              totalSupplied += parseFloat(t.totalUnderlyingSupplied);
-            }
+        extraCTokensSupply.forEach((tok) => {
+          contractReads.push({
+            address: tok.id as `0x${string}`,
+            abi: CERC20_ABI,
+            functionName: "balanceOf",
+            args: [pos.account.id as `0x${string}`],
+            chainId: CANTO_MAINNET_EVM.chainId,
           });
-          results[positionId] = totalSupplied;
-
-          // Prepare balanceOf calls for extraCTokensSupply
-          extraCTokensSupply.forEach((token) => {
-            contractReads.push({
-              address: token.id as `0x${string}`,
-              abi: CERC20_ABI,
-              functionName: "balanceOf",
-              args: [userAddress],
-              chainId: CANTO_MAINNET_EVM.chainId,
-            });
-
-            callMappings.push({
-              positionId,
-              tokenName: token.name,
-              decimals: token.decimals,
-            });
+          mappings.push({
+            positionId: pos.id,
+            tokenName: tok.name,
+            decimals: tok.decimals,
           });
         });
+      });
 
-        const balances = await readContracts({
-          contracts: contractReads,
-          allowFailure: false,
-        });
+      const balances = await readContracts({
+        contracts: contractReads,
+        allowFailure: false,
+      });
+      balances.forEach((bal, i) => {
+        const { positionId, tokenName, decimals } = mappings[i];
+        let val = Number(bal) / 10 ** decimals;
+        if (tokenName === "CUSYC") val *= 1.06;
+        results[positionId] += val;
+      });
 
-        balances.forEach((balance, index) => {
-          const mapping = callMappings[index];
-          if (balance === undefined || balance === null) {
-            console.warn(
-              `Failed to fetch balance for token ${mapping.tokenName} in position ${mapping.positionId}`
-            );
-            return;
-          }
-
-          const { positionId, tokenName, decimals } = mapping;
-
-          const balanceFloat = Number(balance) / 10 ** decimals;
-
-          let converted = balanceFloat;
-          if (tokenName === "CUSYC") {
-            converted = converted * 1.06;
-          }
-
-          results[positionId] += converted;
-        });
-
-        // Update the state with the calculated results
-        setPositionsTotalSupplied(results);
-      } catch (error: any) {
-        console.error("Error fetching and calculating supplies:", error);
-        toast.add({
-          primary: "Failed to fetch and calculate supplies.",
-          state: "failure",
-          duration: 4000,
-        });
-      }
-    };
-
-    fetchAllPositionsSupplies();
-  }, [paginatedPositions]);
+      setPositionsTotalSupplied(results);
+    })();
+  }, [positions]);
 
   useEffect(() => {
     if (!selectedBorrowerPosition) return;
@@ -1294,21 +1267,8 @@ export default function LendingPage() {
             },
             {
               value: (
-                <Container
-                  direction="row"
-                  className={styles.headerWithSort}
-                  onClick={() =>
-                    setSortDirection(
-                      sortDirection === OrderDirection.ASC
-                        ? OrderDirection.DESC
-                        : OrderDirection.ASC
-                    )
-                  }
-                >
+                <Container direction="row" className={styles.headerWithSort}>
                   <Text font="proto_mono">BORROWED AMOUNT</Text>
-                  <span
-                    className={clsx(styles.sortIcon, styles[sortDirection])}
-                  />
                 </Container>
               ),
               ratio: isMobile ? 0 : 3,
@@ -1373,12 +1333,10 @@ export default function LendingPage() {
             paginatedPositions.length > 0
               ? [
                   ...paginatedPositions.map((position, index) => {
-                    const borrowedVal = borrowBalances[position.id]
-                      ? borrowBalances[position.id].borrowBalance
-                      : 0;
-                    const suppliedVal =
-                      positionsTotalSupplied[position.id] ?? undefined;
-                    //@ts-ignore
+                    const borrowedVal = Number(
+                      borrowBalances[position.id]?.borrowBalance ?? 0
+                    );
+                    const suppliedVal = positionsTotalSupplied[position.id];
                     const hf = deriveHealthFactor(suppliedVal, borrowedVal);
 
                     return [
