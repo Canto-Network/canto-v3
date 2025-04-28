@@ -3,6 +3,8 @@ import { baseV1RouterAddress } from "@/config/consts/addresses";
 import { HARD_CODED_ROUTES, RouteLeg } from "@/config/consts/routes";
 import { CANTO_MAINNET_EVM } from "@/config/networks";
 import { readContract } from "@wagmi/core";
+import BigNumber from "bignumber.js";
+import { QueryClient } from "@tanstack/react-query";
 
 export const getHardcodedRoute = (
   tokenA?: any,
@@ -92,3 +94,34 @@ export const popularTokens: ReadonlyArray<any> = [
     circulatingMarketCap: null,
   },
 ] as const;
+
+export const convertToBigInt = (
+  amount: string,
+  decimals: number = 0
+): bigint => {
+  try {
+    BigNumber.set({ EXPONENTIAL_AT: 35 });
+    if (Number.isNaN(Number(amount)) || !amount) {
+      throw new Error("Invalid amount");
+    }
+    const decimalIndex = amount.indexOf(".");
+    const truncatedAmount =
+      decimalIndex === -1
+        ? amount
+        : amount.slice(0, decimalIndex + decimals + 1);
+    const bigNumber = new BigNumber(truncatedAmount);
+    const multiplier = new BigNumber(10).pow(decimals);
+    const convertedAmount = bigNumber.multipliedBy(multiplier);
+    return BigInt(convertedAmount.toString());
+  } catch (err) {
+    return BigInt(0);
+  }
+};
+
+export const getSwapDeadline = () => {
+  return BigInt(Math.ceil(Date.now() / 1000) + 600);
+};
+
+export const reactQueryClient = new QueryClient({
+  defaultOptions: { queries: { refetchOnWindowFocus: false } },
+});

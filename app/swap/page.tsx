@@ -4,58 +4,28 @@ import { useState, useEffect, useMemo } from "react";
 import { formatUnits } from "viem";
 import { useAccount, useBalance } from "wagmi";
 import Container from "@/components/container/container";
-
 import Button from "@/components/button/button";
-
 import Text from "@/components/text";
-
 import styles from "./swap.module.scss";
-
 import { baseV1RouterAddress, cantoAddress } from "@/config/consts/addresses";
 import { TokenSelector } from "./components/TokenSelector";
 import { SwapDetails } from "./components/SwapDetails";
 import { ArrowSwap } from "./components/ArrowSwap";
-import { getAmountOutMin, getHardcodedRoute, popularTokens } from "@/utils/swap/route";
+import {
+  convertToBigInt,
+  getAmountOutMin,
+  getHardcodedRoute,
+  getSwapDeadline,
+  popularTokens,
+} from "@/utils/swap/route";
 import BigNumber from "bignumber.js";
 import { useSwapTokens } from "@/hooks/swap/useSwaptokens";
-import { QueryClient } from "@tanstack/react-query";
 import SelectTokenModal from "./components/SelectTokenModal";
 import { useAddressTokenBalancesQuery } from "@/hooks/swap/useAddressTokenBalances";
 import { CANTO_MAINNET_EVM } from "@/config/networks";
 import { readContract, waitForTransaction, writeContract } from "wagmi/actions";
 import { ERC20_ABI } from "@/config/abis";
-
-
-export const convertToBigInt = (
-  amount: string,
-  decimals: number = 0
-): bigint => {
-  try {
-    BigNumber.set({ EXPONENTIAL_AT: 35 });
-    if (Number.isNaN(Number(amount)) || !amount) {
-      throw new Error("Invalid amount");
-    }
-    const decimalIndex = amount.indexOf(".");
-    const truncatedAmount =
-      decimalIndex === -1
-        ? amount
-        : amount.slice(0, decimalIndex + decimals + 1);
-    const bigNumber = new BigNumber(truncatedAmount);
-    const multiplier = new BigNumber(10).pow(decimals);
-    const convertedAmount = bigNumber.multipliedBy(multiplier);
-    return BigInt(convertedAmount.toString());
-  } catch (err) {
-    return BigInt(0);
-  }
-};
-
-export const getSwapDeadline = () => {
-  return BigInt(Math.ceil(Date.now() / 1000) + 600);
-};
-
-export const reactQueryClient = new QueryClient({
-  defaultOptions: { queries: { refetchOnWindowFocus: false } },
-});
+import { useToast } from "@/components/toast";
 
 export default function Page() {
   const [tokenA, setTokenA] = useState(popularTokens[0]);
@@ -64,6 +34,7 @@ export default function Page() {
   const [receiveAmount, setReceiveAmount] = useState("");
   const [arrowFlip, setArrowFlip] = useState(false);
   const { address } = useAccount();
+  const toast = useToast();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [whichSide, setWhichSide] = useState<"pay" | "receive">();
@@ -205,6 +176,11 @@ export default function Page() {
 
           //@ts-expect-error : type exists
           await waitForTransaction({ hash: approveHash });
+          toast.add({
+            primary: "Transaction Approved. You can now swap",
+            duration: 4000,
+            state: "success",
+          });
           setIsApproving(false);
         }
       }

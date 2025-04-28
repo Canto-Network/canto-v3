@@ -52,6 +52,11 @@ export const useSwapTokens = () => {
             queryKey: ["address-token-balances", address],
           });
         }
+        toast.add({
+          primary: "Swap Successful",
+          duration: 4000,
+          state: "success",
+        });
         refetchCanto();
       },
     });

@@ -10,9 +10,8 @@ import { Analytics } from "@vercel/analytics/react";
 import localFont from "next/font/local";
 import "./globals.scss";
 import { apolloClient } from "@/config/apollo.config";
-
-import { reactQueryClient } from "./swap/page";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { reactQueryClient } from "@/utils/swap/route";
 
 const rm_mono = localFont({
   src: "../fonts/rm-mono-regular.ttf",
