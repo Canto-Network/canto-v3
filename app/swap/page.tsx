@@ -27,6 +27,7 @@ import { readContract, waitForTransaction, writeContract } from "wagmi/actions";
 import { ERC20_ABI } from "@/config/abis";
 import { useToast } from "@/components/toast";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
+import { formatBalance } from "@/utils/formatting";
 
 export default function Page() {
   const [tokenA, setTokenA] = useState(popularTokens[0]);
@@ -62,6 +63,24 @@ export default function Page() {
     return getHardcodedRoute(tokenA, tokenB) ?? [];
   }, [tokenA, tokenB]);
 
+  const balanceMap = useMemo(() => {
+    const map: Record<string, string> = {};
+
+    tokenBalances?.forEach((b) => {
+      map[b.token.address.toLowerCase()] = formatBalance(
+        b.value.toString(),
+        b.token.decimals
+      );
+    });
+
+    map[cantoAddress.toLowerCase()] = formatBalance(
+      cantoBalance?.value.toString() ?? "0",
+      18
+    );
+
+    return map;
+  }, [tokenBalances, cantoBalance]);
+
   useEffect(() => {
     if (isSwapSuccess) {
       setPayAmount("");
@@ -94,12 +113,14 @@ export default function Page() {
     if (!address) return "0";
 
     if (tokenA.address.toLowerCase() === cantoAddress.toLowerCase())
-      return asUiBalance(cantoBalance?.value ?? 0n, 18);
+      return formatBalance(cantoBalance?.value.toString() ?? "0", 18);
 
     const entry = tokenBalances?.find(
       (b) => b.token.address.toLowerCase() === tokenA.address.toLowerCase()
     );
-    return entry ? asUiBalance(entry.value, entry.token.decimals) : "0";
+    return entry
+      ? formatBalance(entry.value.toString(), entry.token.decimals)
+      : "0";
   }, [tokenA, tokenBalances, cantoBalance]);
 
   const balanceB = useMemo(() => {
@@ -108,13 +129,15 @@ export default function Page() {
     if (!address) return "0";
     //@ts-expect-error : type exists
     if (tokenB.address.toLowerCase() === cantoAddress.toLowerCase())
-      return asUiBalance(cantoBalance?.value ?? 0n, 18);
+      return formatBalance(cantoBalance?.value.toString() ?? "0", 18);
 
     const entry = tokenBalances.find(
       //@ts-expect-error : type exists
       (b) => b.token.address.toLowerCase() === tokenB.address.toLowerCase()
     );
-    return entry ? asUiBalance(entry.value, entry.token.decimals) : "0";
+    return entry
+      ? formatBalance(entry.value.toString(), entry.token.decimals)
+      : "0";
   }, [tokenB, tokenBalances, cantoBalance]);
 
   useEffect(() => {
@@ -290,6 +313,10 @@ export default function Page() {
       <SelectTokenModal
         open={modalOpen}
         onClose={() => setModalOpen(false)}
+        balances={balanceMap}
+        currentA={tokenA?.address ?? ""}
+        //@ts-expect-error : type exists
+        currentB={tokenB?.address ?? ""}
         onSelect={(tok: any) => {
           if (whichSide === "pay") setTokenA(tok);
           else setTokenB(tok);
