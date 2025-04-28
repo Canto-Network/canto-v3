@@ -26,6 +26,7 @@ import { CANTO_MAINNET_EVM } from "@/config/networks";
 import { readContract, waitForTransaction, writeContract } from "wagmi/actions";
 import { ERC20_ABI } from "@/config/abis";
 import { useToast } from "@/components/toast";
+import { useConnectModal } from "@rainbow-me/rainbowkit";
 
 export default function Page() {
   const [tokenA, setTokenA] = useState(popularTokens[0]);
@@ -35,6 +36,7 @@ export default function Page() {
   const [arrowFlip, setArrowFlip] = useState(false);
   const { address } = useAccount();
   const toast = useToast();
+  const { openConnectModal } = useConnectModal();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [whichSide, setWhichSide] = useState<"pay" | "receive">();
@@ -241,20 +243,26 @@ export default function Page() {
             balance={balanceB}
           />
           <div style={{ marginTop: "16px" }}>
-            <Button
-              disabled={
-                isApproving ||
-                isSwapping ||
-                !payAmount ||
-                !tokenB ||
-                !address ||
-                Number(payAmount) > Number(balanceA)
-              }
-              onClick={onSwap}
-              width="fill"
-            >
-              {isApproving ? "Approving…" : isSwapping ? "Swapping…" : "Swap"}
-            </Button>
+            {address ? (
+              <Button
+                disabled={
+                  isApproving ||
+                  isSwapping ||
+                  !payAmount ||
+                  !tokenB ||
+                  !address ||
+                  Number(payAmount) > Number(balanceA)
+                }
+                onClick={onSwap}
+                width="fill"
+              >
+                {isApproving ? "Approving…" : isSwapping ? "Swapping…" : "Swap"}
+              </Button>
+            ) : (
+              <Button onClick={openConnectModal} width="fill">
+                Connect Wallet
+              </Button>
+            )}
           </div>
         </Container>
       </Container>
