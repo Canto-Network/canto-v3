@@ -18,22 +18,19 @@ export const getHardcodedRoute = (
 export async function getAmountOutMin(
   amountInWei: bigint,
   route: RouteLeg[],
-  slippagePct = 0.5 // 0.5 % default
+  slippagePct = 0.5
 ) {
   console.log("get amounts out", amountInWei, route);
-  // wagmi v2 signature: readContract(config, { ...params })
   const amounts = (await readContract({
     abi: baseV1RouterAbi,
     address: baseV1RouterAddress,
     functionName: "getAmountsOut",
     args: [amountInWei, route] as const,
     chainId: CANTO_MAINNET_EVM.chainId,
-  })) as bigint[]; // e.g. [amountIn, hop1, hop2, amountOut]
-
-  console.log("amounts out", amounts);
+  })) as bigint[];
 
   const expectedOut = amounts[amounts.length - 1];
-  const slippageBips = BigInt(Math.floor(slippagePct * 100)); // 0.5 → 50 bp
+  const slippageBips = BigInt(Math.floor(slippagePct * 100));
   const amountOutMin = expectedOut - (expectedOut * slippageBips) / 10_000n;
 
   return { expectedOut, amountOutMin };
