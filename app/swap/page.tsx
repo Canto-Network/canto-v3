@@ -4,82 +4,27 @@ import { useState, useEffect, useMemo } from "react";
 import { formatUnits } from "viem";
 import { useAccount, useBalance } from "wagmi";
 import Container from "@/components/container/container";
-import Spacer from "@/components/layout/spacer";
+
 import Button from "@/components/button/button";
-import Modal from "@/components/modal/modal";
+
 import Text from "@/components/text";
-import Icon from "@/components/icon/icon";
 
 import styles from "./swap.module.scss";
 
-import { cantoAddress } from "@/config/consts/addresses";
+import { baseV1RouterAddress, cantoAddress } from "@/config/consts/addresses";
 import { TokenSelector } from "./components/TokenSelector";
 import { SwapDetails } from "./components/SwapDetails";
 import { ArrowSwap } from "./components/ArrowSwap";
-import { getAmountOutMin, getHardcodedRoute } from "@/utils/swap/route";
+import { getAmountOutMin, getHardcodedRoute, popularTokens } from "@/utils/swap/route";
 import BigNumber from "bignumber.js";
 import { useSwapTokens } from "@/hooks/swap/useSwaptokens";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient } from "@tanstack/react-query";
 import SelectTokenModal from "./components/SelectTokenModal";
 import { useAddressTokenBalancesQuery } from "@/hooks/swap/useAddressTokenBalances";
 import { CANTO_MAINNET_EVM } from "@/config/networks";
+import { readContract, waitForTransaction, writeContract } from "wagmi/actions";
+import { ERC20_ABI } from "@/config/abis";
 
-export const popularTokens: ReadonlyArray<any> = [
-  {
-    name: "CANTO",
-    address: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
-    symbol: "CANTO",
-    decimals: "18",
-    iconURL: "/icons/canto.svg",
-    type: "ERC-20",
-    circulatingMarketCap: null,
-  },
-  {
-    name: "Wrapped Canto",
-    address: "0x826551890Dc65655a0Aceca109aB11AbDbD7a07B",
-    symbol: "wCANTO",
-    decimals: "18",
-    iconURL: "/icons/canto.svg",
-    type: "ERC-20",
-    circulatingMarketCap: null,
-  },
-  {
-    name: "Note",
-    address: "0x4e71A2E537B7f9D9413D3991D37958c0b5e1e503",
-    symbol: "NOTE",
-    decimals: "18",
-    iconURL: "/icons/note.svg",
-    type: "ERC-20",
-    circulatingMarketCap: null,
-  },
-  {
-    name: "USD Tether",
-    address: "0xd567B3d7B8FE3C79a1AD8dA978812cfC4Fa05e75",
-    symbol: "USDT",
-    decimals: "6",
-    iconURL: "/icons/usdt.svg",
-    type: "ERC-20",
-    circulatingMarketCap: null,
-  },
-  {
-    name: "USD Coin",
-    address: "0x80b5a32E4F032B2a058b4F29EC95EEfEEB87aDcd",
-    symbol: "USDC",
-    decimals: "6",
-    iconURL: "/icons/usdc.svg",
-    type: "ERC-20",
-    circulatingMarketCap: null,
-  },
-  {
-    name: "Ethereum",
-    address: "0x5FD55A1B9FC24967C4dB09C513C3BA0DFa7FF687",
-    symbol: "ETH",
-    decimals: "18",
-    iconURL: "/icons/eth.svg",
-    type: "ERC-20",
-    circulatingMarketCap: null,
-  },
-] as const;
 
 export const convertToBigInt = (
   amount: string,
@@ -122,9 +67,8 @@ export default function Page() {
 
   const [modalOpen, setModalOpen] = useState(false);
   const [whichSide, setWhichSide] = useState<"pay" | "receive">();
+  const [isApproving, setIsApproving] = useState(false);
 
-  //   const { isAllowanceApproved, approve } = useApprove(tokenA);
-  const isAllowanceApproved = true;
   const {
     swapExactCantoForTokens,
     swapExactTokensForCanto,
@@ -233,21 +177,50 @@ export default function Page() {
   async function onSwap() {
     if (!tokenB || !payAmount) return;
 
-    const inWei = convertToBigInt(payAmount, tokenA.decimals);
-    const { amountOutMin } = await getAmountOutMin(inWei, route, 0);
+    setIsApproving(false); // reset old state
+    try {
+      const inWei = convertToBigInt(payAmount, tokenA.decimals);
+      const { amountOutMin } = await getAmountOutMin(inWei, route, 0);
 
-    // if (!isAllowanceApproved) {
-    //   await approve(inWei);
-    //   return;
-    // }
+      /* ── 1. ERC-20 approval (skip if CANTO) ─────────────────────── */
+      if (tokenA.address.toLowerCase() !== cantoAddress.toLowerCase()) {
+        const allowance: bigint = await readContract({
+          abi: ERC20_ABI,
+          address: tokenA.address as `0x${string}`,
+          functionName: "allowance",
+          args: [address!, baseV1RouterAddress],
+          chainId: CANTO_MAINNET_EVM.chainId,
+        });
 
-    if (tokenA.address === cantoAddress) {
-      swapExactCantoForTokens(inWei, amountOutMin, getSwapDeadline(), route);
-      //@ts-expect-error : type exists
-    } else if (tokenB.address === cantoAddress) {
-      swapExactTokensForCanto(inWei, amountOutMin, getSwapDeadline(), route);
-    } else {
-      swapExactTokensForTokens(inWei, amountOutMin, getSwapDeadline(), route);
+        if (allowance < inWei) {
+          setIsApproving(true);
+
+          const approveHash = await writeContract({
+            abi: ERC20_ABI,
+            address: tokenA.address as `0x${string}`,
+            functionName: "approve",
+            args: [baseV1RouterAddress, 2n ** 256n - 1n],
+            chainId: CANTO_MAINNET_EVM.chainId,
+          });
+
+          //@ts-expect-error : type exists
+          await waitForTransaction({ hash: approveHash });
+          setIsApproving(false);
+        }
+      }
+
+      /* ── 2. perform the swap ────────────────────────────────────── */
+      if (tokenA.address.toLowerCase() === cantoAddress.toLowerCase()) {
+        swapExactCantoForTokens(inWei, amountOutMin, getSwapDeadline(), route);
+        //@ts-expect-error : type exists
+      } else if (tokenB.address.toLowerCase() === cantoAddress.toLowerCase()) {
+        swapExactTokensForCanto(inWei, amountOutMin, getSwapDeadline(), route);
+      } else {
+        swapExactTokensForTokens(inWei, amountOutMin, getSwapDeadline(), route);
+      }
+    } catch (err) {
+      setIsApproving(false); // ensure UI unlocks
+      console.error("Approve / swap failed:", err);
     }
   }
 
@@ -287,6 +260,7 @@ export default function Page() {
           <div style={{ marginTop: "16px" }}>
             <Button
               disabled={
+                isApproving ||
                 isSwapping ||
                 !payAmount ||
                 !tokenB ||
@@ -296,7 +270,7 @@ export default function Page() {
               onClick={onSwap}
               width="fill"
             >
-              {isSwapping ? "Swapping…" : "Swap"}
+              {isApproving ? "Approving…" : isSwapping ? "Swapping…" : "Swap"}
             </Button>
           </div>
         </Container>

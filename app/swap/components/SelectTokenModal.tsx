@@ -6,7 +6,7 @@ import Icon from "@/components/icon/icon";
 import Input from "@/components/input/input";
 import Text from "@/components/text";
 import Spacer from "@/components/layout/spacer";
-import { popularTokens } from "../page";
+import { popularTokens } from "@/utils/swap/route";
 
 type Props = {
   open: boolean;

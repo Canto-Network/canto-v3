@@ -1,9 +1,8 @@
 import Container from "@/components/container/container";
 import Text from "@/components/text";
-import Icon from "@/components/icon/icon";
 import styles from "../swap.module.scss";
-import { popularTokens } from "../page";
 import { useMemo } from "react";
+import { popularTokens } from "@/utils/swap/route";
 
 type Props = {
   conversionRate: string;

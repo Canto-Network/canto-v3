@@ -35,3 +35,60 @@ export async function getAmountOutMin(
 
   return { expectedOut, amountOutMin };
 }
+
+export const popularTokens: ReadonlyArray<any> = [
+  {
+    name: "CANTO",
+    address: "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+    symbol: "CANTO",
+    decimals: "18",
+    iconURL: "/icons/canto.svg",
+    type: "ERC-20",
+    circulatingMarketCap: null,
+  },
+  {
+    name: "Wrapped Canto",
+    address: "0x826551890Dc65655a0Aceca109aB11AbDbD7a07B",
+    symbol: "wCANTO",
+    decimals: "18",
+    iconURL: "/icons/canto.svg",
+    type: "ERC-20",
+    circulatingMarketCap: null,
+  },
+  {
+    name: "Note",
+    address: "0x4e71A2E537B7f9D9413D3991D37958c0b5e1e503",
+    symbol: "NOTE",
+    decimals: "18",
+    iconURL: "/icons/note.svg",
+    type: "ERC-20",
+    circulatingMarketCap: null,
+  },
+  {
+    name: "USD Tether",
+    address: "0xd567B3d7B8FE3C79a1AD8dA978812cfC4Fa05e75",
+    symbol: "USDT",
+    decimals: "6",
+    iconURL: "/icons/usdt.svg",
+    type: "ERC-20",
+    circulatingMarketCap: null,
+  },
+  {
+    name: "USD Coin",
+    address: "0x80b5a32E4F032B2a058b4F29EC95EEfEEB87aDcd",
+    symbol: "USDC",
+    decimals: "6",
+    iconURL: "/icons/usdc.svg",
+    type: "ERC-20",
+    circulatingMarketCap: null,
+  },
+  {
+    name: "Ethereum",
+    address: "0x5FD55A1B9FC24967C4dB09C513C3BA0DFa7FF687",
+    symbol: "ETH",
+    decimals: "18",
+    iconURL: "/icons/eth.svg",
+    type: "ERC-20",
+    circulatingMarketCap: null,
+  },
+] as const;

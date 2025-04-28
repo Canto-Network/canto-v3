@@ -3,9 +3,9 @@ import Button from "@/components/button/button";
 import Icon from "@/components/icon/icon";
 import Text from "@/components/text";
 import styles from "../swap.module.scss";
-import { popularTokens } from "../page";
 import { useMemo } from "react";
 import BigNumber from "bignumber.js";
+import { popularTokens } from "@/utils/swap/route";
 
 type Props = {
   label: "PAY" | "RECEIVE";
