@@ -112,24 +112,6 @@ export const reactQueryClient = new QueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: false } },
 });
 
-export function getTokenBalance(t?: (typeof popularTokens)[number]): string {
-  if (!t) return "0";
-
-  /* native CANTO uses wagmi's useBalance later – for now keep 0 */
-  if (t.address.toLowerCase() === cantoAddress.toLowerCase()) return "0";
-
-  //@ts-expect-error : type exists
-
-  const entry = tokenBalances?.find(
-    (b: any) => b.token.address.toLowerCase() === t.address.toLowerCase()
-  );
-  if (!entry) return "0";
-
-  return new BigNumber(entry.value.toString())
-    .dividedBy(new BigNumber(10).pow(entry.token.decimals))
-    .toFixed(entry.token.decimals > 6 ? 6 : entry.token.decimals); // 500.10
-}
-
 export default function Page() {
   const [tokenA, setTokenA] = useState(popularTokens[0]);
   const [tokenB, setTokenB] = useState<(typeof popularTokens)[] | undefined>();
@@ -156,8 +138,6 @@ export default function Page() {
     chainId: CANTO_MAINNET_EVM.chainId,
     address: address as `0x${string}`,
   });
-
-  console.log("tokenBalances", cantoBalance);
 
   const route = useMemo(() => {
     return getHardcodedRoute(tokenA, tokenB) ?? [];
@@ -306,7 +286,13 @@ export default function Page() {
           />
           <div style={{ marginTop: "16px" }}>
             <Button
-              disabled={isSwapping || !payAmount || !tokenB || !address}
+              disabled={
+                isSwapping ||
+                !payAmount ||
+                !tokenB ||
+                !address ||
+                Number(payAmount) > Number(balanceA)
+              }
               onClick={onSwap}
               width="fill"
             >

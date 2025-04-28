@@ -14,9 +14,7 @@ export const ArrowSwap = ({ flipped, onClick }: Props) => (
       className={clsx(styles.arrowBtn, { [styles.flipped]: flipped })}
       onClick={onClick}
     >
-      <Icon
-        icon={{ url: "/icons/arrow-down.svg", size: 10 }}
-      />
+      <Icon icon={{ url: "/icons/arrow-down.svg", size: 10 }} />
     </button>
   </div>
 );
