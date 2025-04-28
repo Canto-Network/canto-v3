@@ -37,6 +37,7 @@ export default function Page() {
   const { address } = useAccount();
   const toast = useToast();
   const { openConnectModal } = useConnectModal();
+  const GAS_BUFFER_CANTO = 0.02;
 
   const [modalOpen, setModalOpen] = useState(false);
   const [whichSide, setWhichSide] = useState<"pay" | "receive">();
@@ -223,7 +224,16 @@ export default function Page() {
             onAmount={setPayAmount}
             onSelect={() => openModal("pay")}
             balance={balanceA}
-            onMax={() => setPayAmount(balanceA)}
+            onMax={() => {
+              if (tokenA.address.toLowerCase() === cantoAddress.toLowerCase()) {
+                const bal = Number(balanceA);
+                const safe =
+                  bal > GAS_BUFFER_CANTO ? bal - GAS_BUFFER_CANTO : 0;
+                setPayAmount(safe.toString());
+              } else {
+                setPayAmount(balanceA);
+              }
+            }}
           />
           <ArrowSwap
             flipped={arrowFlip}
