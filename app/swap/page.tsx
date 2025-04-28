@@ -45,6 +45,7 @@ export default function Page() {
     swapExactTokensForCanto,
     swapExactTokensForTokens,
     isLoading: isSwapping,
+    isSwapSuccess,
   } = useSwapTokens();
 
   const { data: tokenBalances } = useAddressTokenBalancesQuery(address);
@@ -57,6 +58,12 @@ export default function Page() {
   const route = useMemo(() => {
     return getHardcodedRoute(tokenA, tokenB) ?? [];
   }, [tokenA, tokenB]);
+
+  useEffect(() => {
+    if (isSwapSuccess) {
+      setPayAmount("");
+    }
+  }, [isSwapSuccess]);
 
   /* gas estimate (optional) ------------------------------------------ */
   //   const gasFee = useEstimateSwapGasFee({
@@ -177,7 +184,7 @@ export default function Page() {
           //@ts-expect-error : type exists
           await waitForTransaction({ hash: approveHash });
           toast.add({
-            primary: "Transaction Approved. You can now swap",
+            primary: "Approve Successful",
             duration: 4000,
             state: "success",
           });

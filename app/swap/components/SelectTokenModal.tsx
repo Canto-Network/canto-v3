@@ -6,7 +6,7 @@ import Icon from "@/components/icon/icon";
 import Input from "@/components/input/input";
 import Text from "@/components/text";
 import Spacer from "@/components/layout/spacer";
-import { popularTokens } from "@/utils/swap/route";
+import { selectTokens } from "@/utils/swap/route";
 
 type Props = {
   open: boolean;
@@ -20,8 +20,8 @@ export default function SelectTokenModal({ open, onClose, onSelect }: Props) {
   /* simple symbol / address filter */
   const tokens = useMemo(() => {
     const q = search.trim().toLowerCase();
-    if (!q) return popularTokens;
-    return popularTokens.filter(
+    if (!q) return selectTokens;
+    return selectTokens.filter(
       (t) =>
         t.symbol.toLowerCase().includes(q) ||
         t.address.toLowerCase().includes(q)

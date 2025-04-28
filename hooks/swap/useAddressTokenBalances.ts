@@ -43,7 +43,7 @@ const TOKENS: any = [
   },
   { address: noteAddress, symbol: "NOTE", decimals: 18, type: TokenType.ERC20 },
   { address: usdcAddress, symbol: "USDC", decimals: 6, type: TokenType.ERC20 },
-  { address: atomAddress, symbol: "ATOM", decimals: 18, type: TokenType.ERC20 },
+  { address: atomAddress, symbol: "ATOM", decimals: 6, type: TokenType.ERC20 },
   { address: usdtAddress, symbol: "USDT", decimals: 6, type: TokenType.ERC20 },
   { address: ethAddress, symbol: "ETH", decimals: 18, type: TokenType.ERC20 },
 ];
