@@ -60,6 +60,7 @@ export default function Page() {
   });
 
   const route = useMemo(() => {
+    //@ts-expect-error: type exists
     return getHardcodedRoute(tokenA, tokenB) ?? [];
   }, [tokenA, tokenB]);
 
@@ -174,19 +175,24 @@ export default function Page() {
   }, [tokenA, tokenB, payAmount]);
 
   function openModal(side: "pay" | "receive") {
-    setWhichSide(side);
-    setModalOpen(true);
+    if (address) {
+      setWhichSide(side);
+      setModalOpen(true);
+    } else {
+      if (openConnectModal) {
+        openConnectModal();
+      }
+    }
   }
 
   async function onSwap() {
     if (!tokenB || !payAmount) return;
 
-    setIsApproving(false); // reset old state
+    setIsApproving(false);
     try {
       const inWei = convertToBigInt(payAmount, tokenA.decimals);
       const { amountOutMin } = await getAmountOutMin(inWei, route, 0);
 
-      /* ── 1. ERC-20 approval (skip if CANTO) ─────────────────────── */
       if (tokenA.address.toLowerCase() !== cantoAddress.toLowerCase()) {
         const allowance: bigint = await readContract({
           abi: ERC20_ABI,

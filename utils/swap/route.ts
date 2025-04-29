@@ -6,16 +6,15 @@ import { readContract } from "@wagmi/core";
 import BigNumber from "bignumber.js";
 import { QueryClient } from "@tanstack/react-query";
 
-export const getHardcodedRoute = (
-  tokenA?: any,
-  tokenB?: any
-): RouteLeg[] | undefined => {
-  if (!tokenA || !tokenB) {
-    return;
-  }
-  const key = `${tokenA.symbol.toLowerCase()}-${tokenB.symbol.toLowerCase()}`;
-  return HARD_CODED_ROUTES[key];
-};
+export function getHardcodedRoute(
+  fromSym?: { symbol: string; address: string } | string,
+  toSym?: { symbol: string; address: string } | string
+): RouteLeg[] | undefined {
+  if (!fromSym || !toSym) return undefined;
+  const a = typeof fromSym === "string" ? fromSym : fromSym.symbol;
+  const b = typeof toSym === "string" ? toSym : toSym.symbol;
+  return HARD_CODED_ROUTES[`${a.toLowerCase()}-${b.toLowerCase()}`];
+}
 
 export async function getAmountOutMin(
   amountInWei: bigint,

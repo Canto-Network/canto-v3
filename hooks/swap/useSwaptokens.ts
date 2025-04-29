@@ -59,6 +59,13 @@ export const useSwapTokens = () => {
         });
         refetchCanto();
       },
+      onError() {
+        toast.add({
+          primary: "Swap Failed.Please try again.",
+          duration: 4000,
+          state: "failure",
+        });
+      },
     });
 
   async function executeSwap(
@@ -125,7 +132,7 @@ export const useSwapTokens = () => {
     executeSwap(
       "swapExactCANTOForTokens",
       [amountOutMin, path, address!, deadline],
-      amountIn // msg.value
+      amountIn
     );
 
   return {
