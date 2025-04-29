@@ -22,7 +22,6 @@ export async function getAmountOutMin(
   route: RouteLeg[],
   slippagePct = 0.5
 ) {
-  console.log("get amounts out", amountInWei, route);
   const amounts = (await readContract({
     abi: baseV1RouterAbi,
     address: baseV1RouterAddress,
