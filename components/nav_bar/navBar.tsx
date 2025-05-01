@@ -106,6 +106,16 @@ const NavBar = () => {
         >
           <Text size="sm">Bridge</Text>
         </Link>
+        <Link
+          href="/swap"
+          className={clsx(
+            styles["nav-link"],
+            currentPath == "/swap" && styles.active
+          )}
+          onClick={() => Analytics.actions.events.clickedNavLink("Bridge")}
+        >
+          <Text size="sm">Swap</Text>
+        </Link>
 
         <Link
           href="/lending"
