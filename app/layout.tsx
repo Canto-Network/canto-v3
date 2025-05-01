@@ -10,6 +10,8 @@ import { Analytics } from "@vercel/analytics/react";
 import localFont from "next/font/local";
 import "./globals.scss";
 import { apolloClient } from "@/config/apollo.config";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { reactQueryClient } from "@/utils/swap/route";
 
 const rm_mono = localFont({
   src: "../fonts/rm-mono-regular.ttf",
@@ -78,12 +80,13 @@ export default function RootLayout({
         }
       >
         <div id="toast-root"></div>
-        <CantoWalletProvider>
-          <ReactQueryClientProvider>
-            <ApolloProvider client={apolloClient}>
-              <ToastContainer>
-                <div className="body">
-                  {/* <InfoBar
+        <QueryClientProvider client={reactQueryClient}>
+          <CantoWalletProvider>
+            <ReactQueryClientProvider>
+              <ApolloProvider client={apolloClient}>
+                <ToastContainer>
+                  <div className="body">
+                    {/* <InfoBar
                 values={[
                   {
                     name: "contracts w/ CSR enabled:",
@@ -111,16 +114,17 @@ export default function RootLayout({
                   },
                 ]}
               /> */}
-                  <NavBar />
+                    <NavBar />
 
-                  {children}
-                  <div id="modal-root"></div>
-                  <Footer />
-                </div>
-              </ToastContainer>
-            </ApolloProvider>
-          </ReactQueryClientProvider>
-        </CantoWalletProvider>
+                    {children}
+                    <div id="modal-root"></div>
+                    <Footer />
+                  </div>
+                </ToastContainer>
+              </ApolloProvider>
+            </ReactQueryClientProvider>
+          </CantoWalletProvider>
+        </QueryClientProvider>
         <Analytics />
       </body>
     </html>

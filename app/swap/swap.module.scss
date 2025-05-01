@@ -1,0 +1,186 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    margin: 10px auto;
+    margin-top: 60px;
+    max-width: 490px;
+    width: 100%;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-stroke-color);
+    background: var(--card-sub-surface-color, #dfdfdf);
+    box-shadow: 6px 6px 0px 0px rgba(17, 17, 17, 0.15);
+    height:460px;
+  }
+  
+  .title {
+    width: 100%;
+    text-align: left;
+    padding-top: 7px;
+    padding-left: 7px;
+    padding-right: 7px;
+    margin-top: 12px;
+  }
+  
+  .card {
+    width: 430px;
+    padding: 20px;
+    // background: var(--surface-color, #fff);
+    // box-shadow: var(--box-shadow, 3px 3px 0 rgba(17, 17, 17, 0.15));
+    // border: 1px solid var(--primary-90-color);
+    // border-radius: 8px;
+  }
+
+  .rateCard{
+    width:490px;
+    padding-left: 40px;
+    padding-right: 40px;
+    padding-top:20px;
+    padding-bottom: 20px;
+  }
+
+  /* swap.module.scss */
+.arrowContainer {
+    position: relative;
+    width: 100%;
+    height: 1px;
+    background: var(--border-stroke-color);
+    margin-top: 20px;
+    margin-bottom: 20px;
+  }
+  
+  .arrowBtn {
+    position: absolute;
+    left: 50%;
+    top: -12px;                 /* half the button height */
+    transform: translateX(-50%);
+    width: 28px;
+    height: 28px;
+    background: #222222;
+    border: 1px solid var(--border-stroke-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 200ms ease;
+  }
+  
+  .arrowBtn.flipped {
+    transform: translateX(-50%) rotate(180deg);
+  }
+
+  
+  
+  /* ---------- Token selector --------------------------------------- */
+.selectorCaption {
+    letter-spacing: 0.5px;
+  }
+  
+  .amountNativeInput {
+    font-size: 48px;
+    line-height: 1;
+    background: transparent;
+    width: 50%;
+    border: none;
+    color: var(--primary-40-color, #ffffff);
+    font-family: var(--proto-mono);
+    padding: 0;
+    outline: none;                /* remove default focus ring */
+  }
+  
+  .amountNativeInput::placeholder {
+    color: var(--primary-60-color, #666);
+  }
+  
+  .amountNativeInput:disabled {
+    color: var(--primary-70-color, #555);
+    cursor: not-allowed;
+  }
+  
+  .tokenBtn {
+    width: 180px;
+    justify-content: space-between;
+    background: var(--surface-color, #242424);
+    border: 1px solid var(--border-stroke-color);
+    box-shadow: 3px 3px 0 #000;
+    padding: 8px 12px;
+  }
+
+  /* swap.module.scss */
+
+/* already have .amountNativeInput, .tokenBtn … */
+
+/* ---------- balance row ------------------ */
+.balanceValue {
+    color: var(--accent-color, #32ff9c);
+  }
+  
+  /* MAX button look */
+  .maxBtn {
+    background: #2e3338;
+    padding: 4px 12px;
+    font-family: var(--mono-font, 'proto_mono');
+    font-size: 14px;
+    letter-spacing: 1px;
+    color: var(--accent-color, #32ff9c);
+    border: none;
+    box-shadow: 3px 3px 0 #000;
+  }
+  
+  /* optional hover */
+  .maxBtn:hover {
+    filter: brightness(1.1);
+  }
+
+  .maxValue{
+    color: var(--accent-color, #32ff9c);
+    font-size: small;
+    text-transform: lowercase;
+    margin-left: 4px;
+    cursor: pointer;
+  }
+
+.rateContainer {
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-stroke-color);
+    background: var(--card-sub-surface-color, #dfdfdf);
+    box-shadow: 6px 6px 0px 0px rgba(17, 17, 17, 0.15);
+    max-width: 490px;
+    width: 100%;
+    margin-top: 4px;
+
+}
+
+.items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow-y: auto;
+    transition: transform 0.5s ease-out;
+    background-color: var(--card-sub-surface-color);
+  }
+
+  .item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    cursor: pointer;
+    height: 60px;
+    padding: 0 16px;
+    transition: all 0.2s ease-out;
+    position: relative;
+    &::after {
+      position: absolute;
+      content: "";
+      display: block;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(var(--dark-color), 0.1);
+      transform: scaleY(0.6) translateX(-16px);
+      opacity: 0;
+      transition: all 0.2s ease-out;
+      border-radius: var(--border-radius);
+    }
+}
+  
+  
