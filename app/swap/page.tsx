@@ -267,9 +267,11 @@ export default function Page() {
           <ArrowSwap
             flipped={arrowFlip}
             onClick={() => {
-              setTokenA(tokenB ?? tokenA);
-              setTokenB(tokenA);
-              setArrowFlip(!arrowFlip);
+              if (tokenB) {
+                setTokenA(tokenB ?? tokenA);
+                setTokenB(tokenA);
+                setArrowFlip(!arrowFlip);
+              }
             }}
           />
           <TokenSelector
