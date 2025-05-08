@@ -6,6 +6,7 @@ import {
   ethAddress as ETH,
   usdcAddress as USDC,
   usdtAddress as USDT,
+  cantoAddress as CANTO,
 } from "./addresses";
 
 export interface RouteLeg {
@@ -34,12 +35,73 @@ export const ROUTE_ETH_CANTO: RouteLeg[] = [
   { from: ETH, to: WCANTO, stable: false },
 ];
 
-export const ROUTE_CANTO_WCANTO: RouteLeg[] = []; // deposit
-export const ROUTE_WCANTO_CANTO: RouteLeg[] = []; // withdraw
+export const ROUTE_WCANTO_NOTE: RouteLeg[] = [
+  { from: WCANTO, to: NOTE, stable: false },
+];
+export const ROUTE_NOTE_WCANTO = ROUTE_WCANTO_NOTE.map(
+  ({ from, to, stable }) => ({
+    from: to,
+    to: from,
+    stable,
+  })
+);
+
+export const ROUTE_WCANTO_ATOM: RouteLeg[] = [
+  { from: WCANTO, to: ATOM, stable: false },
+];
+export const ROUTE_ATOM_WCANTO = ROUTE_WCANTO_ATOM.map(
+  ({ from, to, stable }) => ({
+    from: to,
+    to: from,
+    stable,
+  })
+);
+
+export const ROUTE_WCANTO_ETH: RouteLeg[] = [
+  { from: WCANTO, to: ETH, stable: false },
+];
+
+export const ROUTE_WCANTO_CANTO: RouteLeg[] = [
+  { from: WCANTO, to: CANTO, stable: false },
+];
+export const ROUTE_CANTO_WCANTO: RouteLeg[] = [
+  { from: CANTO, to: WCANTO, stable: false },
+];
+export const ROUTE_ETH_WCANTO = ROUTE_WCANTO_ETH.map(
+  ({ from, to, stable }) => ({
+    from: to,
+    to: from,
+    stable,
+  })
+);
+
+export const ROUTE_WCANTO_USDC: RouteLeg[] = [
+  { from: WCANTO, to: NOTE, stable: false },
+  { from: NOTE, to: USDC, stable: true },
+];
+export const ROUTE_USDC_WCANTO = ROUTE_WCANTO_USDC.slice()
+  .reverse()
+  .map(({ from, to, stable }) => ({
+    from: to,
+    to: from,
+    stable,
+  }));
+
+export const ROUTE_WCANTO_USDT: RouteLeg[] = [
+  { from: WCANTO, to: NOTE, stable: false },
+  { from: NOTE, to: USDT, stable: true },
+];
+export const ROUTE_USDT_WCANTO = ROUTE_WCANTO_USDT.slice()
+  .reverse()
+  .map(({ from, to, stable }) => ({
+    from: to,
+    to: from,
+    stable,
+  }));
 
 export const ROUTE_CANTO_USDC: RouteLeg[] = [
-  { from: WCANTO, to: NOTE, stable: false }, // volatile
-  { from: NOTE, to: USDC, stable: true }, // stable
+  { from: WCANTO, to: NOTE, stable: false },
+  { from: NOTE, to: USDC, stable: true },
 ];
 
 export const ROUTE_CANTO_USDT: RouteLeg[] = [
@@ -53,6 +115,23 @@ export const ROUTE_USDC_CANTO = [...ROUTE_CANTO_USDC]
 export const ROUTE_USDT_CANTO = [...ROUTE_CANTO_USDT]
   .reverse()
   .map(({ from, to, stable }) => ({ from: to, to: from, stable }));
+
+const viaWcanto = (src: Address, dst: Address): RouteLeg[] => [
+  { from: src, to: WCANTO, stable: false },
+  { from: WCANTO, to: dst, stable: false },
+];
+
+const stableToNon = (stable: Address, non: Address): RouteLeg[] => [
+  { from: stable, to: NOTE, stable: true },
+  { from: NOTE, to: WCANTO, stable: false },
+  { from: WCANTO, to: non, stable: false },
+];
+
+const nonToStable = (non: Address, stable: Address): RouteLeg[] => [
+  { from: non, to: WCANTO, stable: false },
+  { from: WCANTO, to: NOTE, stable: false },
+  { from: NOTE, to: stable, stable: true },
+];
 
 export const HARD_CODED_ROUTES: Record<string, RouteLeg[]> = {
   /* ---- CANTO versus tokens ---- */
@@ -68,6 +147,17 @@ export const HARD_CODED_ROUTES: Record<string, RouteLeg[]> = {
   "eth-canto": ROUTE_ETH_CANTO,
   "canto-wcanto": ROUTE_CANTO_WCANTO,
   "wcanto-canto": ROUTE_WCANTO_CANTO,
+
+  "wcanto-note": ROUTE_WCANTO_NOTE,
+  "note-wcanto": ROUTE_NOTE_WCANTO,
+  "wcanto-atom": ROUTE_WCANTO_ATOM,
+  "atom-wcanto": ROUTE_ATOM_WCANTO,
+  "wcanto-eth": ROUTE_WCANTO_ETH,
+  "eth-wcanto": ROUTE_ETH_WCANTO,
+  "wcanto-usdc": ROUTE_WCANTO_USDC,
+  "usdc-wcanto": ROUTE_USDC_WCANTO,
+  "wcanto-usdt": ROUTE_WCANTO_USDT,
+  "usdt-wcanto": ROUTE_USDT_WCANTO,
 };
 
 HARD_CODED_ROUTES["note-usdc"] = [{ from: NOTE, to: USDC, stable: true }];
@@ -75,11 +165,6 @@ HARD_CODED_ROUTES["usdc-note"] = [{ from: USDC, to: NOTE, stable: true }];
 
 HARD_CODED_ROUTES["note-usdt"] = [{ from: NOTE, to: USDT, stable: true }];
 HARD_CODED_ROUTES["usdt-note"] = [{ from: USDT, to: NOTE, stable: true }];
-
-const viaWcanto = (src: Address, dst: Address): RouteLeg[] => [
-  { from: src, to: WCANTO, stable: false },
-  { from: WCANTO, to: dst, stable: false },
-];
 
 HARD_CODED_ROUTES["note-atom"] = viaWcanto(NOTE, ATOM);
 HARD_CODED_ROUTES["atom-note"] = viaWcanto(ATOM, NOTE);
@@ -89,18 +174,6 @@ HARD_CODED_ROUTES["eth-note"] = viaWcanto(ETH, NOTE);
 
 HARD_CODED_ROUTES["atom-eth"] = viaWcanto(ATOM, ETH);
 HARD_CODED_ROUTES["eth-atom"] = viaWcanto(ETH, ATOM);
-
-const stableToNon = (stable: Address, non: Address): RouteLeg[] => [
-  { from: stable, to: NOTE, stable: true }, // stable pool
-  { from: NOTE, to: WCANTO, stable: false },
-  { from: WCANTO, to: non, stable: false },
-];
-
-const nonToStable = (non: Address, stable: Address): RouteLeg[] => [
-  { from: non, to: WCANTO, stable: false },
-  { from: WCANTO, to: NOTE, stable: false },
-  { from: NOTE, to: stable, stable: true },
-];
 
 HARD_CODED_ROUTES["usdc-atom"] = stableToNon(USDC, ATOM);
 HARD_CODED_ROUTES["atom-usdc"] = nonToStable(ATOM, USDC);
