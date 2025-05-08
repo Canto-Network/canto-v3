@@ -7,7 +7,11 @@ import Container from "@/components/container/container";
 import Button from "@/components/button/button";
 import Text from "@/components/text";
 import styles from "./swap.module.scss";
-import { baseV1RouterAddress, cantoAddress } from "@/config/consts/addresses";
+import {
+  baseV1RouterAddress,
+  cantoAddress,
+  wCantoAddress as WCANTO,
+} from "@/config/consts/addresses";
 import { TokenSelector } from "./components/TokenSelector";
 import { SwapDetails } from "./components/SwapDetails";
 import { ArrowSwap } from "./components/ArrowSwap";
@@ -18,7 +22,6 @@ import {
   getSwapDeadline,
   popularTokens,
 } from "@/utils/swap/route";
-import BigNumber from "bignumber.js";
 import { useSwapTokens } from "@/hooks/swap/useSwaptokens";
 import SelectTokenModal from "./components/SelectTokenModal";
 import { useAddressTokenBalancesQuery } from "@/hooks/swap/useAddressTokenBalances";
@@ -28,7 +31,6 @@ import { ERC20_ABI } from "@/config/abis";
 import { useToast } from "@/components/toast";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { formatBalance } from "@/utils/formatting";
-import { wCantoAddress as WCANTO } from "@/config/consts/addresses";
 import { useQueryClient } from "@tanstack/react-query";
 
 const WCANTO_ABI = [
