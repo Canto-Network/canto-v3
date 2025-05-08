@@ -113,6 +113,15 @@ export const selectTokens: ReadonlyArray<any> = [
     circulatingMarketCap: null,
   },
   {
+    name: "Wrapped Canto",
+    address: "0x826551890Dc65655a0Aceca109aB11AbDbD7a07B",
+    symbol: "wCANTO",
+    decimals: "18",
+    iconURL: "/icons/canto.svg",
+    type: "ERC-20",
+    circulatingMarketCap: null,
+  },
+  {
     name: "ATOM",
     address: atomAddress,
     symbol: "ATOM",

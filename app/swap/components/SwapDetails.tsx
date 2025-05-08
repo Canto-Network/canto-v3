@@ -47,9 +47,16 @@ export const SwapDetails = ({
           <Text font="proto_mono" size="x-sm">
             Rate
           </Text>
-          <Text font="proto_mono" size="x-sm" color="accent">
-            1 {tokenA?.symbol} ≈ {conversionRate || "---"} {tokenB?.symbol}
-          </Text>
+          {(tokenA?.symbol === "CANTO" && tokenB?.symbol === "wCANTO") ||
+          (tokenA?.symbol === "wCANTO" && tokenB?.symbol === "CANTO") ? (
+            <Text font="proto_mono" size="x-sm" color="accent">
+              1 {tokenA?.symbol} ≈ 1 {tokenB?.symbol}
+            </Text>
+          ) : (
+            <Text font="proto_mono" size="x-sm" color="accent">
+              1 {tokenA?.symbol} ≈ {conversionRate || "---"} {tokenB?.symbol}
+            </Text>
+          )}
         </Container>
 
         <Container direction="row" gap="auto">
