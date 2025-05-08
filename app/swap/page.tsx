@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { formatUnits } from "viem";
+import { Address, formatUnits } from "viem";
 import { useAccount, useBalance } from "wagmi";
 import Container from "@/components/container/container";
 import Button from "@/components/button/button";
@@ -28,6 +28,25 @@ import { ERC20_ABI } from "@/config/abis";
 import { useToast } from "@/components/toast";
 import { useConnectModal } from "@rainbow-me/rainbowkit";
 import { formatBalance } from "@/utils/formatting";
+import { wCantoAddress as WCANTO } from "@/config/consts/addresses";
+import { useQueryClient } from "@tanstack/react-query";
+
+const WCANTO_ABI = [
+  {
+    inputs: [],
+    name: "deposit",
+    outputs: [],
+    stateMutability: "payable",
+    type: "function",
+  },
+  {
+    inputs: [{ internalType: "uint256", name: "wad", type: "uint256" }],
+    name: "withdraw",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+] as const;
 
 export default function Page() {
   const [tokenA, setTokenA] = useState(popularTokens[0]);
@@ -43,6 +62,8 @@ export default function Page() {
   const [modalOpen, setModalOpen] = useState(false);
   const [whichSide, setWhichSide] = useState<"pay" | "receive">();
   const [isApproving, setIsApproving] = useState(false);
+  const [isWrapping, setIsWrapping] = useState(false);
+  const queryClient = useQueryClient();
 
   const {
     swapExactCantoForTokens,
@@ -188,6 +209,67 @@ export default function Page() {
   async function onSwap() {
     if (!tokenB || !payAmount) return;
 
+    const isWrap =
+      tokenA.address.toLowerCase() === cantoAddress.toLowerCase() &&
+      //@ts-expect-error : type exists
+      tokenB.address.toLowerCase() === WCANTO.toLowerCase();
+
+    const isUnwrap =
+      tokenA.address.toLowerCase() === WCANTO.toLowerCase() &&
+      //@ts-expect-error : type exists
+      tokenB.address.toLowerCase() === cantoAddress.toLowerCase();
+
+    if (isWrap || isUnwrap) {
+      try {
+        setIsWrapping(true);
+
+        const inWei = convertToBigInt(payAmount, 18);
+        const fn = isWrap ? "deposit" : "withdraw";
+
+        const txHash = await writeContract({
+          abi: WCANTO_ABI,
+          address: WCANTO as `0x${string}`,
+          functionName: fn,
+          //@ts-expect-error : type exists
+          args: isUnwrap ? [inWei] : [],
+          //@ts-expect-error : type exists
+          value: isWrap ? inWei : undefined,
+          chainId: CANTO_MAINNET_EVM.chainId,
+        });
+
+        await waitForTransaction({
+          hash: txHash?.hash,
+        });
+
+        queryClient.invalidateQueries({
+          queryKey: ["address-token-balances", address],
+        });
+
+        toast.add({
+          primary: "Transaction Successful",
+          state: "success",
+          duration: 4000,
+        });
+
+        setPayAmount("");
+      } catch (err) {
+        queryClient.invalidateQueries({
+          queryKey: ["address-token-balances", address],
+        });
+        toast.add({
+          primary: "Transaction Failed",
+          state: "failure",
+          duration: 4000,
+        });
+      } finally {
+        setIsWrapping(false);
+        queryClient.invalidateQueries({
+          queryKey: ["address-token-balances", address],
+        });
+      }
+      return;
+    }
+
     setIsApproving(false);
     try {
       const inWei = convertToBigInt(payAmount, tokenA.decimals);
@@ -239,6 +321,13 @@ export default function Page() {
     }
   }
 
+  const actionPending = isApproving || isSwapping || isWrapping;
+  const actionLabel = isApproving
+    ? "Approving…"
+    : isSwapping || isWrapping
+      ? "Swapping…"
+      : "Swap";
+
   return (
     <div className={styles.container}>
       <Container direction="column" width="min-content">
@@ -287,8 +376,7 @@ export default function Page() {
             {address ? (
               <Button
                 disabled={
-                  isApproving ||
-                  isSwapping ||
+                  actionPending ||
                   !payAmount ||
                   !tokenB ||
                   !address ||
@@ -297,7 +385,7 @@ export default function Page() {
                 onClick={onSwap}
                 width="fill"
               >
-                {isApproving ? "Approving…" : isSwapping ? "Swapping…" : "Swap"}
+                {actionLabel}
               </Button>
             ) : (
               <Button onClick={openConnectModal} width="fill">

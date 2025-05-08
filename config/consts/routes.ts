@@ -6,6 +6,7 @@ import {
   ethAddress as ETH,
   usdcAddress as USDC,
   usdtAddress as USDT,
+  cantoAddress as CANTO,
 } from "./addresses";
 
 export interface RouteLeg {
@@ -58,6 +59,13 @@ export const ROUTE_ATOM_WCANTO = ROUTE_WCANTO_ATOM.map(
 
 export const ROUTE_WCANTO_ETH: RouteLeg[] = [
   { from: WCANTO, to: ETH, stable: false },
+];
+
+export const ROUTE_WCANTO_CANTO: RouteLeg[] = [
+  { from: WCANTO, to: CANTO, stable: false },
+];
+export const ROUTE_CANTO_WCANTO: RouteLeg[] = [
+  { from: CANTO, to: WCANTO, stable: false },
 ];
 export const ROUTE_ETH_WCANTO = ROUTE_WCANTO_ETH.map(
   ({ from, to, stable }) => ({
@@ -137,6 +145,8 @@ export const HARD_CODED_ROUTES: Record<string, RouteLeg[]> = {
   "note-canto": ROUTE_NOTE_CANTO,
   "canto-eth": ROUTE_CANTO_ETH,
   "eth-canto": ROUTE_ETH_CANTO,
+  "canto-wcanto": ROUTE_CANTO_WCANTO,
+  "wcanto-canto": ROUTE_WCANTO_CANTO,
 
   "wcanto-note": ROUTE_WCANTO_NOTE,
   "note-wcanto": ROUTE_NOTE_WCANTO,
