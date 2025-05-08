@@ -123,10 +123,14 @@ export default function Page() {
 
   const [oneRate, setOneRate] = useState<string>("");
 
-  function asUiBalance(v: bigint, decimals: number) {
-    return new BigNumber(v.toString())
-      .div(new BigNumber(10).pow(decimals))
-      .toFixed(decimals > 6 ? 6 : decimals);
+  function isWrapPair(tokA: Address, tokB?: Address) {
+    if (!tokB) return false;
+    const a = tokA.toLowerCase();
+    const b = tokB.toLowerCase();
+    return (
+      (a === cantoAddress.toLowerCase() && b === WCANTO.toLowerCase()) ||
+      (a === WCANTO.toLowerCase() && b === cantoAddress.toLowerCase())
+    );
   }
 
   const balanceA = useMemo(() => {
@@ -164,6 +168,11 @@ export default function Page() {
 
   useEffect(() => {
     if (!tokenB || !payAmount) return setReceiveAmount("");
+    //@ts-expect-error : type exists
+    if (isWrapPair(tokenA.address, tokenB.address)) {
+      setReceiveAmount(payAmount);
+      return;
+    }
 
     (async () => {
       try {
@@ -183,6 +192,12 @@ export default function Page() {
 
   useEffect(() => {
     if (!tokenA || !tokenB) return setOneRate("");
+
+    //@ts-expect-error : type exists
+    if (isWrapPair(tokenA.address, tokenB.address)) {
+      setOneRate("1");
+      return;
+    }
 
     (async () => {
       const { expectedOut: oneOut } = await getAmountOutMin(
