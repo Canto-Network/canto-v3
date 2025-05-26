@@ -54,8 +54,6 @@ export default function Page() {
   // }
   const { isMobile } = useScreenSize();
 
-  console.log('pairs man', pairs)
-
   //main content
   return (
     <div className={styles.container}>
