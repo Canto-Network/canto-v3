@@ -20,7 +20,6 @@ import { displayAmount } from "@/utils/formatting";
 import Rewards from "./components/rewards";
 import Container from "@/components/container/container";
 import ToggleGroup from "@/components/groupToggle/ToggleGroup";
-import usePool from "./utils";
 import Analytics from "@/provider/analytics";
 import {
   getAnalyticsCantoLiquidityPoolInfo,
@@ -28,6 +27,7 @@ import {
 } from "@/utils/analytics";
 import useScreenSize from "@/hooks/helpers/useScreenSize";
 import Icon from "@/components/icon/icon";
+import usePools from "./usePools";
 
 export default function Page() {
   const {
@@ -46,13 +46,15 @@ export default function Page() {
     pairNames,
     rewardTime,
     isLoading,
-  } = usePool();
+  } = usePools();
 
   //   if mobile only
   // if (!window.matchMedia("(min-width: 768px)").matches) {
   //   return <DesktopOnly />;
   // }
   const { isMobile } = useScreenSize();
+
+  console.log('pairs man', pairs)
 
   //main content
   return (
@@ -117,13 +119,13 @@ export default function Page() {
                       Analytics.actions.events.liquidityPool.manageLPClicked(
                         getAnalyticsAmbientLiquidityPoolInfo(pool)
                       );
-                      setPair(pool.address);
+                      setPair(pool);
                     }),
                     ...pairs.userCantoDex.map((pair) => () => {
                       Analytics.actions.events.liquidityPool.manageLPClicked(
                         getAnalyticsCantoLiquidityPoolInfo(pair)
                       );
-                      setPair(pair.address);
+                      setPair(pair);
                     }),
                   ]
                 : undefined
@@ -202,7 +204,7 @@ export default function Page() {
                       lpType: "AMBIENT",
                       ambientLp: pool.symbol,
                     });
-                    setPair(pool.address);
+                    setPair(pool);
                   }),
                 ...sortedCantoDexPairs
                   .filter(
@@ -238,7 +240,7 @@ export default function Page() {
                         lpType: "AMBIENT",
                         ambientLp: pool.symbol,
                       });
-                      setPair(poolAddress);
+                      setPair(pool);
                     },
                     isMobile,
                   })
@@ -281,26 +283,26 @@ export default function Page() {
               </Container>
             </tr>
           ),
-          ...sortedCantoDexPairs
-            .filter(
-              (pair) =>
-                filteredPairs === "all" ||
-                (filteredPairs === "stable" && pair.stable) ||
-                (filteredPairs === "volatile" && !pair.stable)
-            )
-            .map((pair) =>
-              GeneralCantoDexPairRow({
-                pair,
-                onAddLiquidity: (pairAddress) => {
-                  Analytics.actions.events.liquidityPool.addLPClicked({
-                    lpType: "CANTO",
-                    cantoLp: pair.symbol,
-                  });
-                  setPair(pairAddress);
-                },
-                isMobile,
-              })
-            ),
+          // ...sortedCantoDexPairs
+          //   .filter(
+          //     (pair) =>
+          //       filteredPairs === "all" ||
+          //       (filteredPairs === "stable" && pair.stable) ||
+          //       (filteredPairs === "volatile" && !pair.stable)
+          //   )
+          //   .map((pair) =>
+          //     GeneralCantoDexPairRow({
+          //       pair,
+          //       onAddLiquidity: (pairAddress) => {
+          //         Analytics.actions.events.liquidityPool.addLPClicked({
+          //           lpType: "CANTO",
+          //           cantoLp: pair.symbol,
+          //         });
+          //         setPair(pairAddress);
+          //       },
+          //       isMobile,
+          //     })
+          //   ),
         ]}
       />
       <Spacer height="40px" />

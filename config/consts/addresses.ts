@@ -1,3 +1,4 @@
+import { Address } from "viem";
 import { CLMToken } from "../interfaces";
 import { CANTO_MAINNET_EVM, CANTO_TESTNET_EVM } from "../networks";
 
@@ -130,3 +131,19 @@ export const kantoTokenAddress = "0x566a5BAb30cC8a62509eF0928A0fA4C97b0e873a";
 export const baseV1RouterAddress = "0xa252eEE9BDe830Ca4793F054B506587027825a8e";
 export const baseV1FactoryAddress =
   "0xE387067f12561e579C5f7d4294f51867E0c1cFba";
+
+//CROCSWAP
+
+export const MULTICALL3: Address = "0xF414dBAaa7d567F8bF9F2016a0A6E0Ab78BD042e";
+
+export const CROCSWAP: Address = "0x96eD91FA046387dFfF8B942a8C14F5FBDe4a161A";
+
+export const CROCQUERY: Address = "0x3f098075Bc5d01AEDbC7e6b60138a6B5C8E7B40b";
+
+export const CROCPOLICY: Address = "0xC9f4BbE7717aA568628af1aCB102A145a344b8AB";
+
+export const CROCSLOTS = {
+  WARM_PATH_IDX: 1,
+  COLD_PROXY_IDX: 2,
+  KNOCKOUT_LP_PROXY_IDX: 6,
+} as const;

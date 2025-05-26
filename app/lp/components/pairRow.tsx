@@ -26,6 +26,7 @@ export const UserCantoDexPairRow = ({
   onManage: (pairAddress: string) => void;
   isMobile: boolean;
 }) => {
+  console.log("pair row", pair);
   if (!pair.clmData?.userDetails) return [];
   // add staked and wallet balance
   const totalUserLpTokens = addTokenBalances(
@@ -262,7 +263,7 @@ export const GeneralAmbientPairRow = ({
       horizontal: true,
     }}
   >
-    <Icon icon={{ url: pool.logoURI, size: isMobile ? 40 : 54 }} />
+    {/* <Icon icon={{ url: pool.logoURI, size: isMobile ? 40 : 54 }} /> */}
     <Text theme="primary-dark" key={pool.address + "symbol"}>
       {pool.symbol}
     </Text>
@@ -277,9 +278,9 @@ export const GeneralAmbientPairRow = ({
     <Text key={pool.address}>0</Text>
   ),
   <Text key={pool.address + "tvl"}>
-    {displayAmount(pool.totals.noteTvl, 18, {
+    {displayAmount(pool?.totals?.noteTvl, 18, {
       precision: 2,
-    })}
+    })}{" "}
     <Icon
       style={{ marginLeft: "5px" }}
       themed

@@ -1,27 +1,34 @@
+import React, { useEffect, useState, useMemo } from "react";
+import {
+  Hex,
+  Address,
+  encodeAbiParameters,
+  parseAbiParameter,
+  formatUnits,
+} from "viem";
+import { usePublicClient } from "wagmi";
+import { writeContract } from "@wagmi/core";
+
 import styles from "../dexModals/cantoDex.module.scss";
 import { AmbientPool } from "@/hooks/pairs/newAmbient/interfaces/ambientPools";
 import Text from "@/components/text";
-import Icon from "@/components/icon/icon";
 import Container from "@/components/container/container";
 import Amount from "@/components/amount/amount";
 import Spacer from "@/components/layout/spacer";
-import {
-  displayAmount,
-  formatBalance,
-  formatPercent,
-} from "@/utils/formatting";
+import { formatPercent } from "@/utils/formatting";
 import { ModalItem } from "@/app/lending/components/modal/modal";
 import PopUp from "@/components/popup/popup";
 import Button from "@/components/button/button";
 import Toggle from "@/components/toggle";
-import { useEffect, useState } from "react";
 import ToggleGroup from "@/components/groupToggle/ToggleGroup";
 import Price from "@/components/price/price";
-import { queryAmbientPoolLiquidityCurve } from "@/hooks/pairs/newAmbient/helpers/ambientApi";
-import { convertLiquidityCurveToGraph } from "@/utils/ambient";
 import SVGLiquidityGraph from "@/components/liquidityGraph/svgGraph";
 import Input from "@/components/input/input";
-import { AmbientTransactionParams } from "@/transactions/pairs/ambient";
+import {
+  AmbientAddConcentratedLiquidityParams,
+  AmbientTransactionParams,
+  AmbientTxType,
+} from "@/transactions/pairs/ambient";
 import {
   ALL_TICK_KEYS,
   TickRangeKey,
@@ -29,52 +36,439 @@ import {
 } from "@/utils/ambient/liquidityControllers";
 import { Validation } from "@/config/interfaces";
 import Analytics from "@/provider/analytics";
-import BigNumber from "bignumber.js";
+import { BigNumber as BN } from "bignumber.js";
 import useScreenSize from "@/hooks/helpers/useScreenSize";
+import { fetchContractLiquidityCurve } from "@/hooks/pairs/newAmbient/helpers/ifiAmbient";
+import { CROCDEX_ABI } from "@/config/abis/crocdex";
+import { publicClient } from "@/hooks/pairs/useCrocData";
+import { ERC20_ABI } from "@/config/abis";
+
+/*
+Example AmbientPool interface structure assumed by this component:
+interface TokenData {
+  address: Address;
+  symbol: string;
+  decimals: number;
+  logoURI?: string;
+  balance?: string; // User's balance of this token
+  isNative?: boolean; // If this is the native chain token (for msg.value)
+}
+interface PoolStats {
+  lastPriceSwap: number; // Price of Base in terms of Quote (e.g., Base/Quote)
+  feeRate: number;
+}
+export interface AmbientPool {
+  base: TokenData;
+  quote: TokenData;
+  symbol: string; // e.g., "BASE-QUOTE"
+  poolIdx: number | bigint; // The index of the pool template
+  stats: PoolStats;
+  tickSize: number; // The tick spacing for this pool
+  displayPrecision?: number; // Optional: for formatting prices, defaults to 6 or 4
+}
+*/
+
+// TODO: Replace with your actual iFi DEX (CrocSwap) contract address
+const CROCSWAP_CONTRACT_ADDRESS =
+  "0x96eD91FA046387dFfF8B942a8C14F5FBDe4a161A" as Address;
+
+const CrocSlots = {
+  BOOT_PROXY_IDX: 0,
+  LP_PROXY_IDX: 1, // WarmPath - LIKELY TARGET FOR ADD LIQUIDITY
+  COLD_PROXY_IDX: 2, // ColdPath
+};
+
+const CALLPATH_FOR_WARM_PATH = CrocSlots.LP_PROXY_IDX; // e.g., 1
+
+const USER_CMD_MINT_RANGE_BASE_LP = 0x02; // EXAMPLE GUESS
+const USER_CMD_MINT_RANGE_QUOTE_LP = 0x03; // EXAMPLE GUESS
+
+function humanPriceToSqrtPriceQ64_64(
+  humanPriceBasePerQuote: string | number | BN
+): bigint {
+  const priceBQ = new BN(humanPriceBasePerQuote);
+  if (priceBQ.isLessThanOrEqualTo(0)) {
+    console.error(
+      "humanPriceToSqrtPriceQ64_64: Input price (Base/Quote) must be positive:",
+      priceBQ.toString()
+    );
+    throw new Error("Price limit must be positive for sqrtPrice conversion.");
+  }
+  const priceQB = new BN(1).dividedBy(priceBQ);
+  if (priceQB.isLessThanOrEqualTo(0) || !priceQB.isFinite()) {
+    console.error(
+      `humanPriceToSqrtPriceQ64_64: Cannot convert price ${priceBQ.toString()} to a valid Quote/Base sqrtPrice.`
+    );
+    throw new Error(
+      `Invalid price for sqrtPrice conversion: ${priceBQ.toString()}`
+    );
+  }
+
+  const sqrtP_QB = priceQB.sqrt();
+  const scaleFactor = new BN(2).pow(64); // Scale for Q64.64
+  return BigInt(
+    sqrtP_QB.multipliedBy(scaleFactor).integerValue(BN.ROUND_FLOOR).toString()
+  );
+}
+
+function encodeWarmPathAddConcentratedLiquidityCmd(
+  params: AmbientAddConcentratedLiquidityParams
+): Hex {
+  console.log("Encoding for WarmPath with params:", params);
+
+  let commandCode: number;
+  if (params.isAmountBase) {
+    commandCode = USER_CMD_MINT_RANGE_BASE_LP; // ** REPLACE WITH ACTUAL VALUE **
+  } else {
+    commandCode = USER_CMD_MINT_RANGE_QUOTE_LP; // ** REPLACE WITH ACTUAL VALUE **
+  }
+  console.log("Using commandCode (THIS IS A GUESS, VERIFY IT!):", commandCode);
+
+  let contractLimitLowerSqrtPrice_Q64_64: bigint;
+  let contractLimitHigherSqrtPrice_Q64_64: bigint;
+
+  try {
+    // maxExecPriceWei (max P_B/Q from user) -> min P_Q/B -> lower sqrtPrice limit for contract
+    contractLimitLowerSqrtPrice_Q64_64 = humanPriceToSqrtPriceQ64_64(
+      params.maxExecPriceWei
+    );
+    // minExecPriceWei (min P_B/Q from user) -> max P_Q/B -> upper sqrtPrice limit for contract
+    contractLimitHigherSqrtPrice_Q64_64 = humanPriceToSqrtPriceQ64_64(
+      params.minExecPriceWei
+    );
+  } catch (e: any) {
+    console.error("Error converting price limits to sqrtPrice:", e.message);
+    throw new Error(
+      `Invalid price limits for sqrtPrice conversion: ${e.message}`
+    );
+  }
+
+  if (
+    contractLimitLowerSqrtPrice_Q64_64 >= contractLimitHigherSqrtPrice_Q64_64
+  ) {
+    console.error(
+      "Calculated sqrtPrice limits are invalid: lower SqrtPrice limit must be less than upper SqrtPrice limit.",
+      {
+        minUserPriceBQ: params.minExecPriceWei,
+        maxUserPriceBQ: params.maxExecPriceWei,
+        resultingLowerSqrtQB: contractLimitLowerSqrtPrice_Q64_64.toString(),
+        resultingHigherSqrtQB: contractLimitHigherSqrtPrice_Q64_64.toString(),
+      }
+    );
+    throw new Error(
+      "Invalid price range: lower sqrtPrice limit is not less than upper sqrtPrice limit after conversion."
+    );
+  }
+
+  const abiDefinition = [
+    { type: "uint8", name: "code" },
+    { type: "address", name: "base" },
+    { type: "address", name: "quote" },
+    { type: "uint256", name: "poolIdx" },
+    { type: "int24", name: "bidTick" }, // This is lowerTick from txParams
+    { type: "int24", name: "askTick" }, // This is upperTick from txParams
+    { type: "uint128", name: "liq" }, // This is txParams.amount (token quantity)
+    { type: "uint128", name: "limitLower" }, // This is contractLimitLowerSqrtPrice_Q64_64
+    { type: "uint128", name: "limitHigher" }, // This is contractLimitHigherSqrtPrice_Q64_64
+    { type: "uint8", name: "reserveFlags" },
+    { type: "address", name: "lpConduit" },
+  ] as const;
+
+  const values: any = [
+    commandCode,
+    params.pool.base.address,
+    params.pool.quote.address,
+    BigInt(params.pool.poolIdx),
+    params.lowerTick,
+    params.upperTick,
+    BigInt(params.amount),
+    contractLimitLowerSqrtPrice_Q64_64,
+    contractLimitHigherSqrtPrice_Q64_64,
+    0, // reserveFlags: Default to 0 (no surplus)
+    "0x0000000000000000000000000000000000000000", // lpConduit: Default to address(0)
+  ];
+
+  try {
+    const cmd = encodeAbiParameters(abiDefinition, values);
+    console.log(
+      "Encoded WarmPath Add Liq Command:",
+      cmd,
+      "with values:",
+      values
+    );
+    return cmd;
+  } catch (error) {
+    console.error("ABI encoding failed:", error, "Values:", values);
+    throw new Error("Failed to ABI encode command parameters for WarmPath.");
+  }
+}
+
+// --- TRANSACTION SENDING FUNCTION ---
+/**
+ * Checks allowance, requests approval if needed, then sends the
+ * "add concentrated liquidity" transaction to the CrocSwap/iFi DEX contract.
+ */
+async function sendCrocSwapAddLiquidityTx(
+  txParams: AmbientAddConcentratedLiquidityParams,
+  senderAddress: Address,
+  publicClient: any // To check allowance and wait for receipt
+): Promise<Hex | null> {
+  const tokenToApproveAddress = txParams.isAmountBase
+    ? txParams.pool.base.address
+    : txParams.pool.quote.address;
+  const tokenToApproveSymbol = txParams.isAmountBase
+    ? txParams.pool.base.symbol
+    : txParams.pool.quote.symbol;
+  const tokenToApproveDecimals = txParams.isAmountBase
+    ? txParams.pool.base.decimals
+    : txParams.pool.quote.decimals;
+  const requiredAmount = BigInt(txParams.amount);
+
+  try {
+    const currentAllowance = await publicClient.readContract({
+      address: tokenToApproveAddress,
+      abi: ERC20_ABI,
+      functionName: "allowance",
+      args: [senderAddress, CROCSWAP_CONTRACT_ADDRESS],
+    });
+
+    console.log(
+      `Current allowance for ${tokenToApproveSymbol}: ${formatUnits(
+        currentAllowance,
+        tokenToApproveDecimals ?? 18
+      )}`
+    );
+    console.log(
+      `Required amount for ${tokenToApproveSymbol}: ${formatUnits(
+        requiredAmount,
+        tokenToApproveDecimals ?? 18
+      )}`
+    );
+
+    if (currentAllowance < requiredAmount) {
+      console.log("Allowance is insufficient. Requesting approval...");
+      alert(
+        `This transaction requires you to first approve the DEX to spend your ${tokenToApproveSymbol}.\nPlease confirm the upcoming approval transaction.`
+      );
+
+      // Step 2: Send approve transaction
+      const approveTxHash = await writeContract({
+        // from @wagmi/core
+        address: tokenToApproveAddress as Address,
+        abi: ERC20_ABI,
+        functionName: "approve",
+        args: [CROCSWAP_CONTRACT_ADDRESS, requiredAmount], // Approve for the exact amount
+        // For max approval (less user prompts later, but more permission):
+        // args: [CROCSWAP_CONTRACT_ADDRESS, MaxUint256],
+      });
+      console.log(
+        `Approval transaction sent: ${approveTxHash}. Waiting for confirmation...`
+      );
+      alert(
+        `Approval transaction sent: ${approveTxHash}.\nWaiting for it to be confirmed before proceeding with adding liquidity...`
+      );
+
+      const receipt = await publicClient.waitForTransactionReceipt({
+        hash: approveTxHash,
+      });
+      if (receipt.status !== "success") {
+        console.error("Token approval transaction failed:", receipt);
+        alert(
+          "Token approval failed. Please check the transaction and try again."
+        );
+        return null;
+      }
+      console.log("Token approval successful!");
+      alert("Token approval successful. Now preparing to add liquidity...");
+    } else {
+      console.log("Sufficient token allowance already exists.");
+    }
+  } catch (approvalError: any) {
+    console.error("Error during token approval process:", approvalError);
+    alert(
+      `Token Approval Error: ${
+        approvalError.shortMessage ||
+        approvalError.message ||
+        "Failed to process token approval."
+      }`
+    );
+    return null;
+  }
+
+  const callpath = CALLPATH_FOR_WARM_PATH;
+  let cmd: Hex;
+  try {
+    cmd = encodeWarmPathAddConcentratedLiquidityCmd(txParams);
+  } catch (encodeError: any) {
+    console.error(
+      "CRITICAL: Failed to encode add liquidity command:",
+      encodeError.message || encodeError
+    );
+    alert(
+      `Encoding Error: ${
+        encodeError.message || "Could not prepare transaction data."
+      }`
+    );
+    return null;
+  }
+
+  // Determine msg.value if native token is involved
+  let nativeTokenValue = 0n;
+  if (txParams.isAmountBase && txParams.pool.base.isNative) {
+    nativeTokenValue = BigInt(txParams.amount);
+  } else if (!txParams.isAmountBase && txParams.pool.quote.isNative) {
+    nativeTokenValue = BigInt(txParams.amount);
+  }
+
+  try {
+    // Step 4: Simulate the userCmd transaction
+    console.log(
+      `Simulating userCmd on ${CROCSWAP_CONTRACT_ADDRESS} with callpath: ${callpath}, cmd: ${cmd}, account: ${senderAddress}`
+    );
+
+    const { request } = await publicClient.simulateContract({
+      // publicClient can also simulate
+      address: CROCSWAP_CONTRACT_ADDRESS,
+      abi: CROCDEX_ABI,
+      functionName: "userCmd",
+      args: [callpath, cmd],
+      account: senderAddress, // Crucial for accurate simulation
+      value: nativeTokenValue > 0n ? nativeTokenValue : undefined,
+    });
+    console.log("Transaction simulation successful. Proceeding to send.");
+
+    // Step 5: If simulation is successful, send the actual transaction
+    const hash = await writeContract(request); // Pass the request from simulation
+
+    console.log("Add Liquidity transaction sent successfully, hash:", hash);
+    alert(`Add Liquidity Transaction Submitted!\nHash: ${hash}`);
+    return hash;
+  } catch (error: any) {
+    // This catches errors from simulateContract or writeContract
+    console.error(
+      "Error during simulation or sending Add Liquidity transaction:",
+      error
+    );
+    let specificMessage = "Unknown error during transaction execution.";
+    if (error.cause) {
+      let cause = error.cause;
+      while (cause.cause) {
+        cause = cause.cause;
+      }
+      specificMessage = cause.shortMessage || cause.message || String(cause);
+    } else {
+      specificMessage = error.shortMessage || error.message || String(error);
+    }
+    alert(`Transaction Failed: ${specificMessage}`);
+    return null;
+  }
+}
+
+// --- React Component ---
+
 interface NewPositionModalProps {
   pool: AmbientPool;
-  sendTxFlow: (params: Partial<AmbientTransactionParams>) => void;
   verifyParams: (params: Partial<AmbientTransactionParams>) => Validation;
 }
+
+const formatPriceForDisplayLocal = (
+  price: number | string,
+  precision: number = 6
+): string => {
+  const num = Number(price);
+  if (isNaN(num) || !isFinite(num)) return "N/A";
+  if (num === 0) return (0).toFixed(Math.min(2, precision));
+  return num.toFixed(precision);
+};
+
 export const NewAmbientPositionModal = ({
   pool,
-  sendTxFlow,
   verifyParams,
 }: NewPositionModalProps) => {
-  const { base: baseToken, quote: quoteToken } = pool;
+  const {
+    base: baseToken,
+    quote: quoteToken,
+    symbol: poolSymbol,
+    stats,
+    tickSize,
+    poolIdx,
+    displayPrecision = 6,
+  } = pool;
   const positionManager = useNewAmbientPositionManager(pool);
-  const positionValidation = verifyParams(
-    positionManager.txParams.addLiquidity()
-  );
 
-  // modal options
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [selectedOption, setSelectedOption] = useState<TickRangeKey>("DEFAULT");
+  const publicClient = usePublicClient();
+  const [graphPoints, setGraphPoints] = useState<{ x: number; y: number }[]>(
+    []
+  );
+  const { isMobile } = useScreenSize();
+
+  const currentMarketPrice = useMemo(() => {
+    return stats &&
+      typeof stats.lastPriceSwap === "number" &&
+      isFinite(stats.lastPriceSwap)
+      ? Number(stats.lastPriceSwap)
+      : 0;
+  }, [stats]);
+
+  useEffect(() => {
+    async function getGraphData() {
+      if (
+        !publicClient ||
+        !baseToken ||
+        !quoteToken ||
+        !stats ||
+        currentMarketPrice === 0 ||
+        typeof tickSize !== "number" ||
+        (typeof poolIdx !== "number" && typeof poolIdx !== "bigint")
+      ) {
+        console.warn(
+          "getGraphData: Pre-conditions not met (client, tokens, stats, valid currentMarketPrice, tickSize, or poolIdx)."
+        );
+        setGraphPoints([]);
+        return;
+      }
+      try {
+        const points = await fetchContractLiquidityCurve(publicClient, {
+          base: baseToken,
+          quote: quoteToken,
+          poolIdx: Number(poolIdx),
+          stats: { lastPriceSwap: currentMarketPrice },
+          tickSize: tickSize,
+        });
+        console.log("Fetched graphPoints for modal:", points);
+        setGraphPoints(points);
+      } catch (error) {
+        console.error(
+          "Error fetching contract liquidity curve for modal:",
+          error
+        );
+        setGraphPoints([]);
+      }
+    }
+    if (showAdvanced) {
+      getGraphData();
+    } else {
+      setGraphPoints([]);
+    }
+  }, [
+    publicClient,
+    baseToken,
+    quoteToken,
+    poolIdx,
+    stats,
+    currentMarketPrice,
+    tickSize,
+    showAdvanced,
+  ]);
+
   function setDefaultParams(tickKey: TickRangeKey) {
     setSelectedOption(tickKey);
     positionManager.setters.setDefaultParams(tickKey);
   }
-  // liquidity graph
-  const [graphPoints, setGraphPoints] = useState<{ x: number; y: number }[]>(
-    []
-  );
-  useEffect(() => {
-    async function getGraph() {
-      const { data: curve, error } = await queryAmbientPoolLiquidityCurve(
-        pool.base.chainId,
-        pool.base.address,
-        pool.quote.address,
-        pool.poolIdx
-      );
-      if (error) console.error(error);
-      setGraphPoints(convertLiquidityCurveToGraph(pool, curve));
-    }
-    getGraph();
-  }, [pool]);
 
-  // set to custom price range
   function setPriceRange(price: { min?: string; max?: string }) {
-    // make sure values are not zero
     positionManager.setters.setRangePrice({
       min: Number(price.min) < 0 ? "0" : price.min,
       max: Number(price.max) < 0 ? "0" : price.max,
@@ -82,14 +476,115 @@ export const NewAmbientPositionModal = ({
     setSelectedOption("CUSTOM");
   }
 
-  const percentDiff = (currentPrice: number, selectedPrice: number) =>
-    formatPercent(((selectedPrice - currentPrice) / currentPrice).toString());
+  const percentDiff = (marketPrice: number, rangePrice: number) => {
+    if (marketPrice === 0 || !isFinite(marketPrice) || !isFinite(rangePrice))
+      return "N/A";
+    return formatPercent(((rangePrice - marketPrice) / marketPrice).toString());
+  };
+
   function getWeiRangePrice(priceFormatted: string): string {
-    const scale = BigNumber(10).pow(pool.base.decimals - pool.quote.decimals);
+    if (
+      !baseToken ||
+      !quoteToken ||
+      typeof baseToken.decimals !== "number" ||
+      typeof quoteToken.decimals !== "number"
+    ) {
+      console.warn("getWeiRangePrice: Missing token decimal information.");
+      return "0";
+    }
+    const scale = BN(10).pow(baseToken.decimals - quoteToken.decimals);
     const priceWei = scale.multipliedBy(priceFormatted).toString();
     return priceWei;
   }
-  const { isMobile } = useScreenSize();
+
+  const graphXAxis = useMemo(() => {
+    let minX: number, maxX: number;
+    if (graphPoints.length > 1) {
+      const xValues = graphPoints.map((p) => p.x).filter((x) => isFinite(x));
+      if (xValues.length > 0) {
+        minX = Math.min(...xValues);
+        maxX = Math.max(...xValues);
+        const spread = maxX - minX;
+        const padding =
+          spread === 0
+            ? minX === 0
+              ? 0.01
+              : Math.abs(minX * 0.01)
+            : spread * 0.1;
+        minX = Math.max(0, minX - padding);
+        maxX = maxX + padding;
+      } else {
+        minX = currentMarketPrice > 0 ? currentMarketPrice * 0.95 : 0.95;
+        maxX = currentMarketPrice > 0 ? currentMarketPrice * 1.05 : 1.05;
+      }
+    } else if (currentMarketPrice > 0) {
+      minX = currentMarketPrice * 0.988;
+      maxX = currentMarketPrice * 1.02;
+    } else {
+      minX = 0.95;
+      maxX = 1.05;
+    }
+    if (minX === maxX) {
+      minX = minX > 0 ? minX * 0.99 : minX === 0 ? 0 : -0.01;
+      maxX = maxX > 0 ? maxX * 1.01 : maxX === 0 ? 1 : 0.01;
+      if (minX === 0 && maxX === 0) {
+        maxX = 1;
+      }
+    }
+    return { min: minX, max: maxX };
+  }, [graphPoints, currentMarketPrice]);
+
+  const graphYAxis = useMemo(() => {
+    let maxY = 0.00001;
+    if (graphPoints.length > 0) {
+      const yValues = graphPoints.map((p) => p.y).filter((y) => isFinite(y));
+      if (yValues.length > 0) {
+        const dataMaxY = Math.max(...yValues);
+        maxY = dataMaxY > 0 ? dataMaxY * 1.1 : maxY;
+      }
+    }
+    return { min: -maxY * 0.05, max: maxY };
+  }, [graphPoints]);
+
+  const handleAddLiquidityClick = async () => {
+    const coreLiquidityParams = positionManager.txParams.addLiquidity();
+
+    const paramsForValidation: Partial<AmbientTransactionParams> = {
+      ...coreLiquidityParams,
+      txType: AmbientTxType.ADD_CONC_LIQUIDITY,
+    };
+
+    // const validation = verifyParams(paramsForValidation);
+    // if (validation.error) {
+    //   console.warn(
+    //     "Add Liquidity pre-flight validation failed:",
+    //     validation.reason
+    //   );
+    //   alert(`Validation Error: ${validation.reason}`);
+    //   return;
+    // }
+
+    const txHash = await sendCrocSwapAddLiquidityTx(
+      coreLiquidityParams,
+      "0x8c93CEfa8aF3dC6279d044Bd02d35b88b9BADadC",
+      publicClient
+    );
+
+    if (txHash) {
+      // TODO: Add post-submission UI updates (e.g., close modal, show success toast, refresh user positions)
+    } else {
+      console.error("Modal: Add Liquidity transaction submission failed.");
+    }
+  };
+
+  const currentTxForValidation: Partial<AmbientTransactionParams> =
+    useMemo(() => {
+      return {
+        ...positionManager.txParams.addLiquidity(),
+        txType: AmbientTxType.ADD_CONC_LIQUIDITY,
+      };
+    }, [positionManager]);
+
   return (
     <Container
       width={
@@ -104,36 +599,33 @@ export const NewAmbientPositionModal = ({
         <Container>
           <Container
             direction="row"
-            gap={"auto"}
-            center={{
-              horizontal: true,
-              vertical: true,
-            }}
+            gap="auto"
+            center={{ horizontal: true, vertical: true }}
             width="100%"
           >
-            <div></div>
-            {/* <Text size="lg">Deposit Amounts</Text> */}
+            <div />
             <Container
               direction="row"
-              center={{
-                horizontal: true,
-                vertical: true,
-              }}
+              center={{ horizontal: true, vertical: true }}
               gap={10}
             >
               <Text theme="secondary-dark" size="x-sm">
                 Advanced
-              </Text>{" "}
+              </Text>
               <Toggle
                 value={showAdvanced}
                 onChange={(advanced) => {
-                  // reset prices to default
-                  if (advanced) {
+                  if (
+                    advanced &&
+                    poolSymbol &&
+                    baseToken?.symbol &&
+                    quoteToken?.symbol
+                  ) {
                     Analytics.actions.events.liquidityPool.ambientDexLpModal.advanceClicked(
                       {
-                        ambientLp: pool.symbol,
-                        baseToken: pool.base.symbol,
-                        quoteToken: pool.quote.symbol,
+                        ambientLp: poolSymbol,
+                        baseToken: baseToken.symbol,
+                        quoteToken: quoteToken.symbol,
                       }
                     );
                   }
@@ -145,50 +637,48 @@ export const NewAmbientPositionModal = ({
           </Container>
           <Spacer height="10px" />
           <div className={styles.iconTitle}>
-            <Icon icon={{ url: pool.logoURI, size: 60 }} />
             <Text size="lg" font="proto_mono">
-              {pool.symbol}
+              {poolSymbol ?? "Pool"}
             </Text>
           </div>
-
           <Spacer height="10px" />
           <Amount
-            decimals={baseToken.decimals}
+            decimals={baseToken?.decimals ?? 18}
             value={positionManager.options.amountBase}
             onChange={(e) =>
               positionManager.setters.setAmount(e.target.value, true)
             }
-            IconUrl={baseToken.logoURI}
-            title={baseToken.symbol}
+            IconUrl={baseToken?.logoURI}
+            title={baseToken?.symbol ?? "Base"}
             min="0"
-            max={baseToken.balance ?? "0"}
+            max={baseToken?.balance ?? "0"}
             maxName="LP Modal"
-            symbol={baseToken.symbol}
+            symbol={baseToken?.symbol ?? "BASE"}
             ambientAmountError={
-              Number(pool.stats.lastPriceSwap) <=
-                Number(
-                  getWeiRangePrice(positionManager.options.minRangePrice)
-                ) && Number(positionManager.options.amountBase) !== 0
+              currentMarketPrice > 0 &&
+              currentMarketPrice <=
+                Number(positionManager.options.minRangePrice) &&
+              Number(positionManager.options.amountBase) !== 0
             }
           />
           <Spacer height="12px" />
           <Amount
-            decimals={quoteToken.decimals}
+            decimals={quoteToken?.decimals ?? 18}
             value={positionManager.options.amountQuote}
             onChange={(e) =>
               positionManager.setters.setAmount(e.target.value, false)
             }
-            IconUrl={quoteToken.logoURI}
-            title={quoteToken.symbol}
+            IconUrl={quoteToken?.logoURI}
+            title={quoteToken?.symbol ?? "Quote"}
             min="0"
-            max={quoteToken.balance ?? "0"}
+            max={quoteToken?.balance ?? "0"}
             maxName="LP Modal"
-            symbol={quoteToken.symbol}
+            symbol={quoteToken?.symbol ?? "QUOTE"}
             ambientAmountError={
-              Number(pool.stats.lastPriceSwap) >=
-                Number(
-                  getWeiRangePrice(positionManager.options.maxRangePrice)
-                ) && Number(positionManager.options.amountQuote) !== 0
+              currentMarketPrice > 0 &&
+              currentMarketPrice >=
+                Number(positionManager.options.maxRangePrice) &&
+              Number(positionManager.options.amountQuote) !== 0
             }
           />
           <Spacer height="20px" />
@@ -196,17 +686,15 @@ export const NewAmbientPositionModal = ({
             <ModalItem
               name="Current Price"
               value={
-                displayAmount(
-                  pool.stats.lastPriceSwap.toString(),
-                  pool.base.decimals - pool.quote.decimals,
-                  {
-                    precision: 3,
-                  }
-                ) +
-                " " +
-                pool.base.symbol +
-                " = 1 " +
-                pool.quote.symbol
+                stats &&
+                typeof stats.lastPriceSwap === "number" &&
+                baseToken?.symbol &&
+                quoteToken?.symbol
+                  ? `${formatPriceForDisplayLocal(
+                      stats.lastPriceSwap,
+                      displayPrecision
+                    )} ${baseToken.symbol} / ${quoteToken.symbol}`
+                  : "N/A"
               }
             />
             <ModalItem
@@ -230,15 +718,15 @@ export const NewAmbientPositionModal = ({
                         <Text
                           theme="secondary-dark"
                           size="sm"
-                          style={{
-                            textAlign: "right",
-                          }}
+                          style={{ textAlign: "right" }}
                         >
                           ?
                         </Text>
                       </span>
                       <Text>
-                        {formatPercent(pool.stats.feeRate.toString())}
+                        {stats && typeof stats.feeRate === "number"
+                          ? formatPercent(stats.feeRate.toString())
+                          : "N/A"}
                       </Text>
                     </Container>
                   </PopUp>
@@ -249,17 +737,13 @@ export const NewAmbientPositionModal = ({
               name="Min Execution Price: "
               value={
                 <Container
-                  center={{
-                    vertical: true,
-                  }}
+                  center={{ vertical: true }}
                   gap={10}
                   direction="row"
-                  style={{
-                    width: "100px",
-                  }}
+                  style={{ width: "100px" }}
                 >
                   <Input
-                    height={"sm"}
+                    height="sm"
                     type="number"
                     value={positionManager.options.minExecutionPrice}
                     onChange={(e) =>
@@ -276,17 +760,13 @@ export const NewAmbientPositionModal = ({
               name="Max Execution Price: "
               value={
                 <Container
-                  center={{
-                    vertical: true,
-                  }}
+                  center={{ vertical: true }}
                   gap={10}
                   direction="row"
-                  style={{
-                    width: "100px",
-                  }}
+                  style={{ width: "100px" }}
                 >
                   <Input
-                    height={"sm"}
+                    height="sm"
                     type="number"
                     value={positionManager.options.maxExecutionPrice}
                     onChange={(e) =>
@@ -307,16 +787,21 @@ export const NewAmbientPositionModal = ({
             epochs.
           </Text>
           <Spacer height="8px" />
-
           {!showAdvanced && (
             <Container className={styles.card}>
               <ModalItem
                 name="Min Range Price: "
-                value={positionManager.options.minRangePrice}
+                value={formatPriceForDisplayLocal(
+                  positionManager.options.minRangePrice,
+                  displayPrecision
+                )}
               />
               <ModalItem
                 name="Max Range Price: "
-                value={positionManager.options.maxRangePrice}
+                value={formatPriceForDisplayLocal(
+                  positionManager.options.maxRangePrice,
+                  displayPrecision
+                )}
               />
             </Container>
           )}
@@ -329,30 +814,17 @@ export const NewAmbientPositionModal = ({
                 title="Set Price Range"
                 points={graphPoints}
                 options={{
-                  axis: {
-                    x: { min: 0.988, max: 1.02 },
-                  },
-                  boundaries: {
-                    x: {
-                      min: 0,
-                      max: Infinity,
-                    },
-                  },
+                  axis: { x: graphXAxis, y: graphYAxis },
+                  boundaries: { x: { min: 0, max: Infinity } },
                 }}
                 parentOptions={{
-                  currentXValue: Number(
-                    formatBalance(
-                      pool.stats.lastPriceSwap,
-                      pool.base.decimals - pool.quote.decimals,
-                      { precision: 10 }
-                    )
-                  ),
+                  currentXValue: currentMarketPrice,
                   minXValue: Number(positionManager.options.minRangePrice),
                   maxXValue: Number(positionManager.options.maxRangePrice),
                   setValues: (prices) =>
                     setPriceRange({
-                      min: prices.min?.toFixed(4),
-                      max: prices.max?.toFixed(4),
+                      min: prices.min?.toFixed(displayPrecision),
+                      max: prices.max?.toFixed(displayPrecision),
                     }),
                 }}
               />
@@ -372,13 +844,7 @@ export const NewAmbientPositionModal = ({
                 price={positionManager.options.minRangePrice}
                 onPriceChange={(price) => setPriceRange({ min: price })}
                 description={percentDiff(
-                  Number(
-                    formatBalance(
-                      pool.stats.lastPriceSwap,
-                      pool.base.decimals - pool.quote.decimals,
-                      { precision: 10 }
-                    )
-                  ),
+                  currentMarketPrice,
                   Number(positionManager.options.minRangePrice ?? "0")
                 )}
               />
@@ -388,13 +854,7 @@ export const NewAmbientPositionModal = ({
                 price={positionManager.options.maxRangePrice}
                 onPriceChange={(price) => setPriceRange({ max: price })}
                 description={percentDiff(
-                  Number(
-                    formatBalance(
-                      pool.stats.lastPriceSwap,
-                      pool.base.decimals - pool.quote.decimals,
-                      { precision: 10 }
-                    )
-                  ),
+                  currentMarketPrice,
                   Number(positionManager.options.maxRangePrice ?? "0")
                 )}
               />
@@ -404,18 +864,11 @@ export const NewAmbientPositionModal = ({
       </Container>
       <Spacer height="15px" />
       <Button
-        disabled={positionValidation.error}
-        width={"fill"}
-        onClick={() =>
-          sendTxFlow({
-            ...positionManager.txParams.addLiquidity(),
-            isAdvanced: showAdvanced,
-          })
-        }
+        // disabled={verifyParams(currentTxForValidation).error}
+        width="fill"
+        onClick={handleAddLiquidityClick}
       >
-        {positionValidation.error
-          ? positionValidation.reason
-          : "Add Concentrated Liquidity"}
+        Add LP
       </Button>
       <Spacer height="30px" />
     </Container>

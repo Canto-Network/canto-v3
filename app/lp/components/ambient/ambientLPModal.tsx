@@ -26,17 +26,13 @@ interface AmbientModalProps {
 }
 
 export const AmbientModal = (props: AmbientModalProps) => {
+  console.log("ambient props", props);
   const [selectedPosition, setSelectedPosition] = useState<
     AmbientUserPosition | null | "new"
-  >(null);
+  >("new");
 
   type ModalState = "list" | "new" | "manage";
-  const modalState: ModalState =
-    props.pool.userPositions.length === 0 || selectedPosition === "new"
-      ? "new"
-      : !selectedPosition
-        ? "list"
-        : "manage";
+  const modalState: ModalState = "new";
 
   const title = () => {
     switch (modalState) {
@@ -152,7 +148,7 @@ const PositionList = ({
     >
       <Spacer height="20px" />
       <Container gap={20} className={styles["items-list"]}>
-        {positions.map((item, idx) => (
+        {positions?.map((item, idx) => (
           <Container
             key={idx}
             width="100%"
