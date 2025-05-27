@@ -6,7 +6,7 @@ import {
   parseAbiParameter,
   formatUnits,
 } from "viem";
-import { usePublicClient } from "wagmi";
+import { usePublicClient, useAccount } from "wagmi";
 import { writeContract } from "@wagmi/core";
 
 import styles from "../dexModals/cantoDex.module.scss";
@@ -42,6 +42,7 @@ import { fetchContractLiquidityCurve } from "@/hooks/pairs/newAmbient/helpers/if
 import { CROCDEX_ABI } from "@/config/abis/crocdex";
 import { publicClient } from "@/hooks/pairs/useCrocData";
 import { ERC20_ABI } from "@/config/abis";
+import { useAddressTokenBalancesQuery } from "@/hooks/swap/useAddressTokenBalances";
 
 /*
 Example AmbientPool interface structure assumed by this component:
@@ -385,6 +386,7 @@ export const NewAmbientPositionModal = ({
   pool,
   verifyParams,
 }: NewPositionModalProps) => {
+  console.log("pool", pool);
   const {
     base: baseToken,
     quote: quoteToken,
@@ -411,6 +413,27 @@ export const NewAmbientPositionModal = ({
       ? Number(stats.lastPriceSwap)
       : 0;
   }, [stats]);
+
+  const { address: userAddress } = useAccount();
+  const { data: tokenBalances } = useAddressTokenBalancesQuery(userAddress);
+
+
+  const baseBalanceObj = (tokenBalances ?? []).find(
+    (b) => b.token.address.toLowerCase() === pool.base.address.toLowerCase()
+  );
+  const quoteBalanceObj = (tokenBalances ?? []).find(
+    (b) => b.token.address.toLowerCase() === pool.quote.address.toLowerCase()
+  );
+
+  const baseTokenWithBalance = {
+    ...pool.base,
+    balance: baseBalanceObj ? baseBalanceObj.value.toString() : "0",
+  };
+  const quoteTokenWithBalance = {
+    ...pool.quote,
+    balance: quoteBalanceObj ? quoteBalanceObj.value.toString() : "0",
+  };
+
 
   useEffect(() => {
     async function getGraphData() {
@@ -643,17 +666,17 @@ export const NewAmbientPositionModal = ({
           </div>
           <Spacer height="10px" />
           <Amount
-            decimals={baseToken?.decimals ?? 18}
+            decimals={baseTokenWithBalance.decimals}
             value={positionManager.options.amountBase}
             onChange={(e) =>
               positionManager.setters.setAmount(e.target.value, true)
             }
-            IconUrl={baseToken?.logoURI}
-            title={baseToken?.symbol ?? "Base"}
+            IconUrl={baseTokenWithBalance.logoURI}
+            title={baseTokenWithBalance.symbol ?? "Base"}
             min="0"
-            max={baseToken?.balance ?? "0"}
+            max={baseTokenWithBalance.balance}
             maxName="LP Modal"
-            symbol={baseToken?.symbol ?? "BASE"}
+            symbol={baseTokenWithBalance.symbol ?? "BASE"}
             ambientAmountError={
               currentMarketPrice > 0 &&
               currentMarketPrice <=
@@ -663,17 +686,17 @@ export const NewAmbientPositionModal = ({
           />
           <Spacer height="12px" />
           <Amount
-            decimals={quoteToken?.decimals ?? 18}
+            decimals={quoteTokenWithBalance.decimals}
             value={positionManager.options.amountQuote}
             onChange={(e) =>
               positionManager.setters.setAmount(e.target.value, false)
             }
-            IconUrl={quoteToken?.logoURI}
-            title={quoteToken?.symbol ?? "Quote"}
+            IconUrl={quoteTokenWithBalance.logoURI}
+            title={quoteTokenWithBalance.symbol ?? "Quote"}
             min="0"
-            max={quoteToken?.balance ?? "0"}
+            max={quoteTokenWithBalance.balance}
             maxName="LP Modal"
-            symbol={quoteToken?.symbol ?? "QUOTE"}
+            symbol={quoteTokenWithBalance.symbol ?? "QUOTE"}
             ambientAmountError={
               currentMarketPrice > 0 &&
               currentMarketPrice >=
@@ -688,8 +711,8 @@ export const NewAmbientPositionModal = ({
               value={
                 stats &&
                 typeof stats.lastPriceSwap === "number" &&
-                baseToken?.symbol &&
-                quoteToken?.symbol
+                baseToken.symbol &&
+                quoteToken.symbol
                   ? `${formatPriceForDisplayLocal(
                       stats.lastPriceSwap,
                       displayPrecision
