@@ -112,7 +112,7 @@ const POOLS_TO_CHECK = [
   {
     base: "0x80b5a32E4F032B2a058b4F29EC95EEfEEB87aDcd",
     quote: "0xEe602429Ef7eCe0a13e4FfE8dBC16e101049504C",
-    poolIdx: 420n,
+    poolIdx: 421n,
   },
   {
     base: "0x4e71a2e537b7f9d9413d3991d37958c0b5e1e503",
