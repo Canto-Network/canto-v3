@@ -83,6 +83,24 @@ export const TOKENS: Record<Address, TokenMetaCroc> = {
     decimals: 18,
     logoURI: "/icons/canto.svg",
   },
+
+  [getAddress("0x80b5a32E4F032B2a058b4F29EC95EEfEEB87aDcd")]: {
+    chainId: 7700,
+    address: getAddress("0x80b5a32E4F032B2a058b4F29EC95EEfEEB87aDcd"),
+    symbol: "USDC",
+    name: "USD Coin",
+    decimals: 6,
+    logoURI: "/icons/usdc.svg",
+  },
+
+  [getAddress("0xEe602429Ef7eCe0a13e4FfE8dBC16e101049504C")]: {
+    chainId: 7700,
+    address: getAddress("0xEe602429Ef7eCe0a13e4FfE8dBC16e101049504C"),
+    symbol: "cNOTE",
+    name: "Collateral Note",
+    decimals: 18,
+    logoURI: "/icons/cNote.svg",
+  },
 };
 
 const POOLS_TO_CHECK = [
@@ -90,6 +108,16 @@ const POOLS_TO_CHECK = [
     base: "0x4e71a2e537b7f9d9413d3991d37958c0b5e1e503",
     quote: "0x826551890dc65655a0aceca109ab11abdbd7a07b",
     poolIdx: 36000n,
+  },
+  {
+    base: "0x80b5a32E4F032B2a058b4F29EC95EEfEEB87aDcd",
+    quote: "0xEe602429Ef7eCe0a13e4FfE8dBC16e101049504C",
+    poolIdx: 420n,
+  },
+  {
+    base: "0x4e71a2e537b7f9d9413d3991d37958c0b5e1e503",
+    quote: "0x80b5a32E4F032B2a058b4F29EC95EEfEEB87aDcd",
+    poolIdx: 421n,
   },
 ];
 
@@ -137,7 +165,7 @@ export async function listAllPools(): Promise<CrocPool[]> {
       args: [base as Address, quote as Address, poolIdx],
     });
 
-    console.log("pools param", params);
+    console.log("pools param", params, poolIdx);
 
     if (params.schema_ === 0) continue;
 
@@ -161,7 +189,7 @@ export async function listAllPools(): Promise<CrocPool[]> {
       base: baseMeta,
       quote: quoteMeta,
       poolIdx: Number(poolIdx),
-      symbol: "WCANTO-NOTE",
+      symbol: `${baseMeta.symbol}-${quoteMeta.symbol}`,
       feeRate: Number(params.feeRate_) / 1e6,
       tickSize: Number(params.tickSize_),
       stable: quoteMeta.symbol === "NOTE",
