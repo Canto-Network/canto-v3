@@ -81,8 +81,8 @@ const CrocSlots = {
 
 const CALLPATH_FOR_WARM_PATH = CrocSlots.LP_PROXY_IDX; // e.g., 1
 
-const USER_CMD_MINT_RANGE_BASE_LP = 0x02; // EXAMPLE GUESS
-const USER_CMD_MINT_RANGE_QUOTE_LP = 0x03; // EXAMPLE GUESS
+const USER_CMD_MINT_RANGE_BASE_LP = 11;
+const USER_CMD_MINT_RANGE_QUOTE_LP = 12;
 
 function humanPriceToSqrtPriceQ64_64(
   humanPriceBasePerQuote: string | number | BN
@@ -253,8 +253,7 @@ async function sendCrocSwapAddLiquidityTx(
       );
 
       // Step 2: Send approve transaction
-      const approveTxHash = await writeContract({
-        // from @wagmi/core
+      const approveTx = await writeContract({
         address: tokenToApproveAddress as Address,
         abi: ERC20_ABI,
         functionName: "approve",
@@ -263,14 +262,14 @@ async function sendCrocSwapAddLiquidityTx(
         // args: [CROCSWAP_CONTRACT_ADDRESS, MaxUint256],
       });
       console.log(
-        `Approval transaction sent: ${approveTxHash}. Waiting for confirmation...`
+        `Approval transaction sent: ${approveTx.hash}. Waiting for confirmation...`
       );
       alert(
-        `Approval transaction sent: ${approveTxHash}.\nWaiting for it to be confirmed before proceeding with adding liquidity...`
+        `Approval transaction sent: ${approveTx.hash}.\nWaiting for it to be confirmed before proceeding with adding liquidity...`
       );
 
       const receipt = await publicClient.waitForTransactionReceipt({
-        hash: approveTxHash,
+        hash: approveTx.hash,
       });
       if (receipt.status !== "success") {
         console.error("Token approval transaction failed:", receipt);
@@ -405,6 +404,7 @@ export const NewAmbientPositionModal = ({
     []
   );
   const { isMobile } = useScreenSize();
+  const { address: userAddress } = useAccount();
 
   const currentMarketPrice = useMemo(() => {
     return stats &&
@@ -414,9 +414,7 @@ export const NewAmbientPositionModal = ({
       : 0;
   }, [stats]);
 
-  const { address: userAddress } = useAccount();
   const { data: tokenBalances } = useAddressTokenBalancesQuery(userAddress);
-
 
   const baseBalanceObj = (tokenBalances ?? []).find(
     (b) => b.token.address.toLowerCase() === pool.base.address.toLowerCase()
@@ -433,7 +431,6 @@ export const NewAmbientPositionModal = ({
     ...pool.quote,
     balance: quoteBalanceObj ? quoteBalanceObj.value.toString() : "0",
   };
-
 
   useEffect(() => {
     async function getGraphData() {
@@ -570,6 +567,10 @@ export const NewAmbientPositionModal = ({
   }, [graphPoints]);
 
   const handleAddLiquidityClick = async () => {
+    if (!userAddress) {
+      alert("Please connect your wallet.");
+      return;
+    }
     const coreLiquidityParams = positionManager.txParams.addLiquidity();
 
     const paramsForValidation: Partial<AmbientTransactionParams> = {
@@ -589,7 +590,7 @@ export const NewAmbientPositionModal = ({
 
     const txHash = await sendCrocSwapAddLiquidityTx(
       coreLiquidityParams,
-      "0x8c93CEfa8aF3dC6279d044Bd02d35b88b9BADadC",
+      userAddress,
       publicClient
     );
 
