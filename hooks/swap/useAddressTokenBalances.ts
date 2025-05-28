@@ -1,6 +1,7 @@
 import {
   atomAddress,
   cantoAddress,
+  cNoteAddress,
   ethAddress,
   noteAddress,
   usdcAddress,
@@ -46,6 +47,12 @@ const TOKENS: any = [
   { address: atomAddress, symbol: "ATOM", decimals: 6, type: TokenType.ERC20 },
   { address: usdtAddress, symbol: "USDT", decimals: 6, type: TokenType.ERC20 },
   { address: ethAddress, symbol: "ETH", decimals: 18, type: TokenType.ERC20 },
+  {
+    address: cNoteAddress,
+    symbol: "cNOTE",
+    decimals: 18,
+    type: TokenType.ERC20,
+  },
 ];
 
 type TokenBalance = {

@@ -347,7 +347,9 @@ async function sendCrocSwapAddLiquidityTx(
     // This catches errors from simulateContract or writeContract
     console.error(
       "Error during simulation or sending Add Liquidity transaction:",
-      error
+      error, 
+      error.message,
+      error.data
     );
     let specificMessage = "Unknown error during transaction execution.";
     if (error.cause) {

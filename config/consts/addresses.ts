@@ -118,6 +118,7 @@ export const noteAddress = "0x4e71a2e537b7f9d9413d3991d37958c0b5e1e503";
 export const ethAddress = "0x5fd55a1b9fc24967c4db09c513c3ba0dfa7ff687";
 export const usdtAddress = "0xd567b3d7b8fe3c79a1ad8da978812cfc4fa05e75";
 export const atomAddress = "0xeceeefcee421d8062ef8d6b4d814efe4dc898265";
+export const cNoteAddress = "0xEe602429Ef7eCe0a13e4FfE8dBC16e101049504C";
 export const cantoNotePairAddress =
   "0x1d20635535307208919f0b67c3b2065965a85aa9";
 export const cantoAtomPairAddress =
