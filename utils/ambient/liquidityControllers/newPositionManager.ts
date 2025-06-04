@@ -7,7 +7,6 @@ import {
 import BigNumber from "bignumber.js";
 import {
   getDisplayTokenAmountFromRange,
-  getTickFromPrice,
 } from "@/utils/ambient";
 import { convertToBigNumber } from "@/utils/formatting";
 import { AmbientPool } from "@/hooks/pairs/newAmbient/interfaces/ambientPools";
@@ -15,6 +14,7 @@ import {
   AmbientAddConcentratedLiquidityParams,
   AmbientTxType,
 } from "@/transactions/pairs/ambient";
+import { priceToTick, encodeCrocPrice } from "@crocswap-libs/sdk/dist/utils/price";
 
 /**
  * @notice manages the cretion of a new ambient position
@@ -55,19 +55,15 @@ export function useNewAmbientPositionManager(pool: AmbientPool) {
     // Convert formatted prices to numbers
     const minPrice = Number(minPriceFormatted);
     const maxPrice = Number(maxPriceFormatted);
-    
     // Get current price and calculate slippage
     const currentPrice = Number(pool.stats.lastPriceSwap);
     const slippage = 0.5; // 0.5% default slippage
-    
     // Calculate execution prices with slippage
     const minExecPrice = currentPrice * (1 - slippage / 100);
     const maxExecPrice = currentPrice * (1 + slippage / 100);
-    
     // Use the more conservative of range prices and execution prices
     const finalMinPrice = Math.min(minPrice, minExecPrice);
     const finalMaxPrice = Math.max(maxPrice, maxExecPrice);
-    
     // Return prices in their original format (base/quote)
     // The contract will handle conversion to Q64.64 format
     return {
@@ -142,8 +138,7 @@ export function useNewAmbientPositionManager(pool: AmbientPool) {
   }
 
   // uses internal state to create all wei values to pass into add liquidity tx
-  function createAddConcLiquidityTxParams(): AmbientAddConcentratedLiquidityParams {
-    // convert everything into wei
+  function createAddConcLiquidityTxParams(): AmbientAddConcentratedLiquidityParams | null {
     const rangePrices = getWeiRangePrices(
       userInputs.minRangePrice,
       userInputs.maxRangePrice
@@ -159,11 +154,23 @@ export function useNewAmbientPositionManager(pool: AmbientPool) {
         baseAmount ? pool.base.decimals : pool.quote.decimals
       ).data?.toString() ?? "0";
 
-    // get ticks from range prices
-    let lowerTick = getTickFromPrice(userInputs.minRangePrice, pool.tickSize);
-    let upperTick = getTickFromPrice(userInputs.maxRangePrice, pool.tickSize);
-    if (!Number.isFinite(lowerTick)) lowerTick = 0;
-    if (!Number.isFinite(upperTick)) upperTick = 0;
+    // --- SDK Tick Calculation ---
+    const minPrice = Number(userInputs.minRangePrice);
+    const maxPrice = Number(userInputs.maxRangePrice);
+    const tickSpacing = pool.tickSize;
+    const currentPrice = Number(pool.stats.lastPriceSwap);
+    if (
+      !isFinite(minPrice) || minPrice <= 0 ||
+      !isFinite(maxPrice) || maxPrice <= 0 ||
+      !isFinite(currentPrice) || currentPrice <= 0
+    ) {
+      throw new Error("Invalid price input for liquidity calculation.");
+    }
+    const lowerTick = Math.floor(priceToTick(minPrice) / tickSpacing) * tickSpacing;
+    const upperTick = Math.ceil(priceToTick(maxPrice) / tickSpacing) * tickSpacing;
+
+    const minExecPriceQ64 = encodeCrocPrice(Number(executionPrices.minPriceWei)).toString();
+    const maxExecPriceQ64 = encodeCrocPrice(Number(executionPrices.maxPriceWei)).toString();
 
     return {
       pool: pool,
@@ -172,8 +179,8 @@ export function useNewAmbientPositionManager(pool: AmbientPool) {
       isAmountBase: baseAmount,
       upperTick,
       lowerTick,
-      minExecPriceWei: executionPrices.minPriceWei,
-      maxExecPriceWei: executionPrices.maxPriceWei,
+      minExecPriceWei: minExecPriceQ64,
+      maxExecPriceWei: maxExecPriceQ64,
     };
   }
 

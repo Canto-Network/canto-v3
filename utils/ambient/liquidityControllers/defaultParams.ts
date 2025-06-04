@@ -1,5 +1,5 @@
 import { AmbientPool } from "@/hooks/pairs/newAmbient/interfaces/ambientPools";
-import { getPriceFromTick, getTickFromPrice } from "..";
+import { priceToTick, tickToPrice } from "@crocswap-libs/sdk/dist/utils/price";
 import { formatBalance } from "@/utils/formatting";
 
 /**
@@ -35,42 +35,30 @@ export const defaultPriceRangeFormatted = (
   tickRange: TickRangeKey
 ) => {
   // get current price
-  const midpointPrice = pool.stats.lastPriceSwap;
-  const midpointTick = getTickFromPrice(midpointPrice);
-  
-  console.log(`[Price Range Debug] Pool: ${pool.base.symbol}-${pool.quote.symbol}`);
-  console.log(`[Price Range Debug] Current Price: ${midpointPrice}`);
-  console.log(`[Price Range Debug] Midpoint Tick: ${midpointTick}`);
-  
+  const midpointPrice = Number(pool.stats.lastPriceSwap);
+  const midpointTick = priceToTick(midpointPrice);
+
   // Calculate a reasonable tick range based on the current price
-  // For very small prices (< 1e-6), use a smaller range multiplier
-  const rangeMultiplier = Number(midpointPrice) < 1e-6 ? 0.1 : 1;
-  const adjustedRange = Math.floor(DEFAULT_CONC_LIQ_TICK_RANGES[tickRange] * rangeMultiplier);
-  
-  console.log(`[Price Range Debug] Range Multiplier: ${rangeMultiplier}`);
-  console.log(`[Price Range Debug] Adjusted Range: ${adjustedRange}`);
-  
-  // lower tick and price
+  const adjustedRange = DEFAULT_CONC_LIQ_TICK_RANGES[tickRange];
+
+  // lower tick and price using SDK
   const lowerTick = midpointTick - adjustedRange;
-  const minPrice = getPriceFromTick(lowerTick);
+  const minPrice = tickToPrice(lowerTick);
   const minPriceFormatted = formatBalance(
-    minPrice,
+    minPrice.toString(),
     pool.base.decimals - pool.quote.decimals,
     { precision: 5 }
   );
-  
-  // upper tick and price
+
+  // upper tick and price using SDK
   const upperTick = midpointTick + adjustedRange;
-  const maxPrice = getPriceFromTick(upperTick);
+  const maxPrice = tickToPrice(upperTick);
   const maxPriceFormatted = formatBalance(
-    maxPrice,
+    maxPrice.toString(),
     pool.base.decimals - pool.quote.decimals,
     { precision: 5 }
   );
-  
-  console.log(`[Price Range Debug] Lower Tick: ${lowerTick}, Price: ${minPrice}`);
-  console.log(`[Price Range Debug] Upper Tick: ${upperTick}, Price: ${maxPrice}`);
-  
+
   return {
     minPriceFormatted: minPrice.toString(),
     maxPriceFormatted: maxPrice.toString(),

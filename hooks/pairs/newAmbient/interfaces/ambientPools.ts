@@ -35,6 +35,7 @@ export interface AmbientPool extends BaseAmbientPool {
     feeRate: number;
   };
   userPositions: AmbientUserPosition[];
+  tickSize: number;
   userRewards: string;
   totals: {
     noteTvl: string;

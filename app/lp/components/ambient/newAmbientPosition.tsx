@@ -45,6 +45,13 @@ import { ERC20_ABI } from "@/config/abis";
 import { useAddressTokenBalancesQuery } from "@/hooks/swap/useAddressTokenBalances";
 import { CROCDEX_ABI } from "@/config/abis/crocdex";
 
+import {
+  liquidityForBaseConc,
+  liquidityForQuoteConc,
+  roundForConcLiq,
+} from "@crocswap-libs/sdk/dist/utils/liquidity";
+import { BigNumber as EthersBigNumber } from "ethers";
+
 /*
 Example AmbientPool interface structure assumed by this component:
 interface TokenData {
@@ -90,36 +97,35 @@ const USER_CMD_MINT_RANGE_LIQ_LP = 0x01; // 1 in hex
 const USER_CMD_MINT_RANGE_BASE_LP = 0x0b; // 11 in hex
 const USER_CMD_MINT_RANGE_QUOTE_LP = 0x0c; // 12 in hex
 
-function humanPriceToSqrtPriceQ64_64(
-  humanPriceBasePerQuote: string | number | BN
-): bigint {
-  const priceBQ = new BN(humanPriceBasePerQuote);
-  if (priceBQ.isLessThanOrEqualTo(0)) {
-    console.error(
-      "humanPriceToSqrtPriceQ64_64: Input price (Base/Quote) must be positive:",
-      priceBQ.toString()
-    );
-    throw new Error("Price limit must be positive for sqrtPrice conversion.");
-  }
-  const priceQB = new BN(1).dividedBy(priceBQ);
-  if (priceQB.isLessThanOrEqualTo(0) || !priceQB.isFinite()) {
-    console.error(
-      `humanPriceToSqrtPriceQ64_64: Cannot convert price ${priceBQ.toString()} to a valid Quote/Base sqrtPrice.`
-    );
-    throw new Error(
-      `Invalid price for sqrtPrice conversion: ${priceBQ.toString()}`
-    );
-  }
+// function humanPriceToSqrtPriceQ64_64(
+//   humanPriceBasePerQuote: string | number | BN
+// ): bigint {
+//   const priceBQ = new BN(humanPriceBasePerQuote);
+//   if (priceBQ.isLessThanOrEqualTo(0)) {
+//     console.error(
+//       "humanPriceToSqrtPriceQ64_64: Input price (Base/Quote) must be positive:",
+//       priceBQ.toString()
+//     );
+//     throw new Error("Price limit must be positive for sqrtPrice conversion.");
+//   }
+//   const priceQB = new BN(1).dividedBy(priceBQ);
+//   if (priceQB.isLessThanOrEqualTo(0) || !priceQB.isFinite()) {
+//     console.error(
+//       `humanPriceToSqrtPriceQ64_64: Cannot convert price ${priceBQ.toString()} to a valid Quote/Base sqrtPrice.`
+//     );
+//     throw new Error(
+//       `Invalid price for sqrtPrice conversion: ${priceBQ.toString()}`
+//     );
+//   }
 
-  const sqrtP_QB = priceQB.sqrt();
-  const scaleFactor = new BN(2).pow(64); // Scale for Q64.64
-  return BigInt(
-    sqrtP_QB.multipliedBy(scaleFactor).integerValue(BN.ROUND_FLOOR).toString()
-  );
-}
-
+//   const sqrtP_QB = priceQB.sqrt();
+//   const scaleFactor = new BN(2).pow(64); // Scale for Q64.64
+//   return BigInt(
+//     sqrtP_QB.multipliedBy(scaleFactor).integerValue(BN.ROUND_FLOOR).toString()
+//   );
+// } 
 function quantizeLiquidityToLots(liq: bigint): bigint {
-  // Truncate down to nearest multiple of 1024
+// Truncate down to nearest multiple of 1024
   const LOT_SIZE = 1024n;
   return liq - (liq % LOT_SIZE);
 }
@@ -127,13 +133,11 @@ function quantizeLiquidityToLots(liq: bigint): bigint {
 function encodeWarmPathAddConcentratedLiquidityCmd(
   params: AmbientAddConcentratedLiquidityParams
 ): Hex {
-  // console.log("Encoding for WarmPath with params:", params);
-
   let commandCode: number;
   if (params.isAmountBase) {
-    commandCode = USER_CMD_MINT_RANGE_LIQ_LP; // ** REPLACE WITH ACTUAL VALUE **
+    commandCode = USER_CMD_MINT_RANGE_LIQ_LP;
   } else {
-    commandCode = USER_CMD_MINT_RANGE_QUOTE_LP; // ** REPLACE WITH ACTUAL VALUE **
+    commandCode = USER_CMD_MINT_RANGE_QUOTE_LP;
   }
   // console.log("Using commandCode (THIS IS A GUESS, VERIFY IT!):", commandCode);
 
@@ -183,12 +187,11 @@ function encodeWarmPathAddConcentratedLiquidityCmd(
     { type: "int24", name: "bidTick" },
     { type: "int24", name: "askTick" },
     { type: "uint128", name: "liq" },
-    { type: "string", name: "limitLower" },
-    { type: "string", name: "limitHigher" },
+    { type: "uint128", name: "limitLower" },
+    { type: "uint128", name: "limitHigher" },
     { type: "uint8", name: "reserveFlags" },
     { type: "address", name: "lpConduit" },
   ] as const;
-
   const values = [
     commandCode,
     params.pool.base.address as `0x${string}`,
@@ -197,12 +200,11 @@ function encodeWarmPathAddConcentratedLiquidityCmd(
     params.lowerTick,
     params.upperTick,
     quantizedAmount,
-    params.minExecPriceWei, // Pass decimal price directly
-    params.maxExecPriceWei, // Pass decimal price directly
-    0, // reserveFlags: Default to 0 (no surplus)
-    "0x0000000000000000000000000000000000000000" as `0x${string}`, // lpConduit: Default to address(0)
+    params.minExecPriceWei,
+    params.maxExecPriceWei,
+    0,
+    "0x0000000000000000000000000000000000000000" as `0x${string}`,
   ] as const;
-
   try {
     const cmd = encodeAbiParameters(abiDefinition, values);
     console.log(
@@ -238,7 +240,6 @@ async function sendCrocSwapAddLiquidityTx(
     ? txParams.pool.base.decimals
     : txParams.pool.quote.decimals;
   const requiredAmount = quantizeLiquidityToLots(BigInt(txParams.amount));
-
   try {
     const currentAllowance = await publicClient.readContract({
       address: tokenToApproveAddress,
@@ -281,7 +282,6 @@ async function sendCrocSwapAddLiquidityTx(
       alert(
         `Approval transaction sent: ${approveTx.hash}.\nWaiting for it to be confirmed before proceeding with adding liquidity...`
       );
-
       const receipt = await publicClient.waitForTransactionReceipt({
         hash: approveTx.hash,
       });
@@ -308,7 +308,6 @@ async function sendCrocSwapAddLiquidityTx(
     );
     return null;
   }
-
   const callpath = CALLPATH_FOR_COLD_PATH;
   let cmd: Hex;
   try {
@@ -515,21 +514,20 @@ export const NewAmbientPositionModal = ({
       return "N/A";
     return formatPercent(((rangePrice - marketPrice) / marketPrice).toString());
   };
-
-  function getWeiRangePrice(priceFormatted: string): string {
-    if (
-      !baseToken ||
-      !quoteToken ||
-      typeof baseToken.decimals !== "number" ||
-      typeof quoteToken.decimals !== "number"
-    ) {
-      console.warn("getWeiRangePrice: Missing token decimal information.");
-      return "0";
-    }
-    const scale = BN(10).pow(baseToken.decimals - quoteToken.decimals);
-    const priceWei = scale.multipliedBy(priceFormatted).toString();
-    return priceWei;
-  }
+  // function getWeiRangePrice(priceFormatted: string): string {
+  //   if (
+  //     !baseToken ||
+  //     !quoteToken ||
+  //     typeof baseToken.decimals !== "number" ||
+  //     typeof quoteToken.decimals !== "number"
+  //   ) {
+  //     console.warn("getWeiRangePrice: Missing token decimal information.");
+  //     return "0";
+  //   }
+  //   const scale = BN(10).pow(baseToken.decimals - quoteToken.decimals);
+  //   const priceWei = scale.multipliedBy(priceFormatted).toString();
+  //   return priceWei;
+  // }
 
   const graphXAxis = useMemo(() => {
     let minX: number, maxX: number;
@@ -599,15 +597,76 @@ export const NewAmbientPositionModal = ({
     //     validation.reason
     //   );
     //   alert(`Validation Error: ${validation.reason}`);
+
+
+    // if (!coreLiquidityParams) {
+    //   alert("Please enter a valid amount and price range.");
     //   return;
     // }
+    // Convert amount to wei
+    // const amountStr = coreLiquidityParams.amount;
+    // const isAmountBase = coreLiquidityParams.isAmountBase;
+    // const decimals = isAmountBase ? pool.base.decimals : pool.quote.decimals;
+    // const amountNum = Number(amountStr);
+    // if (
+    //   !amountStr ||
+    //   isNaN(amountNum) ||
+    //   !isFinite(amountNum) ||
+    //   amountNum <= 0
+    // ) {
+    //   alert(
+    //     "Invalid amount entered. Please enter a valid number greater than zero."
+    //   );
+    //   return;
+    // }
+    // const rawWei = amountNum * 10 ** decimals;
+    // if (!isFinite(rawWei) || isNaN(rawWei) || rawWei <= 0) {
+    //   alert("Invalid amount after conversion to wei.");
+    //   return;
+    // }
+    // const amountWei = EthersBigNumber.from(
+    //   rawWei.toLocaleString("fullwide", { useGrouping: false })
+    // );
+    // // Calculate liquidity using SDK
+    // const currentPrice = Number(pool.stats.lastPriceSwap);
+    // const lowerTick = coreLiquidityParams.lowerTick;
+    // const upperTick = coreLiquidityParams.upperTick;
+    // if (
+    //   !isFinite(currentPrice) ||
+    //   !isFinite(lowerTick) ||
+    //   !isFinite(upperTick)
+    // ) {
+    //   alert("Invalid price or tick values. Please check your input.");
+    //   return;
+    // }
+    // console.log("liq args", {
+    //   currentPrice,
+    //   amountWei: amountWei.toString(),
+    //   lowerTick,
+    //   upperTick,
+    //   typeofCurrentPrice: typeof currentPrice,
+    //   typeofAmountWei: typeof amountWei,
+    //   typeofLowerTick: typeof lowerTick,
+    //   typeofUpperTick: typeof upperTick,
+    // });
+    // let liq;
+    // if (isAmountBase) {
+    //   liq = liquidityForBaseConc(currentPrice, amountWei, lowerTick, upperTick);
+    // } else {
+    //   liq = liquidityForQuoteConc(
+    //     currentPrice,
+    //     amountWei,
+    //     lowerTick,
+    //     upperTick
+    //   );
+    // }
+    // liq = roundForConcLiq(liq);
 
     const txHash = await sendCrocSwapAddLiquidityTx(
       coreLiquidityParams,
       userAddress,
       publicClient
     );
-
     if (txHash) {
       // TODO: Add post-submission UI updates (e.g., close modal, show success toast, refresh user positions)
     } else {
