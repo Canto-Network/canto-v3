@@ -43,11 +43,29 @@ export function convertToQ64RootPrice(price: string): string {
  * @notice gets the tick of a price
  * @dev i = log(base1.0001)*P(i)
  * @param price Price in terms of base per quote
- * @returns tick of price
+ * @param tickSize The tick spacing for the pool (defaults to 1)
+ * @returns tick of price, aligned to tickSize
  */
-export function getTickFromPrice(price: string): number {
-  const tick = Math.log(Number(price)) / Math.log(1.0001);
-  return Math.trunc(tick);
+export function getTickFromPrice(price: string, tickSize: number = 1): number {
+  // Convert price to a number and ensure it's positive
+  const priceNum = Number(price);
+  if (priceNum <= 0) {
+    console.error("getTickFromPrice: Price must be positive:", price);
+    return 0;
+  }
+  
+  // Calculate tick using log base 1.0001
+  const tick = Math.log(priceNum) / Math.log(1.0001);
+  
+  // Ensure tick is within valid range
+  const MIN_TICK = -665454;
+  const MAX_TICK = 831818;
+  const boundedTick = Math.max(MIN_TICK, Math.min(MAX_TICK, tick));
+  
+  // Align tick to pool's tick size
+  const alignedTick = Math.round(boundedTick / tickSize) * tickSize;
+  
+  return alignedTick;
 }
 
 /**
@@ -56,7 +74,14 @@ export function getTickFromPrice(price: string): number {
  * @returns price of tick in terms of base per quote
  */
 export function getPriceFromTick(tick: number): string {
-  const price = Math.pow(1.0001, tick);
-  // remove scientific notation
+  // Ensure tick is within valid range
+  const MIN_TICK = -665454;
+  const MAX_TICK = 831818;
+  const boundedTick = Math.max(MIN_TICK, Math.min(MAX_TICK, tick));
+  
+  // Calculate price using 1.0001^tick
+  const price = Math.pow(1.0001, boundedTick);
+  
+  // Convert to string without scientific notation
   return new BigNumber(price).toString();
 }

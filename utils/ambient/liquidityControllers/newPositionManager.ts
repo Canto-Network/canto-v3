@@ -142,8 +142,10 @@ export function useNewAmbientPositionManager(pool: AmbientPool) {
       ).data?.toString() ?? "0";
 
     // get ticks from range prices
-    const lowerTick = getTickFromPrice(rangePrices.minPriceWei);
-    const upperTick = getTickFromPrice(rangePrices.maxPriceWei);
+    let lowerTick = getTickFromPrice(userInputs.minRangePrice, pool.tickSize);
+    let upperTick = getTickFromPrice(userInputs.maxRangePrice, pool.tickSize);
+    if (!Number.isFinite(lowerTick)) lowerTick = 0;
+    if (!Number.isFinite(upperTick)) upperTick = 0;
 
     return {
       pool: pool,

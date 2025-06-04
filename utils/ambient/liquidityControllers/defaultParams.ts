@@ -37,22 +37,42 @@ export const defaultPriceRangeFormatted = (
   // get current price
   const midpointPrice = pool.stats.lastPriceSwap;
   const midpointTick = getTickFromPrice(midpointPrice);
+  
+  console.log(`[Price Range Debug] Pool: ${pool.base.symbol}-${pool.quote.symbol}`);
+  console.log(`[Price Range Debug] Current Price: ${midpointPrice}`);
+  console.log(`[Price Range Debug] Midpoint Tick: ${midpointTick}`);
+  
+  // Calculate a reasonable tick range based on the current price
+  // For very small prices (< 1e-6), use a smaller range multiplier
+  const rangeMultiplier = Number(midpointPrice) < 1e-6 ? 0.1 : 1;
+  const adjustedRange = Math.floor(DEFAULT_CONC_LIQ_TICK_RANGES[tickRange] * rangeMultiplier);
+  
+  console.log(`[Price Range Debug] Range Multiplier: ${rangeMultiplier}`);
+  console.log(`[Price Range Debug] Adjusted Range: ${adjustedRange}`);
+  
   // lower tick and price
-  const lowerTick = midpointTick - DEFAULT_CONC_LIQ_TICK_RANGES[tickRange];
+  const lowerTick = midpointTick - adjustedRange;
+  const minPrice = getPriceFromTick(lowerTick);
   const minPriceFormatted = formatBalance(
-    getPriceFromTick(lowerTick),
+    minPrice,
     pool.base.decimals - pool.quote.decimals,
     { precision: 5 }
   );
+  
   // upper tick and price
-  const upperTick = midpointTick + DEFAULT_CONC_LIQ_TICK_RANGES[tickRange];
+  const upperTick = midpointTick + adjustedRange;
+  const maxPrice = getPriceFromTick(upperTick);
   const maxPriceFormatted = formatBalance(
-    getPriceFromTick(upperTick),
+    maxPrice,
     pool.base.decimals - pool.quote.decimals,
     { precision: 5 }
   );
+  
+  console.log(`[Price Range Debug] Lower Tick: ${lowerTick}, Price: ${minPrice}`);
+  console.log(`[Price Range Debug] Upper Tick: ${upperTick}, Price: ${maxPrice}`);
+  
   return {
-    minPriceFormatted,
-    maxPriceFormatted,
+    minPriceFormatted: minPrice.toString(),
+    maxPriceFormatted: maxPrice.toString(),
   };
 };

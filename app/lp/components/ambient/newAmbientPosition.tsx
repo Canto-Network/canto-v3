@@ -36,13 +36,14 @@ import {
 } from "@/utils/ambient/liquidityControllers";
 import { Validation } from "@/config/interfaces";
 import Analytics from "@/provider/analytics";
-import { BigNumber as BN } from "bignumber.js";
+import { BigNumber } from "bignumber.js";
 import useScreenSize from "@/hooks/helpers/useScreenSize";
 import { fetchContractLiquidityCurve } from "@/hooks/pairs/newAmbient/helpers/ifiAmbient";
-import { CROCDEX_ABI } from "@/config/abis/crocdex";
+import { CROCWARMPATH_ABI } from "@/config/abis/crocWarmPath";
 import { publicClient } from "@/hooks/pairs/useCrocData";
 import { ERC20_ABI } from "@/config/abis";
 import { useAddressTokenBalancesQuery } from "@/hooks/swap/useAddressTokenBalances";
+import { CROCDEX_ABI } from "@/config/abis/crocdex";
 
 /*
 Example AmbientPool interface structure assumed by this component:
@@ -73,16 +74,21 @@ export interface AmbientPool {
 const CROCSWAP_CONTRACT_ADDRESS =
   "0x96eD91FA046387dFfF8B942a8C14F5FBDe4a161A" as Address;
 
+const WARM_PATH_CONTRACT_ADDRESS =
+  "0xd52877C8FB724c57fDec45184dF6fb9947d78D0C" as Address;
+
 const CrocSlots = {
   BOOT_PROXY_IDX: 0,
-  LP_PROXY_IDX: 1, // WarmPath - LIKELY TARGET FOR ADD LIQUIDITY
-  COLD_PROXY_IDX: 2, // ColdPath
+  LP_PROXY_IDX: 1,
+  COLD_PROXY_IDX: 2,
 };
 
-const CALLPATH_FOR_WARM_PATH = CrocSlots.LP_PROXY_IDX; // e.g., 1
+const CALLPATH_FOR_WARM_PATH = CrocSlots.LP_PROXY_IDX;
+const CALLPATH_FOR_COLD_PATH = CrocSlots.COLD_PROXY_IDX;
 
-const USER_CMD_MINT_RANGE_BASE_LP = 11;
-const USER_CMD_MINT_RANGE_QUOTE_LP = 12;
+const USER_CMD_MINT_RANGE_LIQ_LP = 0x01; // 1 in hex
+const USER_CMD_MINT_RANGE_BASE_LP = 0x0b; // 11 in hex
+const USER_CMD_MINT_RANGE_QUOTE_LP = 0x0c; // 12 in hex
 
 function humanPriceToSqrtPriceQ64_64(
   humanPriceBasePerQuote: string | number | BN
@@ -112,82 +118,90 @@ function humanPriceToSqrtPriceQ64_64(
   );
 }
 
+function quantizeLiquidityToLots(liq: bigint): bigint {
+  // Truncate down to nearest multiple of 1024
+  const LOT_SIZE = 1024n;
+  return liq - (liq % LOT_SIZE);
+}
+
 function encodeWarmPathAddConcentratedLiquidityCmd(
   params: AmbientAddConcentratedLiquidityParams
 ): Hex {
-  console.log("Encoding for WarmPath with params:", params);
+  // console.log("Encoding for WarmPath with params:", params);
 
   let commandCode: number;
   if (params.isAmountBase) {
-    commandCode = USER_CMD_MINT_RANGE_BASE_LP; // ** REPLACE WITH ACTUAL VALUE **
+    commandCode = USER_CMD_MINT_RANGE_LIQ_LP; // ** REPLACE WITH ACTUAL VALUE **
   } else {
     commandCode = USER_CMD_MINT_RANGE_QUOTE_LP; // ** REPLACE WITH ACTUAL VALUE **
   }
-  console.log("Using commandCode (THIS IS A GUESS, VERIFY IT!):", commandCode);
+  // console.log("Using commandCode (THIS IS A GUESS, VERIFY IT!):", commandCode);
 
-  let contractLimitLowerSqrtPrice_Q64_64: bigint;
-  let contractLimitHigherSqrtPrice_Q64_64: bigint;
+  // let contractLimitLowerSqrtPrice_Q64_64: bigint;
+  // let contractLimitHigherSqrtPrice_Q64_64: bigint;
 
-  try {
-    // maxExecPriceWei (max P_B/Q from user) -> min P_Q/B -> lower sqrtPrice limit for contract
-    contractLimitLowerSqrtPrice_Q64_64 = humanPriceToSqrtPriceQ64_64(
-      params.maxExecPriceWei
-    );
-    // minExecPriceWei (min P_B/Q from user) -> max P_Q/B -> upper sqrtPrice limit for contract
-    contractLimitHigherSqrtPrice_Q64_64 = humanPriceToSqrtPriceQ64_64(
-      params.minExecPriceWei
-    );
-  } catch (e: any) {
-    console.error("Error converting price limits to sqrtPrice:", e.message);
-    throw new Error(
-      `Invalid price limits for sqrtPrice conversion: ${e.message}`
-    );
-  }
+  // try {
+  //   // maxExecPriceWei (max P_B/Q from user) -> min P_Q/B -> lower sqrtPrice limit for contract
+  //   contractLimitLowerSqrtPrice_Q64_64 = humanPriceToSqrtPriceQ64_64(
+  //     params.maxExecPriceWei
+  //   );
+  //   // minExecPriceWei (min P_B/Q from user) -> max P_Q/B -> upper sqrtPrice limit for contract
+  //   contractLimitHigherSqrtPrice_Q64_64 = humanPriceToSqrtPriceQ64_64(
+  //     params.minExecPriceWei
+  //   );
+  // } catch (e: any) {
+  //   console.error("Error converting price limits to sqrtPrice:", e.message);
+  //   throw new Error(
+  //     `Invalid price limits for sqrtPrice conversion: ${e.message}`
+  //   );
+  // }
 
-  if (
-    contractLimitLowerSqrtPrice_Q64_64 >= contractLimitHigherSqrtPrice_Q64_64
-  ) {
-    console.error(
-      "Calculated sqrtPrice limits are invalid: lower SqrtPrice limit must be less than upper SqrtPrice limit.",
-      {
-        minUserPriceBQ: params.minExecPriceWei,
-        maxUserPriceBQ: params.maxExecPriceWei,
-        resultingLowerSqrtQB: contractLimitLowerSqrtPrice_Q64_64.toString(),
-        resultingHigherSqrtQB: contractLimitHigherSqrtPrice_Q64_64.toString(),
-      }
-    );
-    throw new Error(
-      "Invalid price range: lower sqrtPrice limit is not less than upper sqrtPrice limit after conversion."
-    );
-  }
+  // if (
+  //   contractLimitLowerSqrtPrice_Q64_64 >= contractLimitHigherSqrtPrice_Q64_64
+  // ) {
+  //   console.error(
+  //     "Calculated sqrtPrice limits are invalid: lower SqrtPrice limit must be less than upper SqrtPrice limit.",
+  //     {
+  //       minUserPriceBQ: params.minExecPriceWei,
+  //       maxUserPriceBQ: params.maxExecPriceWei,
+  //       resultingLowerSqrtQB: contractLimitLowerSqrtPrice_Q64_64.toString(),
+  //       resultingHigherSqrtQB: contractLimitHigherSqrtPrice_Q64_64.toString(),
+  //     }
+  //   );
+  //   throw new Error(
+  //     "Invalid price range: lower sqrtPrice limit is not less than upper sqrtPrice limit after conversion."
+  //   );
+  // }
+
+  const quantizedAmount = quantizeLiquidityToLots(BigInt(params.amount));
 
   const abiDefinition = [
     { type: "uint8", name: "code" },
     { type: "address", name: "base" },
     { type: "address", name: "quote" },
     { type: "uint256", name: "poolIdx" },
-    { type: "int24", name: "bidTick" }, // This is lowerTick from txParams
-    { type: "int24", name: "askTick" }, // This is upperTick from txParams
-    { type: "uint128", name: "liq" }, // This is txParams.amount (token quantity)
-    { type: "uint128", name: "limitLower" }, // This is contractLimitLowerSqrtPrice_Q64_64
-    { type: "uint128", name: "limitHigher" }, // This is contractLimitHigherSqrtPrice_Q64_64
+    { type: "int24", name: "bidTick" },
+    { type: "int24", name: "askTick" },
+    { type: "uint128", name: "liq" },
+    { type: "string", name: "limitLower" },
+    { type: "string", name: "limitHigher" },
     { type: "uint8", name: "reserveFlags" },
     { type: "address", name: "lpConduit" },
   ] as const;
 
-  const values: any = [
+  const values = [
     commandCode,
-    params.pool.base.address,
-    params.pool.quote.address,
+    params.pool.base.address as `0x${string}`,
+    params.pool.quote.address as `0x${string}`,
     BigInt(params.pool.poolIdx),
     params.lowerTick,
     params.upperTick,
-    BigInt(params.amount),
-    contractLimitLowerSqrtPrice_Q64_64,
-    contractLimitHigherSqrtPrice_Q64_64,
+    quantizedAmount,
+    params.minExecPriceWei, // Pass decimal price directly
+    params.maxExecPriceWei, // Pass decimal price directly
     0, // reserveFlags: Default to 0 (no surplus)
-    "0x0000000000000000000000000000000000000000", // lpConduit: Default to address(0)
-  ];
+    "0x0000000000000000000000000000000000000000" as `0x${string}`, // lpConduit: Default to address(0)
+  ] as const;
 
   try {
     const cmd = encodeAbiParameters(abiDefinition, values);
@@ -223,7 +237,7 @@ async function sendCrocSwapAddLiquidityTx(
   const tokenToApproveDecimals = txParams.isAmountBase
     ? txParams.pool.base.decimals
     : txParams.pool.quote.decimals;
-  const requiredAmount = BigInt(txParams.amount);
+  const requiredAmount = quantizeLiquidityToLots(BigInt(txParams.amount));
 
   try {
     const currentAllowance = await publicClient.readContract({
@@ -295,7 +309,7 @@ async function sendCrocSwapAddLiquidityTx(
     return null;
   }
 
-  const callpath = CALLPATH_FOR_WARM_PATH;
+  const callpath = CALLPATH_FOR_COLD_PATH;
   let cmd: Hex;
   try {
     cmd = encodeWarmPathAddConcentratedLiquidityCmd(txParams);
@@ -323,31 +337,29 @@ async function sendCrocSwapAddLiquidityTx(
   try {
     // Step 4: Simulate the userCmd transaction
     console.log(
-      `Simulating userCmd on ${CROCSWAP_CONTRACT_ADDRESS} with callpath: ${callpath}, cmd: ${cmd}, account: ${senderAddress}`
+      `Simulating userCmd on ${CROCSWAP_CONTRACT_ADDRESS} with cmd: ${cmd}, account: ${senderAddress}`
     );
 
     const { request } = await publicClient.simulateContract({
-      // publicClient can also simulate
       address: CROCSWAP_CONTRACT_ADDRESS,
       abi: CROCDEX_ABI,
       functionName: "userCmd",
       args: [callpath, cmd],
-      account: senderAddress, // Crucial for accurate simulation
+      account: senderAddress,
       value: nativeTokenValue > 0n ? nativeTokenValue : undefined,
     });
     console.log("Transaction simulation successful. Proceeding to send.");
 
     // Step 5: If simulation is successful, send the actual transaction
-    const hash = await writeContract(request); // Pass the request from simulation
+    const hash = await writeContract(request);
 
     console.log("Add Liquidity transaction sent successfully, hash:", hash);
     alert(`Add Liquidity Transaction Submitted!\nHash: ${hash}`);
     return hash;
   } catch (error: any) {
-    // This catches errors from simulateContract or writeContract
     console.error(
       "Error during simulation or sending Add Liquidity transaction:",
-      error, 
+      error,
       error.message,
       error.data
     );
@@ -387,7 +399,7 @@ export const NewAmbientPositionModal = ({
   pool,
   verifyParams,
 }: NewPositionModalProps) => {
-  console.log("pool", pool);
+  // console.log("pool", pool);
   const {
     base: baseToken,
     quote: quoteToken,

@@ -53,7 +53,7 @@ export interface CrocUserPosition {
 }
 
 /* ------------------------------------------------------------------ */
-/* ---------- 3  helper: fetch a pool’s template specs -------------- */
+/* ---------- 3  helper: fetch a pool's template specs -------------- */
 /* ------------------------------------------------------------------ */
 
 export interface TokenMetaCroc {
@@ -121,14 +121,14 @@ const POOLS_TO_CHECK = [
   },
 ];
 
-const CHUNK = 9_000n; // stay below the node’s 10 000-block window
+const CHUNK = 9_000n; // stay below the node's 10 000-block window
 
 export async function fetchInitPoolLogs(
   client: PublicClient,
   from: bigint = 0n,
   to?: bigint // ← optional
 ) {
-  /** if caller didn’t pass an upper bound, query it now */
+  /** if caller didn't pass an upper bound, query it now */
   if (to === undefined) {
     to = await client.getBlockNumber();
   }
@@ -251,27 +251,64 @@ export async function enrichPool(pool: CrocPool): Promise<any> {
       address: CROCQUERY,
       abi: CROCQUERY_ABI,
       functionName: "queryPrice",
-      args: [pool.base.address, pool.quote.address, pool.poolIdx],
+      args: [pool.base.address, pool.quote.address, BigInt(pool.poolIdx)],
     }),
     publicClient.readContract({
       address: CROCQUERY,
       abi: CROCQUERY_ABI,
       functionName: "queryPoolParams",
-      args: [pool.base.address, pool.quote.address, pool.poolIdx],
+      args: [pool.base.address, pool.quote.address, BigInt(pool.poolIdx)],
     }),
   ]);
 
+  // Convert sqrt price to price in Q64.64 format
   const sqrtQ64 = BigInt(sqrtPriceRaw);
   const priceQ64 = (sqrtQ64 * sqrtQ64) >> 64n;
-  const originalPrice = Number(priceQ64) / 2 ** 64;
-  const invertedPrice = 1 / originalPrice;
+  
+  // Calculate decimal adjustment
+  const decimalDiff = pool.quote.decimals - pool.base.decimals;
+  
+  // Convert Q64.64 to decimal price
+  const priceDecimal = Number(priceQ64) / 2 ** 64;
+  
+  // Apply decimal adjustment
+  const decimalFactor = 10 ** decimalDiff;
+  const adjustedPrice = priceDecimal * decimalFactor;
+  
+  // Calculate inverted price (quote/base)
+  const invertedPrice = 1 / adjustedPrice;
 
-  const lastPriceSwap = invertedPrice;
+  console.log(`Pool ${pool.symbol} (${pool.poolIdx}) Price Details:`, {
+    base: {
+      symbol: pool.base.symbol,
+      decimals: pool.base.decimals,
+      address: pool.base.address,
+    },
+    quote: {
+      symbol: pool.quote.symbol,
+      decimals: pool.quote.decimals,
+      address: pool.quote.address,
+    },
+    rawValues: {
+      sqrtPriceRaw: sqrtPriceRaw.toString(),
+      sqrtQ64: sqrtQ64.toString(),
+      priceQ64: priceQ64.toString(),
+      decimalDiff,
+      decimalFactor,
+      priceDecimal: priceDecimal.toString(),
+      adjustedPrice: adjustedPrice.toString(),
+    },
+    finalPrices: {
+      originalPrice: adjustedPrice.toString(),
+      invertedPrice: invertedPrice.toString(),
+      displayPrice: `${invertedPrice} ${pool.quote.symbol}/${pool.base.symbol}`,
+    },
+  });
 
   return {
     ...pool,
     stats: {
-      lastPriceSwap,
+      lastPriceSwap: invertedPrice,
       feeRate: Number(params.feeRate_) / 1e6,
     },
     totals: {
