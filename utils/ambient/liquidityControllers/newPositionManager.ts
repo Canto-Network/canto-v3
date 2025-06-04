@@ -52,10 +52,28 @@ export function useNewAmbientPositionManager(pool: AmbientPool) {
     minPriceFormatted: string,
     maxPriceFormatted: string
   ): { minPriceWei: string; maxPriceWei: string } {
-    const scale = BigNumber(10).pow(pool.base.decimals - pool.quote.decimals);
-    const minPriceWei = scale.multipliedBy(minPriceFormatted).toString();
-    const maxPriceWei = scale.multipliedBy(maxPriceFormatted).toString();
-    return { minPriceWei, maxPriceWei };
+    // Convert formatted prices to numbers
+    const minPrice = Number(minPriceFormatted);
+    const maxPrice = Number(maxPriceFormatted);
+    
+    // Get current price and calculate slippage
+    const currentPrice = Number(pool.stats.lastPriceSwap);
+    const slippage = 0.5; // 0.5% default slippage
+    
+    // Calculate execution prices with slippage
+    const minExecPrice = currentPrice * (1 - slippage / 100);
+    const maxExecPrice = currentPrice * (1 + slippage / 100);
+    
+    // Use the more conservative of range prices and execution prices
+    const finalMinPrice = Math.min(minPrice, minExecPrice);
+    const finalMaxPrice = Math.max(maxPrice, maxExecPrice);
+    
+    // Return prices in their original format (base/quote)
+    // The contract will handle conversion to Q64.64 format
+    return {
+      minPriceWei: finalMinPrice.toString(),
+      maxPriceWei: finalMaxPrice.toString(),
+    };
   }
 
   /** USER UPDATE FUNCTIONS */
