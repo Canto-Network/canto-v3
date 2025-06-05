@@ -123,9 +123,9 @@ const USER_CMD_MINT_RANGE_QUOTE_LP = 0x0c; // 12 in hex
 //   return BigInt(
 //     sqrtP_QB.multipliedBy(scaleFactor).integerValue(BN.ROUND_FLOOR).toString()
 //   );
-// } 
+// }
 function quantizeLiquidityToLots(liq: bigint): bigint {
-// Truncate down to nearest multiple of 1024
+  // Truncate down to nearest multiple of 1024
   const LOT_SIZE = 1024n;
   return liq - (liq % LOT_SIZE);
 }
@@ -135,7 +135,7 @@ function encodeWarmPathAddConcentratedLiquidityCmd(
 ): Hex {
   let commandCode: number;
   if (params.isAmountBase) {
-    commandCode = USER_CMD_MINT_RANGE_LIQ_LP;
+    commandCode = USER_CMD_MINT_RANGE_BASE_LP;
   } else {
     commandCode = USER_CMD_MINT_RANGE_QUOTE_LP;
   }
@@ -176,8 +176,7 @@ function encodeWarmPathAddConcentratedLiquidityCmd(
   //     "Invalid price range: lower sqrtPrice limit is not less than upper sqrtPrice limit after conversion."
   //   );
   // }
-
-  const quantizedAmount = quantizeLiquidityToLots(BigInt(params.amount));
+  const liq = roundForConcLiq(EthersBigNumber.from(BigInt(params.amount)));
 
   const abiDefinition = [
     { type: "uint8", name: "code" },
@@ -199,9 +198,9 @@ function encodeWarmPathAddConcentratedLiquidityCmd(
     BigInt(params.pool.poolIdx),
     params.lowerTick,
     params.upperTick,
-    quantizedAmount,
-    params.minExecPriceWei,
-    params.maxExecPriceWei,
+    liq.toBigInt(),
+    BigInt(params.minExecPriceWei),
+    BigInt(params.maxExecPriceWei),
     0,
     "0x0000000000000000000000000000000000000000" as `0x${string}`,
   ] as const;
@@ -597,7 +596,6 @@ export const NewAmbientPositionModal = ({
     //     validation.reason
     //   );
     //   alert(`Validation Error: ${validation.reason}`);
-
 
     // if (!coreLiquidityParams) {
     //   alert("Please enter a valid amount and price range.");
