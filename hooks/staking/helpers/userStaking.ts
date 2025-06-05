@@ -70,7 +70,6 @@ export async function getAllUserStakingData(
       endpointUserStaking(chainId, cantoAddress)
     );
     if (userStakingData.error) throw userStakingData.error;
-
     // return data
     return NO_ERROR(userStakingData.data);
   } catch (err) {
