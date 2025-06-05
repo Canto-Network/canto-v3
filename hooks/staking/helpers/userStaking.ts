@@ -10,7 +10,7 @@ import { tryFetch } from "@/utils/async";
 import * as NETWORKS from "@/config/networks";
 
 const cantoMainnetUserAPIEndpoint =
-  process.env.NEXT_PUBLIC_CANTO_MAINNET_USER_API_URL;
+  "https://archive-f12dacd6-1-canto.ansybl.io/api";
 const cantoTestnetUserAPIEndpoint =
   process.env.NEXT_PUBLIC_CANTO_TESTNET_USER_API_URL;
 
