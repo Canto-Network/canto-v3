@@ -176,7 +176,7 @@ function encodeWarmPathAddConcentratedLiquidityCmd(
   //     "Invalid price range: lower sqrtPrice limit is not less than upper sqrtPrice limit after conversion."
   //   );
   // }
-  const liq = roundForConcLiq(EthersBigNumber.from(BigInt(params.amount)));
+  const liq = BigInt(params.amount);
 
   const abiDefinition = [
     { type: "uint8", name: "code" },
@@ -198,7 +198,7 @@ function encodeWarmPathAddConcentratedLiquidityCmd(
     BigInt(params.pool.poolIdx),
     params.lowerTick,
     params.upperTick,
-    liq.toBigInt(),
+    liq,
     BigInt(params.minExecPriceWei),
     BigInt(params.maxExecPriceWei),
     0,
