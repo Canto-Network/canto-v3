@@ -124,11 +124,11 @@ const USER_CMD_MINT_RANGE_QUOTE_LP = 0x0c; // 12 in hex
 //     sqrtP_QB.multipliedBy(scaleFactor).integerValue(BN.ROUND_FLOOR).toString()
 //   );
 // }
-function quantizeLiquidityToLots(liq: bigint): bigint {
-  // Truncate down to nearest multiple of 1024
-  const LOT_SIZE = 1024n;
-  return liq - (liq % LOT_SIZE);
-}
+// function quantizeLiquidityToLots(liq: bigint): bigint {
+//   // Truncate down to nearest multiple of 1024
+//   const LOT_SIZE = 1024n;
+//   return liq - (liq % LOT_SIZE);
+// }
 
 function encodeWarmPathAddConcentratedLiquidityCmd(
   params: AmbientAddConcentratedLiquidityParams
@@ -176,7 +176,6 @@ function encodeWarmPathAddConcentratedLiquidityCmd(
   //     "Invalid price range: lower sqrtPrice limit is not less than upper sqrtPrice limit after conversion."
   //   );
   // }
-  const liq = BigInt(params.amount);
 
   const abiDefinition = [
     { type: "uint8", name: "code" },
@@ -198,7 +197,7 @@ function encodeWarmPathAddConcentratedLiquidityCmd(
     BigInt(params.pool.poolIdx),
     params.lowerTick,
     params.upperTick,
-    liq,
+    BigInt(params.amount),
     BigInt(params.minExecPriceWei),
     BigInt(params.maxExecPriceWei),
     0,
@@ -238,7 +237,7 @@ async function sendCrocSwapAddLiquidityTx(
   const tokenToApproveDecimals = txParams.isAmountBase
     ? txParams.pool.base.decimals
     : txParams.pool.quote.decimals;
-  const requiredAmount = quantizeLiquidityToLots(BigInt(txParams.amount));
+  const requiredAmount = BigInt(txParams.amount);
   try {
     const currentAllowance = await publicClient.readContract({
       address: tokenToApproveAddress,
