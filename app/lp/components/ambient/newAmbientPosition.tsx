@@ -51,6 +51,7 @@ import {
   roundForConcLiq,
 } from "@crocswap-libs/sdk/dist/utils/liquidity";
 import { BigNumber as EthersBigNumber } from "ethers";
+import { CROCCOLDPATH_ABI } from "@/config/abis/crocColdPath";
 
 /*
 Example AmbientPool interface structure assumed by this component:
@@ -83,6 +84,9 @@ const CROCSWAP_CONTRACT_ADDRESS =
 
 const WARM_PATH_CONTRACT_ADDRESS =
   "0xd52877C8FB724c57fDec45184dF6fb9947d78D0C" as Address;
+
+const COLD_PATH_CONTRACT_ADDRESS =
+  "0x1eBb22B8209F6fdb1803bBe9b3dBA2Fe6216c410" as Address;
 
 const CrocSlots = {
   BOOT_PROXY_IDX: 0,
@@ -192,8 +196,8 @@ function encodeWarmPathAddConcentratedLiquidityCmd(
   ] as const;
   const values = [
     commandCode,
-    params.pool.base.address as `0x${string}`,
-    params.pool.quote.address as `0x${string}`,
+    params.pool.base.address.toLowerCase() as `0x${string}`,
+    params.pool.quote.address.toLowerCase() as `0x${string}`,
     BigInt(params.pool.poolIdx),
     params.lowerTick,
     params.upperTick,
