@@ -195,15 +195,17 @@ function encodeWarmPathAddConcentratedLiquidityCmd(
     { type: "address", name: "lpConduit" },
   ] as const;
   const values = [
-    commandCode,
+    11,
     params.pool.base.address.toLowerCase() as `0x${string}`,
     params.pool.quote.address.toLowerCase() as `0x${string}`,
     BigInt(params.pool.poolIdx),
     params.lowerTick,
     params.upperTick,
     BigInt(params.amount),
-    BigInt(params.minExecPriceWei),
-    BigInt(params.maxExecPriceWei),
+    // BigInt(params.minExecPriceWei),
+    0n,
+    340282366920938463463374607431768211455n,
+    // BigInt(params.maxExecPriceWei),
     0,
     "0x0000000000000000000000000000000000000000" as `0x${string}`,
   ] as const;
@@ -349,10 +351,13 @@ async function sendCrocSwapAddLiquidityTx(
       account: senderAddress,
       value: nativeTokenValue > 0n ? nativeTokenValue : undefined,
     });
-    console.log("Transaction simulation successful. Proceeding to send.");
+    console.log(
+      "Transaction simulation successful. Proceeding to send.",
+      request
+    );
 
     // Step 5: If simulation is successful, send the actual transaction
-    const hash = await writeContract(request);
+    const { hash } = await writeContract(request);
 
     console.log("Add Liquidity transaction sent successfully, hash:", hash);
     alert(`Add Liquidity Transaction Submitted!\nHash: ${hash}`);

@@ -49,31 +49,6 @@ export function useNewAmbientPositionManager(pool: AmbientPool) {
     setUserInputs((prev) => ({ ...prev, ...newState }));
   }
 
-  // conversions for prices
-  function getWeiRangePrices(
-    minPriceFormatted: string,
-    maxPriceFormatted: string
-  ): { minPriceWei: string; maxPriceWei: string } {
-    // Convert formatted prices to numbers
-    const minPrice = Number(minPriceFormatted);
-    const maxPrice = Number(maxPriceFormatted);
-    // Get current price and calculate slippage
-    const currentPrice = Number(pool.stats.lastPriceSwap);
-    const slippage = 0.5; // 0.5% default slippage
-    // Calculate execution prices with slippage
-    const minExecPrice = currentPrice * (1 - slippage / 100);
-    const maxExecPrice = currentPrice * (1 + slippage / 100);
-    // Use the more conservative of range prices and execution prices
-    const finalMinPrice = Math.min(minPrice, minExecPrice);
-    const finalMaxPrice = Math.max(maxPrice, maxExecPrice);
-    // Return prices in their original format (base/quote)
-    // The contract will handle conversion to Q64.64 format
-    return {
-      minPriceWei: finalMinPrice.toString(),
-      maxPriceWei: finalMaxPrice.toString(),
-    };
-  }
-
   /** USER UPDATE FUNCTIONS */
 
   // function to set range to one of the default options
@@ -81,9 +56,26 @@ export function useNewAmbientPositionManager(pool: AmbientPool) {
     // make sure custom is not selected
     if (range === "CUSTOM") return;
     const priceRange = defaultPriceRangeFormatted(pool, range);
-    setUserRangePrice({
-      min: priceRange.minPriceFormatted,
-      max: priceRange.maxPriceFormatted,
+    const newMinPrice = priceRange.minPriceFormatted;
+    const newMaxPrice = priceRange.maxPriceFormatted;
+
+    // get new amount from prices
+    const lastUpdateBase = userInputs.lastUpdated === "base";
+    const amount = getDisplayTokenAmountFromRange(
+      lastUpdateBase ? userInputs.amountBase : userInputs.amountQuote,
+      lastUpdateBase,
+      newMinPrice,
+      newMaxPrice,
+      pool
+    );
+
+    setState({
+      amountBase: lastUpdateBase ? userInputs.amountBase : amount,
+      amountQuote: lastUpdateBase ? amount : userInputs.amountQuote,
+      minRangePrice: newMinPrice,
+      maxRangePrice: newMaxPrice,
+      minExecutionPrice: newMinPrice,
+      maxExecutionPrice: newMaxPrice,
     });
   }
 
@@ -96,16 +88,11 @@ export function useNewAmbientPositionManager(pool: AmbientPool) {
 
   // accepts user input for amount and sets other amount based on price
   function setUserAmount(amount: string, isBase: boolean) {
-    // use internal state to fetch prices
-    const currentPrices = getWeiRangePrices(
-      userInputs.minRangePrice,
-      userInputs.maxRangePrice
-    );
     const newAmount = getDisplayTokenAmountFromRange(
       amount,
       isBase,
-      currentPrices.minPriceWei,
-      currentPrices.maxPriceWei,
+      userInputs.minRangePrice,
+      userInputs.maxRangePrice,
       pool
     );
     setState({
@@ -121,13 +108,12 @@ export function useNewAmbientPositionManager(pool: AmbientPool) {
     const lastUpdateBase = userInputs.lastUpdated === "base";
     const minPrice = prices.min ?? userInputs.minRangePrice;
     const maxPrice = prices.max ?? userInputs.maxRangePrice;
-    const newWeiPrices = getWeiRangePrices(minPrice, maxPrice);
     // amount
     const amount = getDisplayTokenAmountFromRange(
       lastUpdateBase ? userInputs.amountBase : userInputs.amountQuote,
       lastUpdateBase,
-      newWeiPrices.minPriceWei,
-      newWeiPrices.maxPriceWei,
+      minPrice,
+      maxPrice,
       pool
     );
     // set all new values
@@ -146,16 +132,8 @@ export function useNewAmbientPositionManager(pool: AmbientPool) {
       return null;
     }
 
-    const rangePrices = getWeiRangePrices(
-      userInputs.minRangePrice,
-      userInputs.maxRangePrice
-    );
-    const executionPrices = getWeiRangePrices(
-      userInputs.minExecutionPrice,
-      userInputs.maxExecutionPrice
-    );
     const baseAmount = userInputs.lastUpdated === "base";
-    
+
     // Convert to wei first
     const { data: amountWei, error: amountError } = convertToBigNumber(
       baseAmount ? userInputs.amountBase : userInputs.amountQuote,
@@ -163,7 +141,6 @@ export function useNewAmbientPositionManager(pool: AmbientPool) {
     );
 
     if (amountError || !amountWei) {
-      console.error("Error converting amount to wei:", amountError);
       return null;
     }
 
@@ -173,107 +150,80 @@ export function useNewAmbientPositionManager(pool: AmbientPool) {
     const tickSpacing = pool.tickSize;
     const currentPrice = Number(pool.stats.lastPriceSwap);
 
-    // Log all input values for debugging
-    console.log("Input values:", {
-      amountWei: amountWei.toString(),
-      minPrice,
-      maxPrice,
-      currentPrice,
-      tickSpacing,
-      baseAmount
-    });
-
     // Validate inputs
     if (
       !amountWei ||
       Number(amountWei) === 0 ||
-      !isFinite(minPrice) || minPrice <= 0 ||
-      !isFinite(maxPrice) || maxPrice <= 0 ||
-      !isFinite(currentPrice) || currentPrice <= 0 ||
+      !isFinite(minPrice) ||
+      minPrice <= 0 ||
+      !isFinite(maxPrice) ||
+      maxPrice <= 0 ||
+      !isFinite(currentPrice) ||
+      currentPrice <= 0 ||
       minPrice === maxPrice
     ) {
-      console.error("Invalid input parameters:", {
-        amountWei: amountWei?.toString(),
-        minPrice,
-        maxPrice,
-        currentPrice
-      });
       return null;
     }
 
-    // Check if current price is outside the range
+    // Check if current price is outside the range for the selected token
     if (baseAmount) {
       if (currentPrice <= minPrice) {
-        console.error("Current price below min price:", { currentPrice, minPrice });
         return null;
       }
     } else {
       if (currentPrice >= maxPrice) {
-        console.error("Current price above max price:", { currentPrice, maxPrice });
         return null;
       }
     }
 
-    const lowerTick = Math.floor(priceToTick(minPrice) / tickSpacing) * tickSpacing;
-    const upperTick = Math.ceil(priceToTick(maxPrice) / tickSpacing) * tickSpacing;
-
-    // Log tick values
-    console.log("Tick values:", {
-      lowerTick,
-      upperTick,
-      minPrice,
-      maxPrice,
-      currentPrice
-    });
+    const lowerTick =
+      Math.floor(priceToTick(minPrice) / tickSpacing) * tickSpacing;
+    const upperTick =
+      Math.ceil(priceToTick(maxPrice) / tickSpacing) * tickSpacing;
 
     // Calculate liquidity using SDK functions
     let liq;
     try {
-      // Ensure amountWei is a valid integer string before converting to BigInt
       const amountWeiInt = amountWei.toString();
       if (!/^\d+$/.test(amountWeiInt)) {
-        console.error("Invalid wei amount:", amountWeiInt);
         return null;
       }
 
-      // Log values before liquidity calculation
-      console.log("Values before liquidity calculation:", {
-        currentPrice,
-        amountWeiInt,
-        lowerTick,
-        upperTick
-      });
-
       if (baseAmount) {
         liq = liquidityForBaseConc(
-          Number(currentPrice),
+          currentPrice,
           BigInt(amountWeiInt),
-          Number(minPrice),
-          Number(maxPrice)
+          minPrice,
+          maxPrice
         );
       } else {
         liq = liquidityForQuoteConc(
-          Number(currentPrice),
+          currentPrice,
           BigInt(amountWeiInt),
-          Number(minPrice),
-          Number(maxPrice)
+          minPrice,
+          maxPrice
         );
       }
       liq = roundForConcLiq(liq);
-
-      // Log liquidity result
-      console.log("Liquidity calculation result:", {
-        liq: liq.toString(),
-        baseAmount
-      });
     } catch (error) {
       console.error("Error calculating liquidity:", error);
       return null;
     }
 
-    // Use SDK's price encoding
-    const minExecPriceQ64 = encodeCrocPrice(Number(executionPrices.minPriceWei));
-    const maxExecPriceQ64 = encodeCrocPrice(Number(executionPrices.maxPriceWei));
+    // Use user-defined execution prices for the limits
+    const minExecPrice = Number(userInputs.minExecutionPrice);
+    const maxExecPrice = Number(userInputs.maxExecutionPrice);
+
+    if (
+      !isFinite(minExecPrice) ||
+      !isFinite(maxExecPrice) ||
+      minExecPrice >= maxExecPrice
+    ) {
+      return null;
+    }
+
+    const minExecPriceQ64 = encodeCrocPrice(minExecPrice);
+    const maxExecPriceQ64 = encodeCrocPrice(maxExecPrice);
 
     return {
       pool: pool,

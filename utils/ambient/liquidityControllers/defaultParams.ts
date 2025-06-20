@@ -30,7 +30,7 @@ export interface UserAddConcentratedLiquidityOptions {
 }
 
 // default price range from pool and tick key
-export const defaultPriceRangeFormatted = (
+export const defaultPriceRangeFormattedOld = (
   pool: AmbientPool,
   tickRange: TickRangeKey
 ) => {
@@ -64,3 +64,27 @@ export const defaultPriceRangeFormatted = (
     maxPriceFormatted: maxPrice.toString(),
   };
 };
+
+
+// Similar to as the limits passed to the contract in ambient-ts-app
+export const defaultPriceRangeFormatted = (
+  pool: AmbientPool,
+  tickRange: TickRangeKey
+) => {
+  // get current price
+  const midpointPrice = Number(pool.stats.lastPriceSwap);
+
+  // Define the slippage percentage for the default range, same as ambient-ts-app
+  const slippage = 0.005; // 0.5%
+
+  // Calculate min and max price based on slippage from the midpoint price
+  const minPrice = midpointPrice * (1 - slippage);
+  const maxPrice = midpointPrice * (1 + slippage);
+
+  return {
+    minPriceFormatted: minPrice.toString(),
+    maxPriceFormatted: maxPrice.toString(),
+  };
+};
+
+
