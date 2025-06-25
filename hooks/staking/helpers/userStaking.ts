@@ -2,10 +2,14 @@ import {
   NEW_ERROR,
   NO_ERROR,
   PromiseWithError,
-  ReturnWithError,
   errMsg,
 } from "@/config/interfaces";
-import { UserStakingReturn, DelegationResponse, UnbondingDelegationResponse, DelegationRewardResponse } from "../interfaces/validators";
+import { 
+  UserStakingReturn, 
+  DelegationResponse, 
+  UnbondingDelegationResponse, 
+  DelegationRewardResponse 
+} from "../interfaces/validators";
 import { ethToCantoAddress } from "@/utils/address";
 import { tryFetch } from "@/utils/async";
 import * as NETWORKS from "@/config/networks";
