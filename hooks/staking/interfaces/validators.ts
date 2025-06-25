@@ -40,7 +40,7 @@ export interface UserStakingReturn {
 /**
  * @notice Response type for querying user delegations
  */
-interface DelegationResponse {
+export interface DelegationResponse {
   balance: {
     denom: string;
     amount: string;
@@ -55,7 +55,7 @@ interface DelegationResponse {
 /**
  * @notice Response type for querying user unbonding delegations
  */
-interface UnbondingDelegationResponse {
+export interface UnbondingDelegationResponse {
   delegator_address: string;
   validator_address: string;
   entries: {
@@ -69,7 +69,7 @@ interface UnbondingDelegationResponse {
 /**
  * @notice Response type for querying user rewards
  */
-interface DelegationRewardResponse {
+export interface DelegationRewardResponse {
   rewards: {
     validator_address: string;
     reward: {
