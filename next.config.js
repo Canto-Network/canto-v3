@@ -26,6 +26,10 @@ const nextConfig = {
         source: "/graphql-dex/:slug*",
         destination: `${process.env.BACKEND_DEX_SUBGRAPH_URL}:slug*`,
       },
+      {
+        source: "/gravity-rpc/:path*",
+        destination: "https://gravitychain.io:1317/:path*",
+      },
     ];
   },
   // Adding CORS Headers for safe to access the manifest.json
